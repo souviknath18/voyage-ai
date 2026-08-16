@@ -9,5 +9,8 @@ export { default as Loader } from "./Loader";
 export { default as DateInput } from "./DateInput";
 export { default as DateRangePicker } from "./DateRangePicker";
 export { default as Dropdown } from "./Dropdown";
+export { default as DestinationImage } from "./DestinationImage";
+export { default as PreferenceBadge } from "./PreferenceBadge";
+export { default as ThumbnailImage } from "./ThumbnailImage";
 
 export type { DropdownOption } from "./Dropdown";
