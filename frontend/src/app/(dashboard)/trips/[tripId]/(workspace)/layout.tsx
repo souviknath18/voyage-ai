@@ -2,6 +2,7 @@ import AppLayout from "@/components/layout/AppLayout";
 
 import TripWorkspaceHeader from "@/components/trip-workspace/TripWorkspaceHeader";
 import TripWorkspaceTabs from "@/components/trip-workspace/TripWorkspaceTabs";
+import TripAssistantLauncher from "@/components/trip-workspace/assistant/TripAssistantLauncher";
 
 import {
   mockTrip,
@@ -49,6 +50,13 @@ export default async function TripWorkspaceLayout({
 
           {/* Overview / Itinerary / Budget / Places / Map / Activity */}
           {children}
+
+          <TripAssistantLauncher
+            tripId={tripId}
+            destination={
+              trip.destination
+            }
+          />
         </div>
       </div>
     </AppLayout>

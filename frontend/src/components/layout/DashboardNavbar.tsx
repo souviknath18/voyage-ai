@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Bell,
   ChevronDown,
@@ -49,15 +50,15 @@ export default function DashboardNavbar({
       {/* Right */}
       <div className="flex items-center gap-2">
         {/* Notification */}
-        <button
-          type="button"
+        <Link
+          href="/notifications"
           aria-label="Notifications"
           className="relative rounded-full p-1.5 text-[#cbc4d2] transition hover:bg-white/[0.06] hover:text-[#fb7185]"
         >
           <Bell size={18} />
 
           <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#fb7185] ring-2 ring-[#070B18]" />
-        </button>
+        </Link>
 
         {/* User */}
         <button

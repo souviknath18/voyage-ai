@@ -1,9 +1,14 @@
 "use client";
 
 import {
+  useState,
+} from "react";
+
+import {
   useRouter,
 } from "next/navigation";
 
+import TripShareModal from "./TripShareModal";
 import TripWorkspaceHero from "./TripWorkspaceHero";
 
 import type {
@@ -20,8 +25,33 @@ export default function TripWorkspaceHeader({
   const router =
     useRouter();
 
+  const [
+    shareOpen,
+    setShareOpen,
+  ] = useState(false);
+
+  /*
+   * MOCK FOR NOW
+   *
+   * Later the backend will return this:
+   *
+   * POST /api/trips/:tripId/share
+   *
+   * {
+   *   share_id: "tokyo-x7k92",
+   *   share_url: "...",
+   * }
+   */
+  const shareId =
+    "tokyo-x7k92";
+
   const handleAskAI =
     () => {
+      /*
+       * Later:
+       * Open floating assistant
+       * through shared assistant state/context.
+       */
       console.log(
         "Open VoyageAI assistant",
       );
@@ -36,33 +66,48 @@ export default function TripWorkspaceHeader({
 
   const handleShare =
     () => {
-      console.log(
-        "Share trip",
+      setShareOpen(
+        true,
       );
     };
 
   const handleExport =
     () => {
-      console.log(
-        "Export trip",
+      router.push(
+        `/trips/${trip.id}/export`,
       );
     };
 
   return (
-    <TripWorkspaceHero
-      trip={trip}
-      onAskAIAction={
-        handleAskAI
-      }
-      onOptimizeAction={
-        handleOptimize
-      }
-      onShareAction={
-        handleShare
-      }
-      onExportAction={
-        handleExport
-      }
-    />
+    <>
+      <TripWorkspaceHero
+        trip={trip}
+        onAskAIAction={
+          handleAskAI
+        }
+        onOptimizeAction={
+          handleOptimize
+        }
+        onShareAction={
+          handleShare
+        }
+        onExportAction={
+          handleExport
+        }
+      />
+
+      <TripShareModal
+        open={shareOpen}
+        shareId={shareId}
+        tripTitle={
+          trip.title
+        }
+        onCloseAction={() =>
+          setShareOpen(
+            false,
+          )
+        }
+      />
+    </>
   );
 }
