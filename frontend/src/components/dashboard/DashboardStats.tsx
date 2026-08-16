@@ -1,58 +1,83 @@
-import { Card } from "@/components/ui";
+import {
+  Bookmark,
+  Globe2,
+  Map,
+} from "lucide-react";
 
-interface DashboardStatsProps {
-  trips: number;
-  countries: number;
-  savedPlaces: number;
-}
+const stats = [
+  {
+    label: "Trips",
+    value: "12",
+    icon: Map,
+    accent:
+      "text-[#d1bcff]",
+  },
 
-export default function DashboardStats({
-  trips,
-  countries,
-  savedPlaces,
-}: DashboardStatsProps) {
-  const stats = [
-    {
-      label: "Trips",
-      value: trips,
-      textColor: "text-[#d1bcff]",
-    },
-    {
-      label: "Countries",
-      value: countries,
-      textColor: "text-[#eac33e]",
-    },
-    {
-      label: "Saved",
-      value: savedPlaces,
-      textColor: "text-[#fb7185]",
-    },
-  ];
+  {
+    label: "Countries",
+    value: "24",
+    icon: Globe2,
+    accent:
+      "text-[#fcd34d]",
+  },
 
+  {
+    label: "Saved",
+    value: "86",
+    icon: Bookmark,
+    accent:
+      "text-[#fb7185]",
+  },
+];
+
+export default function DashboardStats() {
   return (
-    <Card className="voyage-glow flex items-center justify-between p-6">
-      {stats.map((stat, index) => (
-        <div
-          key={stat.label}
-          className="contents"
-        >
-          <div className="flex-1 text-center">
-            <p
-              className={`text-3xl font-bold ${stat.textColor}`}
-            >
-              {stat.value}
-            </p>
+    <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 sm:mt-3 sm:px-5 sm:py-3.5">
+      <div className="grid grid-cols-3 items-center">
+        {stats.map(
+          (
+            stat,
+            index,
+          ) => {
+            const Icon =
+              stat.icon;
 
-            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#cbc4d2]">
-              {stat.label}
-            </p>
-          </div>
+            return (
+              <div
+                key={
+                  stat.label
+                }
+                className={`relative flex flex-col items-center justify-center text-center ${
+                  index !==
+                  stats.length -
+                    1
+                    ? "after:absolute after:right-0 after:h-9 after:w-px after:bg-white/10"
+                    : ""
+                }`}
+              >
+                <Icon
+                  size={13}
+                  className="mb-1.5 text-[#7f8798]"
+                />
 
-          {index < stats.length - 1 && (
-            <div className="h-12 w-px bg-white/10" />
-          )}
-        </div>
-      ))}
-    </Card>
+                <p
+                  className={`text-lg font-semibold sm:text-xl ${stat.accent}`}
+                >
+                  {
+                    stat.value
+                  }
+                </p>
+
+                <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-[#7f8798] sm:text-[10px]">
+                  {
+                    stat.label
+                  }
+                </p>
+              </div>
+            );
+          },
+        )}
+      </div>
+    </div>
   );
 }

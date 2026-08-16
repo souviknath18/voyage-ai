@@ -37,12 +37,14 @@ export default function PlaceDetailsHero({
   return (
     <section className="group relative min-h-[380px] overflow-hidden rounded-xl border border-white/10 bg-[#070B18] sm:min-h-[460px]">
       {/* Image */}
-      <DestinationImage
-        src={place.image}
-        alt={place.name}
-        className="absolute inset-0 h-full w-full"
-        imageClassName="object-center"
-      />
+      <div className="absolute inset-0">
+        <DestinationImage
+          src={place.image}
+          alt={place.name}
+          className="h-full w-full"
+          imageClassName="object-cover object-center"
+        />
+      </div>
 
       {/* Overlay */}
       <div className="pointer-events-none absolute inset-0 bg-black/20" />

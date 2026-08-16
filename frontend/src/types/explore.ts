@@ -33,3 +33,54 @@ export interface Destination {
   featured?: boolean;
   saved?: boolean;
 }
+
+export interface AIRecommendation {
+  id: string;
+
+  city: string;
+  country: string;
+
+  image?: string;
+
+  reason: string;
+
+  tags: string[];
+
+  costLevel: number;
+
+  idealStay: string;
+
+  bestTime: string;
+
+  matchScore?: number;
+
+  featured?: boolean;
+}
+
+export interface SimilarRecommendation {
+  id: string;
+
+  city: string;
+  country: string;
+
+  image?: string;
+
+  description: string;
+
+  costLevel: number;
+}
+
+export interface ValueRecommendation {
+  id: string;
+
+  city: string;
+  country: string;
+
+  image?: string;
+
+  description: string;
+
+  region: string;
+
+  costLevel: number;
+}
