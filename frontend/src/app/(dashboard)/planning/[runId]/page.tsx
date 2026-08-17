@@ -7,6 +7,7 @@ import {
 import AppLayout from "@/components/layout/AppLayout";
 
 import AgentActivityLog from "@/components/planning/AgentActivityLog";
+import PlanningFailure from "./components/PlanningFailure";
 import PlanningHeader from "@/components/planning/PlanningHeader";
 import PlanningProgress from "@/components/planning/PlanningProgress";
 import PlanningTripSummary from "@/components/planning/PlanningTripSummary";
@@ -18,7 +19,16 @@ import type {
 const planningRun: PlanningRun = {
   runId: "run-tokyo-001",
 
-  status: "planning",
+  /*
+   * Change this to:
+   *
+   * "failed"
+   *
+   * to preview the
+   * Trip Planning Failure UI.
+   */
+  // status: "planning",
+  status: "failed",
 
   progress: 58,
 
@@ -26,14 +36,17 @@ const planningRun: PlanningRun = {
     id: "trip-tokyo-001",
 
     origin: "Bangalore",
+
     destination: "Tokyo",
 
     startDate: "10 Nov 2026",
+
     endDate: "15 Nov 2026",
 
     travelers: 1,
 
     currency: "INR",
+
     budget: 150000,
 
     pace: "Balanced",
@@ -95,7 +108,8 @@ const planningRun: PlanningRun = {
     },
 
     {
-      id: "budget-warning",
+      id:
+        "budget-warning",
 
       title:
         "Budget alignment needed",
@@ -111,7 +125,8 @@ const planningRun: PlanningRun = {
     },
 
     {
-      id: "hotel-optimization",
+      id:
+        "hotel-optimization",
 
       title:
         "Optimizing hotel selection",
@@ -209,9 +224,10 @@ const planningRun: PlanningRun = {
 };
 
 export default function PlanningPage() {
-  const params = useParams<{
-    runId: string;
-  }>();
+  const params =
+    useParams<{
+      runId: string;
+    }>();
 
   const runId =
     params.runId;
@@ -225,13 +241,88 @@ export default function PlanningPage() {
     planningRun.status ===
     "planning";
 
+  const failed =
+    planningRun.status ===
+    "failed";
+
+  /*
+   * Failed Planning State
+   */
+  if (failed) {
+    return (
+      <AppLayout>
+        <div className="mx-auto w-full max-w-[1280px] px-4 pb-20 md:px-6">
+          <PlanningFailure
+            tripId={
+              planningRun
+                .trip.id
+            }
+            runId={
+              planningRun
+                .runId
+            }
+            origin={
+              planningRun
+                .trip.origin
+            }
+            destination={
+              planningRun
+                .trip
+                .destination
+            }
+            startDate={
+              planningRun
+                .trip.startDate
+            }
+            endDate={
+              planningRun
+                .trip.endDate
+            }
+            travelers={
+              planningRun
+                .trip
+                .travelers
+            }
+            currency={
+              planningRun
+                .trip.currency
+            }
+            budget={
+              planningRun
+                .trip.budget
+            }
+            onRetryAction={() => {
+              console.log(
+                "Retry planning:",
+                planningRun.runId,
+              );
+
+              /*
+               * Later:
+               *
+               * POST
+               * /api/v1/planning-runs/
+               * {planningRun.runId}/retry
+               */
+            }}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  /*
+   * Normal Planning State
+   */
   return (
     <AppLayout>
       <div className="mx-auto w-full max-w-[1280px] px-4 pb-20 md:px-6">
         <div className="space-y-5">
           {/* Header */}
           <PlanningHeader
-            running={planning}
+            running={
+              planning
+            }
           />
 
           {/* Trip Summary */}
