@@ -41,13 +41,16 @@ export interface PlanningTrip {
   interests: string[];
 }
 
+export type PlanningRunStatus =
+  | "queued"
+  | "planning"
+  | "completed"
+  | "failed";
+
 export interface PlanningRun {
   runId: string;
   trip: PlanningTrip;
   progress: number;
-  status:
-    | "planning"
-    | "completed"
-    | "failed";
+  status: PlanningRunStatus;
   steps: PlanningStep[];
 }
