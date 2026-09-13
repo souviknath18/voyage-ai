@@ -3,10 +3,11 @@
 import {
   useMemo,
   useState,
+  useEffect,
 } from "react";
 
 import AppLayout from "@/components/layout/AppLayout";
-
+import { PageLoader } from "@/components/ui";
 import MyTripsHeader from "@/components/trips/MyTripsHeader";
 import TripTabs from "@/components/trips/TripTabs";
 import TripsGrid from "@/components/trips/TripsGrid";
@@ -187,6 +188,11 @@ export default function MyTripsPage() {
     setSearch,
   ] = useState("");
 
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
   const counts =
     useMemo(() => {
       return {
@@ -264,6 +270,27 @@ export default function MyTripsPage() {
       activeTab,
       search,
     ]);
+
+  useEffect(() => {
+    const timer =
+      setTimeout(() => {
+        setLoading(false);
+      }, 5000);
+
+    return () =>
+      clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <PageLoader
+          title="Loading your trips"
+          description="VoyageAI is retrieving your journeys."
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
