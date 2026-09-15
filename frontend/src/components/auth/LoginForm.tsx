@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { login } from "@/lib/auth";
 
 import {
   ArrowRight,
@@ -65,25 +66,27 @@ export default function LoginForm() {
       setLoading(true);
 
       try {
-        console.log({
+        const response = await login(
           email,
           password,
-        });
+        );
 
-        /*
-         * Later:
-         *
-         * const response =
-         *   await login({
-         *     email,
-         *     password,
-         *   });
-         *
-         * saveAuthData(...)
-         */
+        localStorage.setItem(
+          "access_token",
+          response.access_token,
+        );
 
-        router.push(
-          "/dashboard",
+        router.push("/dashboard");
+      } catch (error) {
+        console.error(
+          "Login failed:",
+          error,
+        );
+
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Login failed",
         );
       } finally {
         setLoading(false);

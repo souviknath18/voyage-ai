@@ -1,9 +1,9 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
-  useEffect,
 } from "react";
 
 import AppLayout from "@/components/layout/AppLayout";
@@ -12,176 +12,104 @@ import MyTripsHeader from "@/components/trips/MyTripsHeader";
 import TripTabs from "@/components/trips/TripTabs";
 import TripsGrid from "@/components/trips/TripsGrid";
 
+import {
+  getTrips,
+  type Trip,
+} from "@/lib/trips";
+
 import type {
   TripListItem,
   TripTab,
 } from "@/types/trips";
 
-const trips: TripListItem[] = [
-  {
-    id: "trip-001",
+
+/**
+ * Convert the Trip returned by FastAPI
+ * into the format expected by the existing
+ * TripsGrid / TripCard components.
+ */
+function mapTripToListItem(
+  trip: Trip,
+): TripListItem {
+  const startDate =
+    new Date(trip.start_date);
+
+  const endDate =
+    new Date(trip.end_date);
+
+  const millisecondsPerDay =
+    1000 * 60 * 60 * 24;
+
+  const duration =
+    Math.ceil(
+      (
+        endDate.getTime() -
+        startDate.getTime()
+      ) / millisecondsPerDay,
+    ) + 1;
+
+  return {
+    id: trip.id,
 
     title:
-      "Neon Nights in Tokyo",
+      `${trip.destination} Trip`,
 
     origin:
-      "Bangalore",
+      trip.origin,
 
     destination:
-      "Tokyo",
+      trip.destination,
 
     startDate:
-      "15 Dec 2026",
+      startDate.toLocaleDateString(
+        "en-GB",
+        {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        },
+      ),
 
     endDate:
-      "22 Dec 2026",
+      endDate.toLocaleDateString(
+        "en-GB",
+        {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        },
+      ),
 
-    duration: 8,
+    duration,
 
-    travelers: 1,
+    travelers:
+      trip.travelers,
 
-    currency: "INR",
+    currency:
+      trip.currency,
 
     estimatedCost:
-      184000,
+      trip.budget
+        ? Number(trip.budget)
+        : undefined,
 
+    // Temporary image.
+    // Later we can generate/select images
+    // based on destination.
     image:
       "/images/trips/tokyo.jpg",
 
     status:
-      "upcoming",
-  },
+      trip.status as TripListItem["status"],
+  };
+}
 
-  {
-    id: "trip-002",
-
-    title:
-      "Amalfi Escape",
-
-    origin:
-      "Bangalore",
-
-    destination:
-      "Amalfi Coast",
-
-    duration: 5,
-
-    travelers: 2,
-
-    currency: "INR",
-
-    image:
-      "/images/trips/amalfi.jpg",
-
-    status:
-      "draft",
-  },
-
-  {
-    id: "trip-003",
-
-    title:
-      "Bali Slow Escape",
-
-    origin:
-      "Bangalore",
-
-    destination:
-      "Bali",
-
-    startDate:
-      "04 Oct 2026",
-
-    endDate:
-      "10 Oct 2026",
-
-    duration: 7,
-
-    travelers: 2,
-
-    currency: "INR",
-
-    estimatedCost:
-      110000,
-
-    image:
-      "/images/trips/bali.jpg",
-
-    status:
-      "upcoming",
-  },
-
-  {
-    id: "trip-004",
-
-    title:
-      "Dubai Weekend",
-
-    origin:
-      "Bangalore",
-
-    destination:
-      "Dubai",
-
-    startDate:
-      "12 Mar 2026",
-
-    endDate:
-      "16 Mar 2026",
-
-    duration: 5,
-
-    travelers: 1,
-
-    currency: "INR",
-
-    estimatedCost:
-      78000,
-
-    image:
-      "/images/trips/dubai.jpg",
-
-    status:
-      "completed",
-  },
-
-  {
-    id: "trip-005",
-
-    title:
-      "Swiss Alpine Journey",
-
-    origin:
-      "Bangalore",
-
-    destination:
-      "Switzerland",
-
-    duration: 9,
-
-    travelers: 2,
-
-    currency: "INR",
-
-    estimatedCost:
-      265000,
-
-    image:
-      "/images/trips/switzerland.jpg",
-
-    status:
-      "saved",
-  },
-];
 
 export default function MyTripsPage() {
   const [
     activeTab,
     setActiveTab,
-  ] =
-    useState<TripTab>(
-      "upcoming",
-    );
+  ] = useState<TripTab>("draft");
 
   const [
     search,
@@ -189,10 +117,66 @@ export default function MyTripsPage() {
   ] = useState("");
 
   const [
+    trips,
+    setTrips,
+  ] = useState<TripListItem[]>([]);
+
+  const [
     loading,
     setLoading,
   ] = useState(true);
 
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(null);
+
+
+  /**
+   * Fetch real trips from FastAPI.
+   */
+  useEffect(() => {
+    const loadTrips =
+      async () => {
+        try {
+          setLoading(true);
+          setError(null);
+
+          const data =
+            await getTrips();
+
+          const mappedTrips =
+            data.map(
+              mapTripToListItem,
+            );
+
+          setTrips(
+            mappedTrips,
+          );
+        } catch (error) {
+          console.error(
+            "Failed to load trips:",
+            error,
+          );
+
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Failed to load trips",
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
+
+    loadTrips();
+  }, []);
+
+
+  /**
+   * Calculate tab counts using
+   * the real backend trips.
+   */
   const counts =
     useMemo(() => {
       return {
@@ -224,8 +208,13 @@ export default function MyTripsPage() {
               "saved",
           ).length,
       };
-    }, []);
+    }, [trips]);
 
+
+  /**
+   * Filter trips based on selected
+   * tab and search query.
+   */
   const filteredTrips =
     useMemo(() => {
       const query =
@@ -250,37 +239,28 @@ export default function MyTripsPage() {
           return (
             trip.title
               .toLowerCase()
-              .includes(
-                query,
-              ) ||
+              .includes(query) ||
+
             trip.origin
               .toLowerCase()
-              .includes(
-                query,
-              ) ||
+              .includes(query) ||
+
             trip.destination
               .toLowerCase()
-              .includes(
-                query,
-              )
+              .includes(query)
           );
         },
       );
     }, [
+      trips,
       activeTab,
       search,
     ]);
 
-  useEffect(() => {
-    const timer =
-      setTimeout(() => {
-        setLoading(false);
-      }, 5000);
 
-    return () =>
-      clearTimeout(timer);
-  }, []);
-
+  /**
+   * Loading state.
+   */
   if (loading) {
     return (
       <AppLayout>
@@ -292,11 +272,36 @@ export default function MyTripsPage() {
     );
   }
 
+
+  /**
+   * API error state.
+   */
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="mx-auto w-full max-w-[1280px] px-4 py-10 md:px-6">
+          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6">
+            <h2 className="text-lg font-semibold">
+              Unable to load trips
+            </h2>
+
+            <p className="mt-2 text-sm text-muted-foreground">
+              {error}
+            </p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+
   return (
     <AppLayout>
       <div className="mx-auto w-full max-w-[1280px] px-4 pb-20 md:px-6">
         <div className="space-y-6">
+
           {/* Header */}
+
           <MyTripsHeader
             search={search}
             onSearchChangeAction={
@@ -304,18 +309,24 @@ export default function MyTripsPage() {
             }
           />
 
+
           {/* Tabs */}
+
           <TripTabs
             activeTab={
               activeTab
             }
-            counts={counts}
+            counts={
+              counts
+            }
             onChangeAction={
               setActiveTab
             }
           />
 
+
           {/* Trips */}
+
           <TripsGrid
             trips={
               filteredTrips
@@ -324,6 +335,7 @@ export default function MyTripsPage() {
               activeTab
             }
           />
+
         </div>
       </div>
     </AppLayout>

@@ -23,3 +23,24 @@ export interface TripFormData {
 
   aiBrief: string;
 }
+
+export interface Trip {
+  id: string;
+  user_id: string;
+
+  origin: string;
+  destination: string;
+
+  start_date: string;
+  end_date: string;
+
+  travelers: number;
+
+  budget: string | null;
+  currency: string;
+
+  status: string;
+
+  created_at: string;
+  updated_at: string;
+}

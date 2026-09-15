@@ -8,6 +8,7 @@ from alembic import context
 from app.core.config import settings
 from app.db.base import Base
 from app.modules.users.models import User
+from app.modules.trips.models import Trip
 
 
 config = context.config
