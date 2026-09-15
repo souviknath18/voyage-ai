@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 
 import AIConciergeBrief from "@/components/plan-trip/AIConciergeBrief";
@@ -12,10 +12,11 @@ import InterestSelector from "@/components/plan-trip/InterestSelector";
 import PlanTripHero from "@/components/plan-trip/PlanTripHero";
 import PrivacyCard from "@/components/plan-trip/PrivacyCard";
 import TravelPaceSelector from "@/components/plan-trip/TravelPaceSelector";
-
+import { createTrip } from "@/lib/trips";
 import type { TripFormData } from "@/types/trip";
 
 export default function PlanTripPage() {
+  const router = useRouter();
   const [trip, setTrip] = useState<TripFormData>({
     origin: "",
     destination: "",
@@ -85,14 +86,27 @@ export default function PlanTripPage() {
     setPlanning(true);
 
     try {
-      console.log(
-        "VoyageAI trip payload:",
-        trip,
-      );
+      const createdTrip = await createTrip({
+        origin: trip.origin,
+        destination: trip.destination,
+        start_date: trip.startDate,
+        end_date: trip.endDate,
+        travelers: trip.travelers,
+        budget: trip.budget,
+        currency: trip.currency,
+      });
+
+      router.push(`/trips/${createdTrip.id}`);
     } catch (error) {
       console.error(
-        "Failed to start trip planning:",
+        "Failed to create trip:",
         error,
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to create trip",
       );
     } finally {
       setPlanning(false);

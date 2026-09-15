@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { register } from "@/lib/auth";
 
 import {
   ArrowRight,
@@ -78,46 +79,36 @@ export default function SignupForm() {
     passwordValid &&
     passwordsMatch;
 
-  const handleSubmit =
-    async (
-      event:
-        FormEvent<HTMLFormElement>,
-    ) => {
-      event.preventDefault();
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
 
-      if (!formValid) {
-        return;
-      }
+    setLoading(true);
 
-      setLoading(true);
+    try {
+      await register(
+        email,
+        password,
+        fullName,
+      );
 
-      try {
-        console.log({
-          fullName,
-          email,
-          password,
-        });
+      router.push("/login");
+    } catch (error) {
+      console.error(
+        "Registration failed:",
+        error,
+      );
 
-        /*
-         * Later:
-         *
-         * const response =
-         *   await signup({
-         *     full_name: fullName,
-         *     email,
-         *     password,
-         *   });
-         *
-         * saveAuthData(...)
-         */
-
-        router.push(
-          "/dashboard",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Registration failed",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section className="relative flex min-h-dvh items-center px-4 py-8 sm:px-8 lg:px-12 xl:px-20">
