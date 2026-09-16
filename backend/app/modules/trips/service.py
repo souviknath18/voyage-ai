@@ -33,7 +33,7 @@ async def create_user_trip(
 
 async def get_user_trip(
   db: AsyncSession,
-  trip_id: uuid.UUID,
+  trip_id: str,
   user_id: uuid.UUID,
 ) -> Trip:
   trip = await get_trip_by_id(
@@ -63,7 +63,7 @@ async def list_user_trips(
 
 async def update_user_trip(
   db: AsyncSession,
-  trip_id: uuid.UUID,
+  trip_id: str,
   user_id: uuid.UUID,
   data: TripUpdate,
 ) -> Trip:
@@ -102,7 +102,7 @@ async def update_user_trip(
 
 async def delete_user_trip(
   db: AsyncSession,
-  trip_id: uuid.UUID,
+  trip_id: str,
   user_id: uuid.UUID,
 ) -> None:
   trip = await get_user_trip(

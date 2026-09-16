@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,9 +57,11 @@ async def get_trips(
   response_model=TripResponse,
 )
 async def get_trip(
-  trip_id: uuid.UUID,
+  trip_id: str,
   db: AsyncSession = Depends(get_db),
-  current_user: User = Depends(get_current_user),
+  current_user: User = Depends(
+    get_current_user
+  ),
 ):
   return await get_user_trip(
     db=db,
@@ -75,10 +75,12 @@ async def get_trip(
   response_model=TripResponse,
 )
 async def update_trip(
-  trip_id: uuid.UUID,
+  trip_id: str,
   data: TripUpdate,
   db: AsyncSession = Depends(get_db),
-  current_user: User = Depends(get_current_user),
+  current_user: User = Depends(
+    get_current_user
+  ),
 ):
   return await update_user_trip(
     db=db,
@@ -93,9 +95,11 @@ async def update_trip(
   status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_trip(
-  trip_id: uuid.UUID,
+  trip_id: str,
   db: AsyncSession = Depends(get_db),
-  current_user: User = Depends(get_current_user),
+  current_user: User = Depends(
+    get_current_user
+  ),
 ):
   await delete_user_trip(
     db=db,

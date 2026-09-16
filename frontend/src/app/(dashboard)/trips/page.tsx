@@ -11,6 +11,9 @@ import { PageLoader } from "@/components/ui";
 import MyTripsHeader from "@/components/trips/MyTripsHeader";
 import TripTabs from "@/components/trips/TripTabs";
 import TripsGrid from "@/components/trips/TripsGrid";
+import {
+  getDestinationImage,
+} from "@/lib/destination-images";
 
 import {
   getTrips,
@@ -49,7 +52,7 @@ function mapTripToListItem(
     ) + 1;
 
   return {
-    id: trip.id,
+    id: trip.trip_id,
 
     title:
       `${trip.destination} Trip`,
@@ -96,8 +99,12 @@ function mapTripToListItem(
     // Temporary image.
     // Later we can generate/select images
     // based on destination.
+    // image:
+    //   "/images/trips/tokyo.jpg",
     image:
-      "/images/trips/tokyo.jpg",
+      getDestinationImage(
+        trip.destination,
+      ),
 
     status:
       trip.status as TripListItem["status"],
