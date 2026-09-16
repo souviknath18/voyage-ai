@@ -1,4 +1,68 @@
+# Environment variables / secrets
 .env
+.env.*
+!.env.example
+
+# Virtual environments
 venv/
+.venv/
+env/
+ENV/
+
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Type checking / linting
+.mypy_cache/
+.pyright/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+logs/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# LangGraph / AI local state
+.langgraph/
+.checkpoints/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
