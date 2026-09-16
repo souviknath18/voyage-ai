@@ -1,0 +1,42 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.cache
+
+# Test / coverage artifacts
+coverage/
+.coverage
+htmlcov/
+
+# Local AI / agent artifacts
+.checkpoints/
+*.checkpoint
+
+# Archives / local backups
+*.zip
+*.tar
+*.tar.gz
+
+# Misc
+*.pid
