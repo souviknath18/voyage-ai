@@ -80,6 +80,7 @@ class TripUpdate(BaseModel):
 
 class TripResponse(BaseModel):
   id: uuid.UUID
+  trip_id: str
   user_id: uuid.UUID
 
   origin: str

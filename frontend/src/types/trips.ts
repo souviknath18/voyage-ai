@@ -51,7 +51,7 @@ export interface TripListItem {
   currency: string;
   estimatedCost?: number;
 
-  image: string;
+  image?: string;
 
   status: TripStatus;
 

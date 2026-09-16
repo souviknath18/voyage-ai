@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import {
+  useEffect,
+  useState,
+} from "react";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 
 import AIConciergeBrief from "@/components/plan-trip/AIConciergeBrief";
@@ -12,11 +18,20 @@ import InterestSelector from "@/components/plan-trip/InterestSelector";
 import PlanTripHero from "@/components/plan-trip/PlanTripHero";
 import PrivacyCard from "@/components/plan-trip/PrivacyCard";
 import TravelPaceSelector from "@/components/plan-trip/TravelPaceSelector";
-import { createTrip } from "@/lib/trips";
+import {
+  createTrip,
+  getTrip,
+  getTripPreferences,
+  saveTripPreferences,
+  updateTrip,
+} from "@/lib/trips";
+import { PageLoader } from "@/components/ui";
 import type { TripFormData } from "@/types/trip";
 
 export default function PlanTripPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const draftTripId = searchParams.get("draft");
   const [trip, setTrip] = useState<TripFormData>({
     origin: "",
     destination: "",
@@ -32,8 +47,94 @@ export default function PlanTripPage() {
   });
 
   const [planning, setPlanning] = useState(false);
+  const [loadingDraft, setLoadingDraft] = useState(false);
 
-  const updateTrip = <K extends keyof TripFormData>(
+  useEffect(() => {
+    if (!draftTripId) {
+      return;
+    }
+
+    const loadDraftTrip =
+      async () => {
+        try {
+          setLoadingDraft(true);
+
+          const existingTrip =
+            await getTrip(draftTripId);
+
+          let preferences = null;
+
+          try {
+            preferences =
+              await getTripPreferences(
+                draftTripId,
+              );
+          } catch (error) {
+            console.warn(
+              "No saved preferences found:",
+              error,
+            );
+          }
+
+          setTrip((previous) => ({
+            ...previous,
+
+            origin: existingTrip.origin,
+            destination:
+              existingTrip.destination,
+
+            startDate:
+              existingTrip.start_date,
+            endDate:
+              existingTrip.end_date,
+
+            travelers:
+              existingTrip.travelers,
+
+            budget:
+              existingTrip.budget
+                ? Number(existingTrip.budget)
+                : 0,
+
+            currency:
+              existingTrip.currency,
+
+            pace:
+              preferences?.pace ??
+              previous.pace,
+
+            interests:
+              preferences?.interests ??
+              previous.interests,
+
+            aiBrief:
+              preferences?.ai_brief ??
+              previous.aiBrief,
+
+            budgetLevel:
+              preferences?.budget_level ??
+              previous.budgetLevel,
+          }));
+        } catch (error) {
+          console.error(
+            "Failed to load draft trip:",
+            error,
+          );
+
+          alert(
+            error instanceof Error
+              ? error.message
+              : "Failed to load draft trip",
+          );
+        } finally {
+          setLoadingDraft(false);
+        }
+      };
+
+    loadDraftTrip();
+  }, [draftTripId]);
+
+  const updateTripField = <K extends keyof TripFormData>(
     key: K,
     value: TripFormData[K],
   ) => {
@@ -62,9 +163,9 @@ export default function PlanTripPage() {
     const startDate = new Date(trip.startDate);
     const endDate = new Date(trip.endDate);
 
-    if (endDate < startDate) {
+    if (endDate <= startDate) {
       alert(
-        "End date cannot be before the start date.",
+        "End date must be after the start date.",
       );
       return;
     }
@@ -86,7 +187,7 @@ export default function PlanTripPage() {
     setPlanning(true);
 
     try {
-      const createdTrip = await createTrip({
+      const payload = {
         origin: trip.origin,
         destination: trip.destination,
         start_date: trip.startDate,
@@ -94,9 +195,33 @@ export default function PlanTripPage() {
         travelers: trip.travelers,
         budget: trip.budget,
         currency: trip.currency,
-      });
+      };
 
-      router.push(`/trips/${createdTrip.id}`);
+      const savedTrip =
+        draftTripId
+          ? await updateTrip(
+              draftTripId,
+              payload,
+            )
+          : await createTrip(
+              payload,
+            );
+
+      await saveTripPreferences(
+        savedTrip.trip_id,
+        {
+          pace: trip.pace,
+          interests: trip.interests,
+          ai_brief:
+            trip.aiBrief.trim() || null,
+          budget_level:
+            trip.budgetLevel,
+        },
+      );
+
+      router.push(
+        `/trips/${savedTrip.trip_id}`,
+      );
     } catch (error) {
       console.error(
         "Failed to create trip:",
@@ -112,6 +237,17 @@ export default function PlanTripPage() {
       setPlanning(false);
     }
   };
+
+  if (loadingDraft) {
+    return (
+      <AppLayout>
+        <PageLoader
+          title="Loading your trip"
+          description="VoyageAI is retrieving your draft."
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -130,31 +266,31 @@ export default function PlanTripPage() {
                 endDate={trip.endDate}
                 travelers={trip.travelers}
                 onOriginChangeAction={(value) =>
-                  updateTrip(
+                  updateTripField(
                     "origin",
                     value,
                   )
                 }
                 onDestinationChangeAction={(value) =>
-                  updateTrip(
+                  updateTripField(
                     "destination",
                     value,
                   )
                 }
                 onStartDateChangeAction={(value) =>
-                  updateTrip(
+                  updateTripField(
                     "startDate",
                     value,
                   )
                 }
                 onEndDateChangeAction={(value) =>
-                  updateTrip(
+                  updateTripField(
                     "endDate",
                     value,
                   )
                 }
                 onTravelersChangeAction={(value) =>
-                  updateTrip(
+                  updateTripField(
                     "travelers",
                     value,
                   )
@@ -170,19 +306,19 @@ export default function PlanTripPage() {
                     trip.budgetLevel
                   }
                   onCurrencyChangeAction={(value) =>
-                    updateTrip(
+                    updateTripField(
                       "currency",
                       value,
                     )
                   }
                   onBudgetChangeAction={(value) =>
-                    updateTrip(
+                    updateTripField(
                       "budget",
                       value,
                     )
                   }
                   onBudgetLevelChangeAction={(value) =>
-                    updateTrip(
+                    updateTripField(
                       "budgetLevel",
                       value,
                     )
@@ -192,7 +328,7 @@ export default function PlanTripPage() {
                 <TravelPaceSelector
                   value={trip.pace}
                   onChangeAction={(value) =>
-                    updateTrip(
+                    updateTripField(
                       "pace",
                       value,
                     )
@@ -204,7 +340,7 @@ export default function PlanTripPage() {
               <InterestSelector
                 selected={trip.interests}
                 onChangeAction={(value) =>
-                  updateTrip(
+                  updateTripField(
                     "interests",
                     value,
                   )
@@ -215,7 +351,7 @@ export default function PlanTripPage() {
               <AIConciergeBrief
                 value={trip.aiBrief}
                 onChangeAction={(value) =>
-                  updateTrip(
+                  updateTripField(
                     "aiBrief",
                     value,
                   )

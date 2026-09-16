@@ -9,6 +9,8 @@ from app.core.config import settings
 from app.db.base import Base
 from app.modules.users.models import User
 from app.modules.trips.models import Trip
+from app.modules.trip_preferences.models import TripPreference
+from app.modules.agent_runs.models import AgentRun
 
 
 config = context.config

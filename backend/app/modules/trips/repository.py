@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import select
@@ -12,12 +13,55 @@ async def create_trip(
   user_id: uuid.UUID,
   trip_data: dict[str, Any],
 ) -> Trip:
+  today = datetime.now(
+    timezone.utc
+  ).strftime("%Y%m%d")
+
+  prefix = f"TRIP-{today}-"
+
+  result = await db.execute(
+    select(Trip.trip_id)
+    .where(
+      Trip.trip_id.like(
+        f"{prefix}%"
+      )
+    )
+    .order_by(
+      Trip.trip_id.desc()
+    )
+    .limit(1)
+  )
+
+  last_trip_id = (
+    result.scalar_one_or_none()
+  )
+
+  if last_trip_id:
+    try:
+      last_number = int(
+        last_trip_id.split("-")[-1]
+      )
+    except (
+      ValueError,
+      IndexError,
+    ):
+      last_number = 0
+  else:
+    last_number = 0
+
+  trip_id = (
+    f"{prefix}"
+    f"{last_number + 1:04d}"
+  )
+
   trip = Trip(
+    trip_id=trip_id,
     user_id=user_id,
     **trip_data,
   )
 
   db.add(trip)
+
   await db.commit()
   await db.refresh(trip)
 
@@ -26,12 +70,12 @@ async def create_trip(
 
 async def get_trip_by_id(
   db: AsyncSession,
-  trip_id: uuid.UUID,
+  trip_id: str,
   user_id: uuid.UUID,
 ) -> Trip | None:
   result = await db.execute(
     select(Trip).where(
-      Trip.id == trip_id,
+      Trip.trip_id == trip_id,
       Trip.user_id == user_id,
     )
   )
