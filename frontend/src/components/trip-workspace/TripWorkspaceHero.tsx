@@ -16,11 +16,11 @@ import {
 } from "@/components/ui";
 
 import type {
-  TripWorkspaceData,
+  TripWorkspaceHeaderData,
 } from "@/types/trip-workspace";
 
 interface TripWorkspaceHeroProps {
-  trip: TripWorkspaceData;
+  trip: TripWorkspaceHeaderData;
 
   onAskAIAction: () => void;
   onOptimizeAction: () => void;

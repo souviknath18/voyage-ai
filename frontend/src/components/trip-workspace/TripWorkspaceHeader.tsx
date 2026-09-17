@@ -12,11 +12,11 @@ import TripShareModal from "./TripShareModal";
 import TripWorkspaceHero from "./TripWorkspaceHero";
 
 import type {
-  TripWorkspaceData,
+  TripWorkspaceHeaderData,
 } from "@/types/trip-workspace";
 
 interface TripWorkspaceHeaderProps {
-  trip: TripWorkspaceData;
+  trip: TripWorkspaceHeaderData;
 }
 
 export default function TripWorkspaceHeader({

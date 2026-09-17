@@ -1,5 +1,6 @@
 from typing import Any
 
+from datetime import date, timedelta
 from langchain_openai import ChatOpenAI
 
 from app.ai.planning.schemas import (
@@ -27,6 +28,32 @@ async def generate_itinerary(
 
   trip = snapshot["trip"]
   preferences = snapshot["preferences"]
+
+  start_date = date.fromisoformat(
+    trip["start_date"]
+  )
+
+  end_date = date.fromisoformat(
+    trip["end_date"]
+  )
+
+  required_dates = []
+
+  current_date = start_date
+
+  while current_date <= end_date:
+    required_dates.append(
+      current_date.isoformat()
+    )
+    current_date += timedelta(days=1)
+
+  required_dates_text = "\n".join(
+    f"Day {index}: {trip_date}"
+    for index, trip_date in enumerate(
+      required_dates,
+      start=1,
+    )
+  )
 
   prompt = f"""
 You are the itinerary planning component of VoyageAI.
@@ -61,6 +88,19 @@ RULES
 - Treat costs as estimates, not verified live prices.
 - Do not claim that hotels, flights, restaurants,
   tickets, or activities have been booked.
+
+REQUIRED ITINERARY DAYS
+{required_dates_text}
+
+IMPORTANT DATE RULES
+- Generate exactly {len(required_dates)} itinerary days.
+- Day 1 must use {required_dates[0]}.
+- Day {len(required_dates)} must use {required_dates[-1]}.
+- Use every date listed above exactly once.
+- Keep the dates in exactly the listed order.
+- day_number must start at 1 and increase by 1.
+- Do not add dates before or after this list.
+- Do not skip any date.
 """
 
   itinerary = await structured_llm.ainvoke(

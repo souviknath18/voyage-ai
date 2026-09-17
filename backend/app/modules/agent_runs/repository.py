@@ -73,17 +73,21 @@ async def update_agent_run_step(
 
 
 async def mark_agent_run_completed(
-  db: AsyncSession,
-  agent_run: AgentRun,
-) -> AgentRun:
+  db,
+  agent_run,
+  commit: bool = True,
+):
   agent_run.status = "completed"
   agent_run.current_step = "completed"
   agent_run.completed_at = datetime.now(
     timezone.utc
   )
 
-  await db.commit()
-  await db.refresh(agent_run)
+  if commit:
+    await db.commit()
+    await db.refresh(agent_run)
+  else:
+    await db.flush()
 
   return agent_run
 

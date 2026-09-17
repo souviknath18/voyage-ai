@@ -116,3 +116,20 @@ async def delete_trip(
 ) -> None:
   await db.delete(trip)
   await db.commit()
+
+
+async def update_trip_status(
+  db: AsyncSession,
+  trip: Trip,
+  status: str,
+  commit: bool = True,
+) -> Trip:
+  trip.status = status
+
+  if commit:
+    await db.commit()
+    await db.refresh(trip)
+  else:
+    await db.flush()
+
+  return trip

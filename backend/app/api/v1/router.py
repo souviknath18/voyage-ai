@@ -5,7 +5,9 @@ from app.modules.auth.router import router as auth_router
 from app.modules.trips.router import router as trips_router
 from app.modules.trip_preferences.router import router as trip_preferences_router
 from app.modules.agent_runs.router import router as agent_runs_router
-
+from app.modules.itineraries.router import (
+  router as itineraries_router,
+)
 
 router = APIRouter()
 
@@ -42,4 +44,11 @@ router.include_router(
   agent_runs_router,
   prefix="/trips",
   tags=["AI Planning"],
+)
+
+
+router.include_router(
+  itineraries_router,
+  prefix="/trips",
+  tags=["Itineraries"],
 )

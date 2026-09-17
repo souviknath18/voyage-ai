@@ -21,7 +21,9 @@ import TripWeatherCard from "@/components/trip-workspace/TripWeatherCard";
 
 import {
   getTrip,
+  getTripItinerary,
   type Trip,
+  type TripItinerary,
 } from "@/lib/trips";
 
 import {
@@ -53,6 +55,12 @@ export default function TripOverviewPage() {
     setError,
   ] = useState<string | null>(null);
 
+  const [
+    itinerary,
+    setItinerary,
+  ] = useState<TripItinerary | null>(
+    null,
+  );
 
   useEffect(() => {
     const loadTrip =
@@ -61,12 +69,16 @@ export default function TripOverviewPage() {
           setLoading(true);
           setError(null);
 
-          const data =
-            await getTrip(
-              params.tripId,
-            );
+          const [
+            tripData,
+            itineraryData,
+          ] = await Promise.all([
+            getTrip(params.tripId),
+            getTripItinerary(params.tripId),
+          ]);
 
-          setTrip(data);
+          setTrip(tripData);
+          setItinerary(itineraryData);
         } catch (error) {
           console.error(
             "Failed to load trip:",
@@ -140,7 +152,6 @@ export default function TripOverviewPage() {
     );
   }
 
-
   if (!trip) {
     return (
       <div className="p-6">
@@ -149,85 +160,51 @@ export default function TripOverviewPage() {
     );
   }
 
+  const estimatedCost =
+    itinerary?.days.reduce(
+      (tripTotal, day) =>
+        tripTotal +
+        day.activities.reduce(
+          (dayTotal, activity) =>
+            dayTotal +
+            Number(
+              activity.estimated_cost,
+            ),
+          0,
+        ),
+      0,
+    ) ?? 0;
+
+  const budgetBreakdown =
+    itinerary?.days.map(
+      (day) => ({
+        label: `Day ${day.day_number}`,
+        amount:
+          day.activities.reduce(
+            (
+              total,
+              activity,
+            ) =>
+              total +
+              Number(
+                activity.estimated_cost,
+              ),
+            0,
+          ),
+      }),
+    ) ?? [];
+
 
   return (
     <div className="space-y-5">
-
-      {/*
-       * TEMPORARY:
-       *
-       * This section proves that the workspace
-       * is loading the real Trip from FastAPI.
-       *
-       * Later this information should live in
-       * your workspace header.
-       */}
-      <div className="rounded-xl border p-5">
-        <div className="flex flex-col gap-2">
-
-          <div className="flex items-center gap-2">
-            <span className="rounded-full border px-3 py-1 text-xs font-medium capitalize">
-              {trip.status}
-            </span>
-          </div>
-
-          <h1 className="text-2xl font-semibold">
-            {trip.destination} Trip
-          </h1>
-
-          <p className="text-sm text-muted-foreground">
-            {trip.origin}
-            {" → "}
-            {trip.destination}
-          </p>
-
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-
-            <span>
-              {trip.start_date}
-              {" → "}
-              {trip.end_date}
-            </span>
-
-            <span>
-              {trip.travelers}{" "}
-              {trip.travelers === 1
-                ? "traveler"
-                : "travelers"}
-            </span>
-
-            {trip.budget && (
-              <span>
-                {trip.currency}{" "}
-                {Number(
-                  trip.budget,
-                ).toLocaleString(
-                  "en-IN",
-                )}
-              </span>
-            )}
-
-          </div>
-        </div>
-      </div>
-
-
-      {/*
-       * AI-generated data below is still mocked.
-       *
-       * Later AgentRun / itinerary generation
-       * will replace these values.
-       */}
-
-
-      {/* AI + Warning */}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
 
         <div className="lg:col-span-8">
           <TripAIOverview
             summary={
-              mockTrip.aiSummary
+              itinerary?.summary ??
+              "No AI trip summary available."
             }
           />
         </div>
@@ -305,22 +282,19 @@ export default function TripOverviewPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
 
         <TripBudgetOverview
-          currency={
-            trip.currency
-          }
+          currency={trip.currency}
           totalBudget={
             trip.budget
               ? Number(trip.budget)
               : 0
           }
           estimatedCost={
-            mockTrip.estimatedCost
+            estimatedCost
           }
           items={
-            mockTrip.budgetBreakdown
+            budgetBreakdown
           }
         />
-
 
         <TripHighlights
           highlights={

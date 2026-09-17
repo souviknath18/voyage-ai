@@ -17,11 +17,15 @@ from app.ai.planning.nodes.validate_itinerary import (
 )
 from app.ai.planning.state import PlanningState
 
+from app.ai.planning.nodes.research_trip import (
+    research_trip,
+)
+
 
 MAX_REPLANS = 2
 
 
-def load_context(
+async def load_context(
   state: PlanningState,
 ) -> dict[str, Any]:
   return {
@@ -50,7 +54,7 @@ def route_after_validation(
   return "replan"
 
 
-def planning_failed(
+async def planning_failed(
   state: PlanningState,
 ) -> dict[str, Any]:
   errors = state["validation_errors"]
@@ -67,71 +71,85 @@ def planning_failed(
   }
 
 
-builder = StateGraph(PlanningState)
+def build_planning_graph(
+  *,
+  load_context_node=load_context,
+  research_trip_node=research_trip,
+  generate_itinerary_node=generate_itinerary,
+  validate_itinerary_node=validate_itinerary,
+  replan_itinerary_node=replan_itinerary,
+  planning_failed_node=planning_failed,
+):
+  builder = StateGraph(PlanningState)
 
+  builder.add_node(
+    "load_context",
+    load_context_node,
+  )
 
-builder.add_node(
-  "load_context",
-  load_context,
-)
+  builder.add_node(
+    "generate_itinerary",
+    generate_itinerary_node,
+  )
 
-builder.add_node(
-  "generate_itinerary",
-  generate_itinerary,
-)
+  builder.add_node(
+    "validate_itinerary",
+    validate_itinerary_node,
+  )
 
-builder.add_node(
-  "validate_itinerary",
-  validate_itinerary,
-)
+  builder.add_node(
+    "replan_itinerary",
+    replan_itinerary_node,
+  )
 
-builder.add_node(
-  "replan_itinerary",
-  replan_itinerary,
-)
+  builder.add_node(
+    "planning_failed",
+    planning_failed_node,
+  )
 
-builder.add_node(
-  "planning_failed",
-  planning_failed,
-)
+  builder.add_node(
+    "research_trip",
+    research_trip_node,
+  )
 
+  builder.add_edge(
+    START,
+    "load_context",
+  )
 
-builder.add_edge(
-  START,
-  "load_context",
-)
+  builder.add_edge(
+    "load_context",
+    "research_trip",
+  )
 
-builder.add_edge(
-  "load_context",
-  "generate_itinerary",
-)
+  builder.add_edge(
+    "research_trip",
+    "generate_itinerary",
+  )
 
-builder.add_edge(
-  "generate_itinerary",
-  "validate_itinerary",
-)
+  builder.add_edge(
+    "generate_itinerary",
+    "validate_itinerary",
+  )
 
+  builder.add_conditional_edges(
+    "validate_itinerary",
+    route_after_validation,
+    {
+      "completed": END,
+      "replan": "replan_itinerary",
+      "failed": "planning_failed",
+    },
+  )
 
-builder.add_conditional_edges(
-  "validate_itinerary",
-  route_after_validation,
-  {
-    "completed": END,
-    "replan": "replan_itinerary",
-    "failed": "planning_failed",
-  },
-)
+  builder.add_edge(
+    "replan_itinerary",
+    "validate_itinerary",
+  )
 
+  builder.add_edge(
+    "planning_failed",
+    END,
+  )
 
-builder.add_edge(
-  "replan_itinerary",
-  "validate_itinerary",
-)
-
-builder.add_edge(
-  "planning_failed",
-  END,
-)
-
-
-planning_graph = builder.compile()
+  return builder.compile()
