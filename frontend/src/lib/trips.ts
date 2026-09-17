@@ -55,6 +55,50 @@ export interface SaveTripPreferenceRequest {
   budget_level: number;
 }
 
+export interface AgentRun {
+  id: string;
+  trip_id: string;
+  status: "pending" | "running" | "completed" | "failed";
+  current_step: string | null;
+  attempt: number;
+  input_snapshot: Record<string, unknown> | null;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ItineraryItem {
+  id: string;
+  time: string;
+  title: string;
+  description: string;
+  location: string | null;
+  estimated_cost: string;
+}
+
+export interface ItineraryDay {
+  id: string;
+  day_number: number;
+  date: string;
+  title: string;
+  activities: ItineraryItem[];
+}
+
+export interface TripItinerary {
+  id: string;
+  trip_id: string;
+  agent_run_id: string;
+  destination: string;
+  summary: string;
+  currency: string;
+  estimated_total_cost: string;
+  days: ItineraryDay[];
+  created_at: string;
+  updated_at: string;
+}
+
 export async function createTrip(
   data: CreateTripRequest
 ): Promise<Trip> {
@@ -212,6 +256,56 @@ export async function saveTripPreferences(
           `Bearer ${token}`,
       },
       body: JSON.stringify(data),
+    },
+  );
+}
+
+export async function planTrip(
+  tripId: string,
+): Promise<AgentRun> {
+  const token =
+    localStorage.getItem(
+      "access_token",
+    );
+
+  if (!token) {
+    throw new Error(
+      "You are not logged in",
+    );
+  }
+
+  return apiRequest<AgentRun>(
+    `/trips/${tripId}/plan`,
+    {
+      method: "POST",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    },
+  );
+}
+
+export async function getTripItinerary(
+  tripId: string,
+): Promise<TripItinerary> {
+  const token =
+    localStorage.getItem("access_token");
+
+  if (!token) {
+    throw new Error(
+      "You are not logged in",
+    );
+  }
+
+  return apiRequest<TripItinerary>(
+    `/trips/${tripId}/itinerary`,
+    {
+      method: "GET",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
     },
   );
 }

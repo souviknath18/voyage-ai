@@ -24,6 +24,7 @@ import {
   getTripPreferences,
   saveTripPreferences,
   updateTrip,
+  planTrip,
 } from "@/lib/trips";
 import { PageLoader } from "@/components/ui";
 import type { TripFormData } from "@/types/trip";
@@ -219,19 +220,37 @@ export default function PlanTripPage() {
         },
       );
 
+      // Start AI itinerary planning
+      const agentRun = await planTrip(
+        savedTrip.trip_id,
+      );
+
+      if (agentRun.status === "failed") {
+        throw new Error(
+          agentRun.error_message ||
+            "AI trip planning failed.",
+        );
+      }
+
+      if (agentRun.status !== "completed") {
+        throw new Error(
+          "AI trip planning did not complete.",
+        );
+      }
+
       router.push(
         `/trips/${savedTrip.trip_id}`,
       );
     } catch (error) {
       console.error(
-        "Failed to create trip:",
+        "Failed to plan trip:",
         error,
       );
 
       alert(
         error instanceof Error
           ? error.message
-          : "Failed to create trip",
+          : "Failed to plan trip",
       );
     } finally {
       setPlanning(false);

@@ -11,6 +11,13 @@ from app.modules.users.models import User
 from app.modules.trips.models import Trip
 from app.modules.trip_preferences.models import TripPreference
 from app.modules.agent_runs.models import AgentRun
+from app.modules.agent_steps.models import AgentStep
+from app.modules.tool_calls.models import ToolCall
+from app.modules.itineraries.models import (
+    Itinerary,
+    ItineraryDay,
+    ItineraryItem,
+)
 
 
 config = context.config

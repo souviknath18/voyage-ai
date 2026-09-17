@@ -55,6 +55,35 @@ export interface TripBudgetItem {
   amount: number;
 }
 
+export interface TripWorkspaceHeaderData {
+  id: string;
+
+  title: string;
+
+  origin: string;
+  destination: string;
+
+  startDate: string;
+  endDate: string;
+
+  duration: number;
+
+  travelers: number;
+
+  status:
+    | "ready"
+    | "planning"
+    | "warning";
+
+  currency: string;
+
+  totalBudget: number;
+  estimatedCost: number;
+  remainingBudget: number;
+
+  image?: string;
+}
+
 export interface TripWorkspaceData {
   id: string;
 
