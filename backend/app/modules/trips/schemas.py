@@ -100,3 +100,19 @@ class TripResponse(BaseModel):
   model_config = {
     "from_attributes": True,
   }
+
+  destination_name: str | None = None
+  destination_country: str | None = None
+  destination_country_code: str | None = None
+  destination_latitude: Decimal | None = None
+  destination_longitude: Decimal | None = None
+  destination_timezone: str | None = None
+
+
+class TripDestinationRequest(BaseModel):
+  name: str
+  country: str
+  country_code: str
+  latitude: float
+  longitude: float
+  timezone: str | None = None

@@ -99,6 +99,24 @@ export interface TripItinerary {
   updated_at: string;
 }
 
+export interface WeatherDay {
+  date: string;
+  temperature_max: number | null;
+  temperature_min: number | null;
+  precipitation_probability: number | null;
+  weather_code: number | null;
+  weather_description: string;
+}
+
+export interface TripWeather {
+  destination: string;
+  country: string | null;
+  timezone: string | null;
+  source: string;
+  forecast_available_until: string | null;
+  forecast: WeatherDay[];
+}
+
 export async function createTrip(
   data: CreateTripRequest
 ): Promise<Trip> {
@@ -300,6 +318,32 @@ export async function getTripItinerary(
 
   return apiRequest<TripItinerary>(
     `/trips/${tripId}/itinerary`,
+    {
+      method: "GET",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    },
+  );
+}
+
+export async function getTripWeather(
+  tripId: string,
+): Promise<TripWeather> {
+  const token =
+    localStorage.getItem(
+      "access_token",
+    );
+
+  if (!token) {
+    throw new Error(
+      "You are not logged in",
+    );
+  }
+
+  return apiRequest<TripWeather>(
+    `/trips/${tripId}/weather`,
     {
       method: "GET",
       headers: {

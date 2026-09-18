@@ -11,6 +11,7 @@ import { PageLoader } from "@/components/ui";
 
 import {
   getTripItinerary,
+  getTripWeather,
   type TripItinerary as TripItineraryResponse,
 } from "@/lib/trips";
 
@@ -62,16 +63,22 @@ export default function TripItineraryPage() {
         setLoading(true);
         setError(null);
 
-        const data =
-          await getTripItinerary(
-            tripId,
-          );
+        const [
+          itineraryData,
+          weatherData,
+        ] = await Promise.all([
+          getTripItinerary(tripId),
+          getTripWeather(tripId),
+        ]);
 
-        setItineraryResponse(data);
+        setItineraryResponse(
+          itineraryData,
+        );
 
         setItinerary(
           mapItineraryToWorkspace(
-            data,
+            itineraryData,
+            weatherData,
           ),
         );
       } catch (error) {

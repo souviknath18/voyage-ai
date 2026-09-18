@@ -59,12 +59,35 @@ async def start_agent_run(
       "trip_id": trip.trip_id,
       "origin": trip.origin,
       "destination": trip.destination,
+
+      "destination_name": trip.destination_name,
+      "destination_country": trip.destination_country,
+      "destination_country_code": trip.destination_country_code,
+
+      "destination_latitude": (
+        float(trip.destination_latitude)
+        if trip.destination_latitude is not None
+        else None
+      ),
+
+      "destination_longitude": (
+        float(trip.destination_longitude)
+        if trip.destination_longitude is not None
+        else None
+      ),
+
+      "destination_timezone": trip.destination_timezone,
+
       "start_date": trip.start_date.isoformat(),
       "end_date": trip.end_date.isoformat(),
       "travelers": trip.travelers,
-      "budget": serialize_value(
-        trip.budget
+
+      "budget": (
+        float(trip.budget)
+        if trip.budget is not None
+        else None
       ),
+
       "currency": trip.currency,
     },
     "preferences": {

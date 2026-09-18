@@ -195,7 +195,7 @@ export interface ItineraryDayData {
   estimatedCost: number;
 
   weather: {
-    temperature: number;
+    temperature: number | null;
     condition: string;
   };
 

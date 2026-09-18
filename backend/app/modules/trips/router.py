@@ -8,6 +8,7 @@ from app.modules.trips.schemas import (
   TripCreate,
   TripResponse,
   TripUpdate,
+  TripDestinationRequest,
 )
 from app.modules.trips.service import (
   create_user_trip,
@@ -15,6 +16,7 @@ from app.modules.trips.service import (
   get_user_trip,
   list_user_trips,
   update_user_trip,
+  set_trip_destination,
 )
 
 
@@ -109,4 +111,22 @@ async def delete_trip(
 
   return Response(
     status_code=status.HTTP_204_NO_CONTENT
+  )
+
+
+@router.put(
+  "/{trip_id}/destination",
+  response_model=TripResponse,
+)
+async def update_destination(
+  trip_id: str,
+  payload: TripDestinationRequest,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  return await set_trip_destination(
+      db=db,
+      public_trip_id=trip_id,
+      user_id=current_user.id,
+      destination_data=payload,
   )

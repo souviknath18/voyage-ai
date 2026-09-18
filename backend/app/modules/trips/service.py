@@ -3,6 +3,10 @@ import uuid
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.ai.tools.location import search_locations
+from app.modules.trips.repository import update_trip_destination
+from app.modules.trips.schemas import TripDestinationRequest
+
 from app.modules.trips.models import Trip
 from app.modules.trips.repository import (
   create_trip,
@@ -114,4 +118,56 @@ async def delete_user_trip(
   await delete_trip(
     db=db,
     trip=trip,
+  )
+
+
+async def set_trip_destination(
+  db: AsyncSession,
+  public_trip_id: str,
+  user_id,
+  destination_data: TripDestinationRequest,
+):
+  trip = await get_user_trip(
+    db=db,
+    trip_id=public_trip_id,
+    user_id=user_id,
+  )
+
+  candidates = await search_locations(
+    destination=trip.destination,
+  )
+
+  matched_location = None
+
+  for candidate in candidates:
+    if (
+      candidate["name"] == destination_data.name
+      and candidate["country_code"] == destination_data.country_code
+      and abs(
+        candidate["latitude"]
+        - destination_data.latitude
+      ) < 0.001
+      and abs(
+        candidate["longitude"]
+        - destination_data.longitude
+      ) < 0.001
+    ):
+      matched_location = candidate
+      break
+
+  if matched_location is None:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail="Selected destination could not be verified.",
+    )
+
+  return await update_trip_destination(
+    db=db,
+    trip=trip,
+    name=matched_location["name"],
+    country=matched_location["country"],
+    country_code=matched_location["country_code"],
+    latitude=matched_location["latitude"],
+    longitude=matched_location["longitude"],
+    timezone=matched_location["timezone"],
   )
