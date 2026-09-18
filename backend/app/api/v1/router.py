@@ -8,9 +8,14 @@ from app.modules.agent_runs.router import router as agent_runs_router
 from app.modules.itineraries.router import (
   router as itineraries_router,
 )
+from app.modules.locations.router import (
+  router as locations_router,
+)
+from app.modules.weather.router import (
+  router as weather_router,
+)
 
 router = APIRouter()
-
 
 router.include_router(
   health_router,
@@ -18,13 +23,11 @@ router.include_router(
   tags=["Health"],
 )
 
-
 router.include_router(
   auth_router,
   prefix="/auth",
   tags=["Authentication"],
 )
-
 
 router.include_router(
   trips_router,
@@ -32,13 +35,11 @@ router.include_router(
   tags=["Trips"],
 )
 
-
 router.include_router(
   trip_preferences_router,
   prefix="/trips",
   tags=["Trip Preferences"],
 )
-
 
 router.include_router(
   agent_runs_router,
@@ -46,9 +47,18 @@ router.include_router(
   tags=["AI Planning"],
 )
 
-
 router.include_router(
   itineraries_router,
   prefix="/trips",
   tags=["Itineraries"],
+)
+
+router.include_router(
+  locations_router,
+  tags=["Locations"],
+)
+
+router.include_router(
+  weather_router,
+  tags=["Weather"],
 )

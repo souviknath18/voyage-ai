@@ -29,6 +29,47 @@ async def generate_itinerary(
   trip = snapshot["trip"]
   preferences = snapshot["preferences"]
 
+  # Research data collected before itinerary generation
+  research_results = state.get(
+    "research_results",
+    {},
+  )
+
+  weather = research_results.get(
+    "weather",
+    {},
+  )
+
+  weather_forecast = weather.get(
+    "forecast",
+    [],
+  )
+
+  weather_context = (
+    "No weather forecast is available "
+    "for the trip dates."
+  )
+
+  if weather_forecast:
+    weather_lines = []
+
+    for day in weather_forecast:
+      weather_lines.append(
+        (
+          f"{day['date']}: "
+          f"{day['temperature_min']}°C to "
+          f"{day['temperature_max']}°C, "
+          f"precipitation probability "
+          f"{day['precipitation_probability']}%, "
+          f"conditions: "
+          f"{day['weather_description']}"
+        )
+      )
+
+    weather_context = "\n".join(
+      weather_lines
+    )
+
   start_date = date.fromisoformat(
     trip["start_date"]
   )
@@ -77,6 +118,21 @@ Additional instructions:
 
 Budget preference level:
 {preferences["budget_level"]}/100
+
+WEATHER FORECAST
+{weather_context}
+
+WEATHER RULES
+- Use weather information only for dates where forecast
+  data is provided.
+- Prefer indoor or weather-resilient activities when
+  precipitation probability is high.
+- Do not invent weather information for dates without
+  forecast data.
+- Do not change the destination or trip dates because
+  of weather.
+- Treat weather forecasts as planning context, not as
+  guaranteed future conditions.
 
 RULES
 - Do not change the origin or destination.

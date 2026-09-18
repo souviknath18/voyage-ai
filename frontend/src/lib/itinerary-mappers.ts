@@ -1,5 +1,6 @@
-import type {
+import {
   TripItinerary,
+  TripWeather,
 } from "@/lib/trips";
 
 import type {
@@ -62,6 +63,7 @@ function inferActivityType(
 
 export function mapItineraryToWorkspace(
   itinerary: TripItinerary,
+  weather: TripWeather | null = null,
 ): ItineraryDayData[] {
   return itinerary.days.map((day) => ({
     id: day.id,
@@ -80,13 +82,26 @@ export function mapItineraryToWorkspace(
         0,
       ),
 
-    // Weather is not available from the
-    // backend yet. Keep a neutral placeholder
-    // until the weather tool is implemented.
-    weather: {
-      temperature: 0,
-      condition: "Not available",
-    },
+    weather: (() => {
+      const forecast = weather?.forecast.find(
+        (forecastDay) =>
+          forecastDay.date === day.date,
+      );
+
+      if (!forecast) {
+        return {
+          temperature: null,
+          condition: "Forecast unavailable",
+        };
+      }
+
+      return {
+        temperature:
+          forecast.temperature_max,
+        condition:
+          forecast.weather_description,
+      };
+    })(),
 
     activities: day.activities.map(
       (activity) => ({

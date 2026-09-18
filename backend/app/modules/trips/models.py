@@ -98,3 +98,33 @@ class Trip(Base):
     onupdate=func.now(),
     nullable=False,
   )
+
+  destination_name: Mapped[str | None] = mapped_column(
+    String(255),
+    nullable=True,
+  )
+
+  destination_country: Mapped[str | None] = mapped_column(
+    String(100),
+    nullable=True,
+  )
+
+  destination_country_code: Mapped[str | None] = mapped_column(
+    String(10),
+    nullable=True,
+  )
+
+  destination_latitude: Mapped[Decimal | None] = mapped_column(
+    Numeric(9, 6),
+    nullable=True,
+  )
+
+  destination_longitude: Mapped[Decimal | None] = mapped_column(
+    Numeric(9, 6),
+    nullable=True,
+  )
+
+  destination_timezone: Mapped[str | None] = mapped_column(
+    String(100),
+    nullable=True,
+  )

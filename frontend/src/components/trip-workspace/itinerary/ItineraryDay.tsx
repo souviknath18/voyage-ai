@@ -79,9 +79,20 @@ export default function ItineraryDay({
               className="text-[#fcd34d]"
             />
 
-            {day.weather.temperature}°
-            {" • "}
-            {day.weather.condition}
+            {day.weather.temperature !== null ? (
+              <div className="flex items-center gap-1.5">
+                <Sun className="h-4 w-4" />
+
+                <span>
+                  {Math.round(day.weather.temperature)}° •{" "}
+                  {day.weather.condition}
+                </span>
+              </div>
+            ) : (
+              <span className="text-muted-foreground">
+                Forecast unavailable
+              </span>
+            )}
           </div>
 
           <ChevronDown

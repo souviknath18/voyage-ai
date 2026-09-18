@@ -23,6 +23,22 @@ async def research_trip(
   start_date = trip.get("start_date")
   end_date = trip.get("end_date")
 
+  latitude = trip.get(
+    "destination_latitude"
+  )
+  longitude = trip.get(
+    "destination_longitude"
+  )
+  timezone = trip.get(
+    "destination_timezone"
+  )
+
+  if latitude is None or longitude is None:
+    raise ValueError(
+      "Trip destination has not been resolved. "
+      "Resolve the destination before AI planning."
+    )
+
   weather = await execute_tool(
     db=db,
     agent_step_id=agent_step_id,
@@ -30,15 +46,30 @@ async def research_trip(
     tool=get_weather,
     arguments={
       "destination": destination,
+      "latitude": latitude,
+      "longitude": longitude,
+      "timezone": timezone,
       "start_date": start_date,
       "end_date": end_date,
     },
   )
 
   research_results = {
-    "destination": destination,
-    "start_date": start_date,
-    "end_date": end_date,
+    "destination": {
+      "name": (
+        trip.get("destination_name")
+        or destination
+      ),
+      "country": trip.get(
+        "destination_country"
+      ),
+      "country_code": trip.get(
+        "destination_country_code"
+      ),
+      "latitude": latitude,
+      "longitude": longitude,
+      "timezone": timezone,
+    },
     "weather": weather,
     "places": [],
     "hotels": [],
