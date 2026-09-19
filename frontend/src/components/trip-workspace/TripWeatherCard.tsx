@@ -1,6 +1,4 @@
-import {
-  Sun,
-} from "lucide-react";
+import WeatherIcon from "@/components/trip-workspace/WeatherIcon";
 
 import {
   Card,
@@ -23,7 +21,8 @@ export default function TripWeatherCard({
         Local Weather
       </p>
 
-      <Sun
+      <WeatherIcon
+        condition={weather.condition}
         size={42}
         className="mt-5 text-[#fcd34d]"
       />

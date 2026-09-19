@@ -22,13 +22,19 @@ import TripWeatherCard from "@/components/trip-workspace/TripWeatherCard";
 import {
   getTrip,
   getTripItinerary,
+  getTripWeather,
   type Trip,
   type TripItinerary,
+  type TripWeather,
 } from "@/lib/trips";
 
 import {
   mockTrip,
 } from "@/data/mock-trip";
+
+import type {
+  TripWeather as TripWeatherCardData,
+} from "@/types/trip-workspace";
 
 
 export default function TripOverviewPage() {
@@ -62,6 +68,13 @@ export default function TripOverviewPage() {
     null,
   );
 
+  const [
+    weather,
+    setWeather,
+  ] = useState<TripWeather | null>(
+    null,
+  );
+
   useEffect(() => {
     const loadTrip =
       async () => {
@@ -72,13 +85,16 @@ export default function TripOverviewPage() {
           const [
             tripData,
             itineraryData,
+            weatherData,
           ] = await Promise.all([
             getTrip(params.tripId),
             getTripItinerary(params.tripId),
+            getTripWeather(params.tripId),
           ]);
 
           setTrip(tripData);
           setItinerary(itineraryData);
+          setWeather(weatherData);
         } catch (error) {
           console.error(
             "Failed to load trip:",
@@ -194,6 +210,35 @@ export default function TripOverviewPage() {
       }),
     ) ?? [];
 
+  const today =
+    new Date().toISOString().split("T")[0];
+
+  const currentForecast =
+    weather?.forecast.find(
+      (day) => day.date === today,
+    ) ??
+    weather?.forecast[0] ??
+    null;
+
+  const weatherCardData:
+    TripWeatherCardData | null =
+      currentForecast
+        ? {
+            temperature: Math.round(
+              currentForecast.temperature_max ??
+                currentForecast.temperature_min ??
+                0,
+            ),
+            condition:
+              currentForecast.weather_description,
+            note:
+              currentForecast
+                .precipitation_probability !== null
+                ? `${currentForecast.precipitation_probability}% chance of precipitation`
+                : "Precipitation data unavailable",
+          }
+        : null;
+
 
   return (
     <div className="space-y-5">
@@ -267,11 +312,17 @@ export default function TripOverviewPage() {
 
 
         <div className="lg:col-span-2">
-          <TripWeatherCard
-            weather={
-              mockTrip.weather
-            }
-          />
+          {weatherCardData ? (
+            <TripWeatherCard
+              weather={weatherCardData}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center rounded-xl border p-5">
+              <p className="text-sm text-muted-foreground">
+                Weather forecast unavailable.
+              </p>
+            </div>
+          )}
         </div>
 
       </div>
