@@ -2,7 +2,6 @@
 
 import {
   ChevronDown,
-  Sun,
 } from "lucide-react";
 
 import {
@@ -12,6 +11,8 @@ import {
 import type {
   ItineraryDayData,
 } from "@/types/trip-workspace";
+
+import WeatherIcon from "@/components/trip-workspace/WeatherIcon";
 
 import AddActivityButton from "./AddActivityButton";
 import ItineraryActivity from "./ItineraryActivity";
@@ -74,20 +75,21 @@ export default function ItineraryDay({
         <div className="flex shrink-0 items-center gap-2">
           {/* Weather */}
           <div className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[10px] font-medium text-[#cbc4d2] sm:flex">
-            <Sun
-              size={13}
-              className="text-[#fcd34d]"
-            />
-
             {day.weather.temperature !== null ? (
-              <div className="flex items-center gap-1.5">
-                <Sun className="h-4 w-4" />
+              <>
+                <WeatherIcon
+                  condition={day.weather.condition}
+                  size={14}
+                  className="text-[#fcd34d]"
+                />
 
                 <span>
-                  {Math.round(day.weather.temperature)}° •{" "}
-                  {day.weather.condition}
+                  {Math.round(
+                    day.weather.temperature,
+                  )}
+                  ° • {day.weather.condition}
                 </span>
-              </div>
+              </>
             ) : (
               <span className="text-muted-foreground">
                 Forecast unavailable
@@ -108,14 +110,26 @@ export default function ItineraryDay({
 
       {/* Mobile Weather */}
       <div className="mt-3 flex items-center gap-1.5 text-xs text-[#948e9c] sm:hidden">
-        <Sun
-          size={13}
-          className="text-[#fcd34d]"
-        />
+        {day.weather.temperature !== null ? (
+          <>
+            <WeatherIcon
+              condition={day.weather.condition}
+              size={14}
+              className="text-[#fcd34d]"
+            />
 
-        {day.weather.temperature}°
-        {" • "}
-        {day.weather.condition}
+            <span>
+              {Math.round(
+                day.weather.temperature,
+              )}
+              ° • {day.weather.condition}
+            </span>
+          </>
+        ) : (
+          <span className="text-muted-foreground">
+            Forecast unavailable
+          </span>
+        )}
       </div>
 
       {/* Timeline */}
