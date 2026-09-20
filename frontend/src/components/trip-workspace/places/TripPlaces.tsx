@@ -98,24 +98,17 @@ export default function TripPlaces({
         0,
       );
 
-  const selectedPlaces =
-    localPlaces.filter(
-      (place) =>
-        place.status === "planned" ||
-        place.status === "saved",
-    );
-
   const plannedPlaces =
-    selectedPlaces.filter(
+    localPlaces.filter(
       (place) =>
         place.status === "planned",
     ).length;
 
   const coverage =
-    selectedPlaces.length > 0
+    localPlaces.length > 0
       ? Math.round(
           (plannedPlaces /
-            selectedPlaces.length) *
+            localPlaces.length) *
             100,
         )
       : 0;

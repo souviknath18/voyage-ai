@@ -69,12 +69,18 @@ export interface AgentRun {
   updated_at: string;
 }
 
+export type ItineraryGroundingType =
+  | "verified_place"
+  | "generic";
+
 export interface ItineraryItem {
   id: string;
   time: string;
   title: string;
   description: string;
   location: string | null;
+  activity_type: ItineraryGroundingType;
+  place_id: string | null;
   estimated_cost: string;
 }
 
@@ -97,6 +103,20 @@ export interface TripItinerary {
   days: ItineraryDay[];
   created_at: string;
   updated_at: string;
+}
+
+export interface TripPlace {
+  id: string;
+  provider: string;
+  provider_place_id: string;
+  name: string;
+  categories: string[];
+  address: string | null;
+  latitude: string;
+  longitude: string;
+  distance: string | null;
+  search_group: string | null;
+  created_at: string;
 }
 
 export interface WeatherDay {
@@ -318,6 +338,32 @@ export async function getTripItinerary(
 
   return apiRequest<TripItinerary>(
     `/trips/${tripId}/itinerary`,
+    {
+      method: "GET",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    },
+  );
+}
+
+export async function getTripPlaces(
+  tripId: string,
+): Promise<TripPlace[]> {
+  const token =
+    localStorage.getItem(
+      "access_token",
+    );
+
+  if (!token) {
+    throw new Error(
+      "You are not logged in",
+    );
+  }
+
+  return apiRequest<TripPlace[]>(
+    `/trips/${tripId}/places`,
     {
       method: "GET",
       headers: {

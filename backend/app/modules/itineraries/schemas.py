@@ -7,10 +7,19 @@ from pydantic import BaseModel
 
 class ItineraryItemResponse(BaseModel):
   id: uuid.UUID
+
   time: str
+
   title: str
+
   description: str
+
   location: str | None
+
+  activity_type: str
+
+  place_id: str | None
+
   estimated_cost: Decimal
 
   model_config = {

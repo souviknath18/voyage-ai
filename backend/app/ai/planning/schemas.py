@@ -1,16 +1,19 @@
 from pydantic import BaseModel, Field
+from typing import Literal
 
 
 class ItineraryActivity(BaseModel):
-  time: str = Field(
-    description="Suggested local time, for example 09:00"
-  )
-
+  time: str
   title: str
-
   description: str
-
   location: str | None = None
+
+  activity_type: Literal[
+    "verified_place",
+    "generic",
+  ]
+
+  place_id: str | None = None
 
   estimated_cost: float = Field(
     default=0,

@@ -14,6 +14,9 @@ from app.modules.locations.router import (
 from app.modules.weather.router import (
   router as weather_router,
 )
+from app.modules.places.router import (
+  router as places_router,
+)
 
 router = APIRouter()
 
@@ -51,6 +54,12 @@ router.include_router(
   itineraries_router,
   prefix="/trips",
   tags=["Itineraries"],
+)
+
+router.include_router(
+  places_router,
+  prefix="/trips",
+  tags=["Places"],
 )
 
 router.include_router(

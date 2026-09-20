@@ -171,6 +171,12 @@ export interface ItineraryActivity {
 
   type: ItineraryActivityType;
 
+  groundingType:
+  | "verified_place"
+  | "generic";
+
+  placeId?: string;
+
   startTime: string;
   duration: string;
 
