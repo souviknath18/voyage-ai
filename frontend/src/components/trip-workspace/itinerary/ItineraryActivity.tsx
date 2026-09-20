@@ -153,6 +153,16 @@ export default function ItineraryActivity({
               <Badge variant="neutral">
                 {activity.type}
               </Badge>
+
+              {activity.groundingType ===
+                "verified_place" && (
+                <Badge
+                  variant="neutral"
+                  className="border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                >
+                  Verified place
+                </Badge>
+              )}
             </div>
 
             <p className="mt-2 text-xs leading-5 text-[#948e9c]">

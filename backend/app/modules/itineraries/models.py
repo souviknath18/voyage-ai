@@ -193,6 +193,17 @@ class ItineraryItem(Base):
     nullable=True,
   )
 
+  activity_type: Mapped[str] = mapped_column(
+    String(30),
+    nullable=False,
+    default="generic",
+  )
+
+  place_id: Mapped[str | None] = mapped_column(
+    String(255),
+    nullable=True,
+  )
+
   estimated_cost: Mapped[Decimal] = mapped_column(
     Numeric(12, 2),
     nullable=False,

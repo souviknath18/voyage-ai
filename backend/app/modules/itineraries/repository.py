@@ -74,6 +74,8 @@ async def save_itinerary(
         title=activity["title"],
         description=activity["description"],
         location=activity.get("location"),
+        activity_type=activity["activity_type"],
+        place_id=activity.get("place_id"),
         estimated_cost=Decimal(
           str(
             activity.get(

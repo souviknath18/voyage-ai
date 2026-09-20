@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.planning.state import PlanningState
 from app.ai.tools.executor import execute_tool
 from app.ai.tools.weather import get_weather
+from app.ai.tools.places import search_places
 
 
 async def research_trip(
@@ -17,6 +18,18 @@ async def research_trip(
   trip = state["input_snapshot"].get(
     "trip",
     {},
+  )
+
+  preferences = state[
+    "input_snapshot"
+  ].get(
+    "preferences",
+    {},
+  )
+
+  interests = preferences.get(
+    "interests",
+    [],
   )
 
   destination = trip.get("destination")
@@ -54,6 +67,19 @@ async def research_trip(
     },
   )
 
+  places = await execute_tool(
+    db=db,
+    agent_step_id=agent_step_id,
+    tool_name="search_places",
+    tool=search_places,
+    arguments={
+      "latitude": latitude,
+      "longitude": longitude,
+      "interests": interests,
+      "limit": 30,
+    },
+  )
+
   research_results = {
     "destination": {
       "name": (
@@ -71,7 +97,7 @@ async def research_trip(
       "timezone": timezone,
     },
     "weather": weather,
-    "places": [],
+    "places": places["places"],
     "hotels": [],
     "flights": [],
   }

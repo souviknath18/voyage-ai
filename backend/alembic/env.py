@@ -18,6 +18,7 @@ from app.modules.itineraries.models import (
     ItineraryDay,
     ItineraryItem,
 )
+from app.modules.places.models import TripPlace
 
 
 config = context.config

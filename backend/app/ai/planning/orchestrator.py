@@ -35,6 +35,9 @@ from app.modules.itineraries.repository import (
 from app.modules.trips.repository import (
   update_trip_status,
 )
+from app.modules.places.repository import (
+  replace_trip_places,
+)
 
 
 async def execute_planning_graph(
@@ -134,6 +137,22 @@ async def execute_planning_graph(
       trip_id=agent_run.trip_id,
       agent_run_id=agent_run.id,
       itinerary_data=final_itinerary,
+    )
+
+    research_results = result.get(
+      "research_results",
+      {},
+    )
+
+    places = research_results.get(
+      "places",
+      [],
+    )
+
+    await replace_trip_places(
+      db=db,
+      trip_id=agent_run.trip_id,
+      places=places,
     )
 
     result = await db.execute(
