@@ -1,7 +1,6 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password
 from app.modules.auth.schemas import RegisterRequest
 from app.modules.users.models import User
 from app.modules.users.repository import (
@@ -49,29 +48,29 @@ async def login_user(
   db: AsyncSession,
   email: str,
   password: str,
-) -> str:
-    user = await get_user_by_email(
-      db=db,
-      email=email,
+) -> tuple[str, User]:
+  user = await get_user_by_email(
+    db=db,
+    email=email,
+  )
+
+  if not user:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid email or password",
     )
 
-    if not user:
-      raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid email or password",
-      )
-
-    if not verify_password(
-      password,
-      user.hashed_password,
-    ):
-      raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid email or password",
-      )
-
-    access_token = create_access_token(
-      subject=str(user.id)
+  if not verify_password(
+    password,
+    user.hashed_password,
+  ):
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid email or password",
     )
 
-    return access_token
+  access_token = create_access_token(
+    subject=str(user.id)
+  )
+
+  return access_token, user

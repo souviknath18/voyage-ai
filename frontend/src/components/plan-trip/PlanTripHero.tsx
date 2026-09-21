@@ -4,22 +4,7 @@ import {
 
 export default function PlanTripHero() {
   return (
-    <section className="relative w-full overflow-hidden pb-4 pt-2.5 sm:pt-3">
-      {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "url('/images/plan-trip/plan-trip-hero.jpg')",
-        }}
-      />
-
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-[#0A0F1F]/80" />
-
-      {/* Blend Into Page */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0F1F] via-[#0A0F1F]/30 to-[#0A0F1F]/50" />
-
+    <section className="relative w-full pb-4 pt-2.5 sm:pt-3">
       {/* Content */}
       <div className="relative z-10">
         {/* Icon + Title */}
