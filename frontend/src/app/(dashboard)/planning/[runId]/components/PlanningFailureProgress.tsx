@@ -1,91 +1,20 @@
 "use client";
 
-interface PlanningProgressStep {
-  id: string;
+import {
+  Check,
+  X,
+} from "lucide-react";
 
-  label: string;
-
-  description: string;
-
-  status:
-    | "completed"
-    | "failed"
-    | "pending";
-}
+import type {
+  PlanningStep,
+} from "@/types/planning";
 
 interface PlanningFailureProgressProps {
-  steps?: PlanningProgressStep[];
+  steps: PlanningStep[];
 }
 
-const defaultSteps: PlanningProgressStep[] = [
-  {
-    id: "preferences",
-
-    label:
-      "Understanding preferences",
-
-    description:
-      "Travel preferences and trip constraints analyzed.",
-
-    status:
-      "completed",
-  },
-
-  {
-    id: "strategy",
-
-    label:
-      "Building travel strategy",
-
-    description:
-      "Initial trip structure and planning approach created.",
-
-    status:
-      "completed",
-  },
-
-  {
-    id: "experiences",
-
-    label:
-      "Finding experiences",
-
-    description:
-      "VoyageAI couldn't finish curating suitable places and activities.",
-
-    status:
-      "failed",
-  },
-
-  {
-    id: "itinerary",
-
-    label:
-      "Creating itinerary",
-
-    description:
-      "Waiting for the previous planning stage.",
-
-    status:
-      "pending",
-  },
-
-  {
-    id: "finalizing",
-
-    label:
-      "Finalizing trip",
-
-    description:
-      "Waiting for itinerary generation.",
-
-    status:
-      "pending",
-  },
-];
-
 export default function PlanningFailureProgress({
-  steps = defaultSteps,
+  steps,
 }: PlanningFailureProgressProps) {
   return (
     <div className="h-full rounded-xl border border-white/10 bg-white/[0.025] p-4 sm:p-5">
@@ -94,79 +23,41 @@ export default function PlanningFailureProgress({
       </p>
 
       <div className="mt-4">
-        {steps.map(
-          (
-            step,
-            index,
-          ) => (
-            <ProgressItem
-              key={
-                step.id
-              }
-              label={
-                step.label
-              }
-              description={
-                step.description
-              }
-              status={
-                step.status
-              }
-              last={
-                index ===
-                steps.length -
-                  1
-              }
-            />
-          ),
-        )}
+        {steps.map((step, index) => (
+          <ProgressItem
+            key={step.id}
+            step={step}
+            last={index === steps.length - 1}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
 function ProgressItem({
-  label,
-  description,
-  status,
+  step,
   last,
 }: {
-  label: string;
-
-  description: string;
-
-  status:
-    | "completed"
-    | "failed"
-    | "pending";
-
+  step: PlanningStep;
   last: boolean;
 }) {
+  const failed =
+    step.status === "failed";
+
+  const completed =
+    step.status === "completed";
+
   return (
     <div className="relative flex gap-3">
-      {/* Timeline */}
       <div className="relative flex shrink-0 flex-col items-center">
-        <div
-          className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border ${
-            status ===
-            "completed"
-              ? "border-[#d1bcff]/40 bg-[#d1bcff]/10 text-[#d1bcff]"
-              : status ===
-                  "failed"
-                ? "border-[#fb7185]/50 bg-[#fb7185]/10 text-[#fb7185] shadow-[0_0_12px_rgba(251,113,133,0.18)]"
-                : "border-white/10 bg-white/[0.03] text-[#596174]"
-          }`}
-        >
-          {status ===
-            "completed" && (
-            <span className="text-[11px] font-bold">
-              ✓
-            </span>
+        <div className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border ${completed ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-400" : failed ? "border-[#fb7185]/50 bg-[#fb7185]/10 text-[#fb7185] shadow-[0_0_12px_rgba(251,113,133,0.18)]" : "border-white/10 bg-white/[0.03] text-[#596174]"}`}>
+          {completed && (
+            <Check size={12} />
           )}
 
-          {status ===
-            "failed" && (
-            <span className="h-2 w-2 rounded-full bg-[#fb7185]" />
+          {failed && (
+            <X size={12} />
           )}
         </div>
 
@@ -175,25 +66,36 @@ function ProgressItem({
         )}
       </div>
 
-      {/* Content */}
-      <div className="min-w-0 pb-4">
-        <p
-          className={`text-xs font-medium sm:text-[13px] ${
-            status ===
-            "failed"
-              ? "text-[#fb7185]"
-              : status ===
-                  "pending"
-                ? "text-[#7f8798]"
-                : "text-[#e6e0e8]"
-          }`}
-        >
-          {label}
+      <div className="min-w-0 flex-1 pb-4">
+        <p className={`text-xs font-medium sm:text-[13px] ${failed ? "text-[#fb7185]" : completed ? "text-[#e6e0e8]" : "text-[#7f8798]"}`}>
+          {step.title}
         </p>
 
-        <p className="mt-0.5 text-[11px] leading-4 text-[#7f8798]">
-          {description}
-        </p>
+        {step.description && (
+          <p className="mt-0.5 text-[11px] leading-4 text-[#7f8798]">
+            {step.description}
+          </p>
+        )}
+
+        {step.children && step.children.length > 0 && (
+          <div className="mt-2 space-y-1.5 border-l border-white/10 pl-3">
+            {step.children.map((child) => (
+              <div key={child.id} className="flex items-center gap-2 text-[11px]">
+                {child.status === "completed" ? (
+                  <Check size={11} className="shrink-0 text-emerald-400" />
+                ) : child.status === "failed" ? (
+                  <X size={11} className="shrink-0 text-[#fb7185]" />
+                ) : (
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#596174]" />
+                )}
+
+                <span className={child.status === "failed" ? "text-[#fb7185]" : "text-[#948e9c]"}>
+                  {child.title}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

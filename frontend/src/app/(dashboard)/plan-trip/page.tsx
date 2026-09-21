@@ -24,6 +24,7 @@ import {
   getTripPreferences,
   saveTripPreferences,
   updateTrip,
+  setTripDestination,
   planTrip,
 } from "@/lib/trips";
 import { PageLoader } from "@/components/ui";
@@ -36,6 +37,8 @@ export default function PlanTripPage() {
   const [trip, setTrip] = useState<TripFormData>({
     origin: "",
     destination: "",
+    originLocation: null,
+    destinationLocation: null,
     startDate: "",
     endDate: "",
     travelers: 2,
@@ -156,6 +159,11 @@ export default function PlanTripPage() {
       return;
     }
 
+    if (!trip.destinationLocation) {
+      alert("Please select a destination from the suggestions.");
+      return;
+    }
+
     if (!trip.startDate || !trip.endDate) {
       alert("Please select your travel dates.");
       return;
@@ -213,33 +221,29 @@ export default function PlanTripPage() {
         {
           pace: trip.pace,
           interests: trip.interests,
-          ai_brief:
-            trip.aiBrief.trim() || null,
-          budget_level:
-            trip.budgetLevel,
+          ai_brief: trip.aiBrief.trim() || null,
+          budget_level: trip.budgetLevel,
         },
       );
 
-      // Start AI itinerary planning
+      await setTripDestination(
+        savedTrip.trip_id,
+        {
+          name: trip.destinationLocation.name,
+          country: trip.destinationLocation.country,
+          country_code: trip.destinationLocation.countryCode,
+          latitude: trip.destinationLocation.latitude,
+          longitude: trip.destinationLocation.longitude,
+          timezone: trip.destinationLocation.timezone,
+        },
+      );
+
       const agentRun = await planTrip(
         savedTrip.trip_id,
       );
 
-      if (agentRun.status === "failed") {
-        throw new Error(
-          agentRun.error_message ||
-            "AI trip planning failed.",
-        );
-      }
-
-      if (agentRun.status !== "completed") {
-        throw new Error(
-          "AI trip planning did not complete.",
-        );
-      }
-
       router.push(
-        `/trips/${savedTrip.trip_id}`,
+        `/planning/${agentRun.id}`,
       );
     } catch (error) {
       console.error(
@@ -281,33 +285,54 @@ export default function PlanTripPage() {
               <CoreTripDetails
                 origin={trip.origin}
                 destination={trip.destination}
+                originLocation={trip.originLocation}
+                destinationLocation={trip.destinationLocation}
                 startDate={trip.startDate}
                 endDate={trip.endDate}
                 travelers={trip.travelers}
+
                 onOriginChangeAction={(value) =>
                   updateTripField(
                     "origin",
                     value,
                   )
                 }
+
                 onDestinationChangeAction={(value) =>
                   updateTripField(
                     "destination",
                     value,
                   )
                 }
+
+                onOriginLocationSelectAction={(location) =>
+                  updateTripField(
+                    "originLocation",
+                    location,
+                  )
+                }
+
+                onDestinationLocationSelectAction={(location) =>
+                  updateTripField(
+                    "destinationLocation",
+                    location,
+                  )
+                }
+
                 onStartDateChangeAction={(value) =>
                   updateTripField(
                     "startDate",
                     value,
                   )
                 }
+
                 onEndDateChangeAction={(value) =>
                   updateTripField(
                     "endDate",
                     value,
                   )
                 }
+
                 onTravelersChangeAction={(value) =>
                   updateTripField(
                     "travelers",

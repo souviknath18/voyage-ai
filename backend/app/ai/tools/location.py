@@ -29,15 +29,53 @@ async def search_locations(
 
   results = data.get("results", [])
 
-  return [
-    {
-      "name": result.get("name"),
-      "admin1": result.get("admin1"),
-      "country": result.get("country"),
-      "country_code": result.get("country_code"),
-      "latitude": result.get("latitude"),
-      "longitude": result.get("longitude"),
-      "timezone": result.get("timezone"),
-    }
-    for result in results
-  ]
+  locations = []
+
+  for result in results:
+    name = result.get("name")
+    admin1 = result.get("admin1")
+    country = result.get("country")
+
+    display_admin1 = admin1
+
+    if (
+      name
+      and admin1
+      and name.strip().casefold()
+      == admin1.strip().casefold()
+    ):
+      display_admin1 = None
+
+    formatted_name = ", ".join(
+      part
+      for part in [
+        name,
+        display_admin1,
+        country,
+      ]
+      if part
+    )
+
+    locations.append(
+      {
+        "id": str(result.get("id")),
+        "name": name,
+        "admin1": admin1,
+        "country": country,
+        "country_code": result.get(
+          "country_code"
+        ),
+        "latitude": result.get(
+          "latitude"
+        ),
+        "longitude": result.get(
+          "longitude"
+        ),
+        "timezone": result.get(
+          "timezone"
+        ),
+        "formatted_name": formatted_name,
+      }
+    )
+
+  return locations

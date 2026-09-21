@@ -52,8 +52,8 @@ export function mapTripToWorkspaceHeader(
     title:
       `${trip.destination} Trip`,
 
-    origin: trip.origin,
-    destination: trip.destination,
+    origin: trip.origin_name ?? trip.origin.split(",")[0].trim(),
+    destination: trip.destination_name ?? trip.destination.split(",")[0].trim(),
 
     startDate: trip.start_date,
     endDate: trip.end_date,

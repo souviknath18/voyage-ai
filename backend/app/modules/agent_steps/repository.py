@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.agent_steps.models import AgentStep
@@ -56,3 +57,22 @@ async def mark_agent_step_failed(
   await db.flush()
 
   return agent_step
+
+
+async def get_agent_steps(
+  db: AsyncSession,
+  agent_run_id: uuid.UUID,
+) -> list[AgentStep]:
+  result = await db.execute(
+    select(AgentStep)
+    .where(
+      AgentStep.agent_run_id == agent_run_id
+    )
+    .order_by(
+      AgentStep.created_at.asc()
+    )
+  )
+
+  return list(
+    result.scalars().all()
+  )

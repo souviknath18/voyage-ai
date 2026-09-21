@@ -1,6 +1,9 @@
 from typing import Any
 
-from datetime import date, timedelta
+from app.ai.planning.itinerary_dates import (
+  get_required_trip_dates,
+  normalize_itinerary_dates,
+)
 from langchain_openai import ChatOpenAI
 
 from app.ai.planning.schemas import (
@@ -29,23 +32,10 @@ async def replan_itinerary(
   trip = snapshot["trip"]
   preferences = snapshot["preferences"]
 
-  start_date = date.fromisoformat(
-    trip["start_date"]
+  required_dates = get_required_trip_dates(
+    start_date=trip["start_date"],
+    end_date=trip["end_date"],
   )
-
-  end_date = date.fromisoformat(
-    trip["end_date"]
-  )
-
-  required_dates = []
-
-  current_date = start_date
-
-  while current_date <= end_date:
-    required_dates.append(
-      current_date.isoformat()
-    )
-    current_date += timedelta(days=1)
 
   required_dates_text = "\n".join(
     f"Day {index}: {trip_date}"
@@ -189,6 +179,32 @@ PLACE GROUNDING RULES
   instead of making claims about reputation, quality,
   popularity, or characteristics.
 
+COST CATEGORY RULES
+- Every activity must have exactly one cost_category.
+- cost_category must be one of:
+  "food", "transport", "activity", "shopping", "other".
+- Use "food" for breakfast, lunch, dinner, cafes,
+  restaurants, snacks, and other food or drink activities.
+- Use "transport" for taxis, transfers, local rides,
+  public transport, and other local transportation.
+- Use "activity" for attractions, sightseeing, tours,
+  museums, temples, parks, entertainment, and other
+  planned experiences.
+- Use "shopping" for shopping activities, markets when
+  shopping is the purpose, and planned purchases.
+- Use "other" only when none of the above categories
+  reasonably applies.
+- Do not use "flight" or "hotel" as a cost_category.
+- Preserve a correct existing cost_category when possible.
+- If an activity is changed during replanning, make sure
+  its cost_category still matches the resulting activity.
+- estimated_cost must represent only the estimated cost
+  associated with that activity.
+- Use 0 when an activity does not reasonably require
+  spending.
+- Treat estimated_cost as an estimate, not a verified
+  or live price.
+
 PREVIOUS ITINERARY
 {previous_itinerary}
 
@@ -224,9 +240,21 @@ IMPORTANT DATE RULES
     prompt
   )
 
+  draft_itinerary = (
+    itinerary.model_dump()
+  )
+
+  draft_itinerary = (
+    normalize_itinerary_dates(
+      draft_itinerary,
+      start_date=trip["start_date"],
+      end_date=trip["end_date"],
+    )
+  )
+
   return {
     "draft_itinerary":
-        itinerary.model_dump(),
+      draft_itinerary,
     "validation_errors": [],
     "replan_count": replan_count,
     "final_itinerary": None,

@@ -7,7 +7,7 @@ from app.modules.locations.schemas import (
   LocationSearchResult,
 )
 from app.modules.locations.service import (
-  search_destination_locations,
+    search_location_suggestions,
 )
 
 
@@ -25,6 +25,6 @@ async def search_locations_endpoint(
     max_length=100,
   ),
 ):
-  return await search_destination_locations(
+  return await search_location_suggestions(
     query=query,
   )

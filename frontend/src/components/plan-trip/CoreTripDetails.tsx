@@ -3,16 +3,16 @@
 import {
   Card,
   DateRangePicker,
-  Input,
 } from "@/components/ui";
 
 import {
-  MapPin,
-  Navigation,
   Plane,
 } from "lucide-react";
 
 import TravelerCounter from "./TravelerCounter";
+import LocationAutocomplete from "@/components/plan-trip/LocationAutocomplete";
+import type { LocationSuggestion } from "@/types/location";
+
 
 interface CoreTripDetailsProps {
   origin: string;
@@ -21,6 +21,17 @@ interface CoreTripDetailsProps {
   endDate: string;
   travelers: number;
 
+  originLocation: LocationSuggestion | null;
+  destinationLocation: LocationSuggestion | null;
+
+  onOriginLocationSelectAction: (
+    location: LocationSuggestion | null,
+  ) => void;
+
+  onDestinationLocationSelectAction: (
+    location: LocationSuggestion | null,
+  ) => void;
+
   onOriginChangeAction: (value: string) => void;
   onDestinationChangeAction: (value: string) => void;
   onStartDateChangeAction: (value: string) => void;
@@ -28,12 +39,20 @@ interface CoreTripDetailsProps {
   onTravelersChangeAction: (value: number) => void;
 }
 
+
 export default function CoreTripDetails({
   origin,
   destination,
   startDate,
   endDate,
   travelers,
+
+  originLocation,
+  destinationLocation,
+
+  onOriginLocationSelectAction,
+  onDestinationLocationSelectAction,
+
   onOriginChangeAction,
   onDestinationChangeAction,
   onStartDateChangeAction,
@@ -57,32 +76,38 @@ export default function CoreTripDetails({
       {/* Fields */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Origin */}
-        <Input
-          label="Origin"
-          value={origin}
-          onChange={(event) =>
-            onOriginChangeAction(event.target.value)
-          }
-          placeholder="e.g. Bangalore, India"
-          leftIcon={
-            <Navigation size={15} />
-          }
-          className="text-sm"
-        />
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#e6e0e8]">
+            Origin
+          </label>
+
+          <LocationAutocomplete
+            value={origin}
+            selectedLocation={originLocation}
+            placeholder="e.g. Bengaluru, India"
+            onValueChange={onOriginChangeAction}
+            onLocationSelect={
+              onOriginLocationSelectAction
+            }
+          />
+        </div>
 
         {/* Destination */}
-        <Input
-          label="Destination"
-          value={destination}
-          onChange={(event) =>
-            onDestinationChangeAction(event.target.value)
-          }
-          placeholder="e.g. Tokyo, Japan"
-          leftIcon={
-            <MapPin size={15} />
-          }
-          className="text-sm"
-        />
+        <div>
+          <label className="mb-2 block text-sm font-medium text-[#e6e0e8]">
+            Destination
+          </label>
+
+          <LocationAutocomplete
+            value={destination}
+            selectedLocation={destinationLocation}
+            placeholder="e.g. Tokyo, Japan"
+            onValueChange={onDestinationChangeAction}
+            onLocationSelect={
+              onDestinationLocationSelectAction
+            }
+          />
+        </div>
 
         {/* Travel Dates */}
         <div>
@@ -105,7 +130,9 @@ export default function CoreTripDetails({
         {/* Travelers */}
         <TravelerCounter
           value={travelers}
-          onChangeAction={onTravelersChangeAction}
+          onChangeAction={
+            onTravelersChangeAction
+          }
         />
       </div>
     </Card>

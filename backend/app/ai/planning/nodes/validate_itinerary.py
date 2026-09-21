@@ -1,7 +1,10 @@
-from datetime import date, timedelta
+from datetime import datetime
 from typing import Any
 
 from app.ai.planning.state import PlanningState
+from app.ai.planning.itinerary_dates import (
+  get_required_trip_dates,
+)
 
 
 def _build_verified_place_description(
@@ -89,6 +92,65 @@ def _build_verified_place_title(
     f"Visit {place_name}"
   )
 
+def _parse_activity_time(
+  value: str,
+) -> datetime:
+  """
+  Parse itinerary activity time.
+
+  Expected examples:
+
+  8:00 AM
+  10:30 AM
+  1:00 PM
+  12:15 PM
+  """
+
+  cleaned_value = (
+    value
+    .strip()
+    .upper()
+  )
+
+  return datetime.strptime(
+    cleaned_value,
+    "%I:%M %p",
+  )
+
+def _activity_sort_key(
+  activity: dict[str, Any],
+) -> tuple[int, int]:
+  time_value = activity.get(
+    "time",
+    "",
+  )
+
+  try:
+    parsed_time = (
+      _parse_activity_time(
+        time_value
+      )
+    )
+
+    return (
+      parsed_time.hour,
+      parsed_time.minute,
+    )
+
+  except ValueError:
+    return (
+      99,
+      99,
+    )
+
+ALLOWED_COST_CATEGORIES = {
+  "food",
+  "transport",
+  "activity",
+  "shopping",
+  "other",
+}
+
 def validate_itinerary(
     state: PlanningState,
 ) -> dict[str, Any]:
@@ -132,22 +194,10 @@ def validate_itinerary(
     verified_places_by_id
   )
 
-  start_date = date.fromisoformat(
-    trip["start_date"]
+  expected_dates = get_required_trip_dates(
+    start_date=trip["start_date"],
+    end_date=trip["end_date"],
   )
-  end_date = date.fromisoformat(
-    trip["end_date"]
-  )
-
-  expected_dates = []
-
-  current_date = start_date
-
-  while current_date <= end_date:
-    expected_dates.append(
-      current_date.isoformat()
-    )
-    current_date += timedelta(days=1)
 
   itinerary_days = itinerary.get(
     "days",
@@ -158,6 +208,35 @@ def validate_itinerary(
     activities = day.get(
       "activities",
       [],
+    )
+
+    for activity in activities:
+      time_value = activity.get(
+        "time",
+        "",
+      )
+
+
+      try:
+        _parse_activity_time(
+          time_value
+        )
+
+      except ValueError:
+        errors.append(
+          (
+            f"Activity "
+            f"'{activity.get('title', 'Unknown activity')}' "
+            f"has invalid time "
+            f"'{time_value}'. "
+            "Expected format like "
+            "'9:30 AM' or '2:00 PM'."
+          )
+        )
+
+
+    activities.sort(
+      key=_activity_sort_key
     )
 
     for activity in activities:
@@ -173,6 +252,23 @@ def validate_itinerary(
       place_id = activity.get(
         "place_id"
       )
+
+      cost_category = activity.get(
+        "cost_category"
+      )
+
+      if (
+        cost_category
+        not in ALLOWED_COST_CATEGORIES
+      ):
+        errors.append(
+          (
+            f"Activity '{title}' "
+            "has an invalid "
+            f"cost_category "
+            f"'{cost_category}'."
+          )
+        )
 
       if (
         activity_type
@@ -264,18 +360,54 @@ def validate_itinerary(
     for day in itinerary_days
   ]
 
+  if len(itinerary_days) != len(expected_dates):
+    errors.append(
+      (
+        "Itinerary must contain exactly "
+        f"{len(expected_dates)} days, "
+        f"but contains "
+        f"{len(itinerary_days)}."
+      )
+    )
+
+
+  actual_day_numbers = [
+    day.get("day_number")
+    for day in itinerary_days
+  ]
+
+  expected_day_numbers = list(
+    range(
+      1,
+      len(expected_dates) + 1,
+    )
+  )
+
+  if (
+    actual_day_numbers
+    != expected_day_numbers
+  ):
+    errors.append(
+      (
+        "Itinerary day numbers must "
+        "start at 1 and increase "
+        "sequentially."
+      )
+    )
+
+
+  if actual_dates != expected_dates:
+    errors.append(
+      "Itinerary dates do not exactly "
+      "match the trip dates."
+    )
+
   if itinerary.get("destination") != (
     trip["destination"]
   ):
     errors.append(
       "Itinerary destination does not "
       "match the trip destination."
-    )
-
-  if actual_dates != expected_dates:
-    errors.append(
-      "Itinerary dates do not exactly "
-      "match the trip dates."
     )
 
   estimated_total_cost = sum(

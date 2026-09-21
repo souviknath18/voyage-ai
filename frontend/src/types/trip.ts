@@ -1,3 +1,7 @@
+import type {
+  LocationSuggestion,
+} from "@/types/location";
+
 export type TravelPace =
   | "relaxed"
   | "balanced"
@@ -7,6 +11,9 @@ export interface TripFormData {
   origin: string;
   destination: string;
 
+  originLocation: LocationSuggestion | null;
+  destinationLocation: LocationSuggestion | null;
+
   startDate: string;
   endDate: string;
 
@@ -14,11 +21,9 @@ export interface TripFormData {
 
   currency: string;
   budget: number;
-
   budgetLevel: number;
 
   pace: TravelPace;
-
   interests: string[];
 
   aiBrief: string;

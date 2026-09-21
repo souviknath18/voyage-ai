@@ -33,7 +33,7 @@ export default function MapItineraryPanel({
   onSelectLocationAction,
 }: MapItineraryPanelProps) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-[#070B18]/80 backdrop-blur-xl">
+    <div className="flex h-auto flex-col overflow-hidden lg:h-full rounded-xl border border-white/10 bg-[#070B18]/80 backdrop-blur-xl">
       {/* Header */}
       <div className="border-b border-white/10 p-4">
         <div className="flex items-center gap-2">
@@ -53,7 +53,7 @@ export default function MapItineraryPanel({
       </div>
 
       {/* Stops */}
-      <div className="flex-1 overflow-y-auto p-4 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10">
+      <div className="voyage-scrollbar overflow-visible p-4 pr-3 lg:flex-1 lg:overflow-y-auto">
         {locations.length > 0 ? (
           locations.map(
             (

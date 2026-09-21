@@ -101,6 +101,13 @@ class TripResponse(BaseModel):
     "from_attributes": True,
   }
 
+  origin_name: str | None = None
+  origin_country: str | None = None
+  origin_country_code: str | None = None
+  origin_latitude: Decimal | None = None
+  origin_longitude: Decimal | None = None
+  origin_timezone: str | None = None
+
   destination_name: str | None = None
   destination_country: str | None = None
   destination_country_code: str | None = None

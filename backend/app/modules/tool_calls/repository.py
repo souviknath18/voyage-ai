@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.tool_calls.models import ToolCall
@@ -60,3 +61,27 @@ async def mark_tool_call_failed(
   await db.flush()
 
   return tool_call
+
+
+async def get_tool_calls_for_steps(
+  db: AsyncSession,
+  agent_step_ids: list[uuid.UUID],
+) -> list[ToolCall]:
+  if not agent_step_ids:
+    return []
+
+  result = await db.execute(
+    select(ToolCall)
+    .where(
+      ToolCall.agent_step_id.in_(
+        agent_step_ids
+      )
+    )
+    .order_by(
+      ToolCall.created_at.asc()
+    )
+  )
+
+  return list(
+    result.scalars().all()
+  )

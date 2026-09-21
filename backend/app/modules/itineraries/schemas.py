@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 
 class ItineraryItemResponse(BaseModel):
+
   id: uuid.UUID
 
   time: str
@@ -17,6 +18,8 @@ class ItineraryItemResponse(BaseModel):
   location: str | None
 
   activity_type: str
+
+  cost_category: str
 
   place_id: str | None
 

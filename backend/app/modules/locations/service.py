@@ -1,7 +1,9 @@
-from app.ai.tools.location import search_locations
+from app.ai.tools.location import (
+  search_locations,
+)
 
 
-async def search_destination_locations(
+async def search_location_suggestions(
   query: str,
 ) -> list[dict]:
   query = query.strip()

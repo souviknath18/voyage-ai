@@ -12,7 +12,9 @@ from sqlalchemy import (
   Text,
   func,
 )
+
 from sqlalchemy.dialects.postgresql import UUID
+
 from sqlalchemy.orm import (
   Mapped,
   mapped_column,
@@ -118,7 +120,7 @@ class ItineraryDay(Base):
   activities: Mapped[list["ItineraryItem"]] = relationship(
     back_populates="itinerary_day",
     cascade="all, delete-orphan",
-    order_by="ItineraryItem.time",
+    order_by="ItineraryItem.sort_order",
   )
 
   day_number: Mapped[int] = mapped_column(
@@ -173,6 +175,11 @@ class ItineraryItem(Base):
     back_populates="activities",
   )
 
+  sort_order: Mapped[int] = mapped_column(
+    Integer,
+    nullable=False,
+  )
+
   time: Mapped[str] = mapped_column(
     String(20),
     nullable=False,
@@ -197,6 +204,11 @@ class ItineraryItem(Base):
     String(30),
     nullable=False,
     default="generic",
+  )
+
+  cost_category: Mapped[str] = mapped_column(
+    String(30),
+    nullable=False,
   )
 
   place_id: Mapped[str | None] = mapped_column(

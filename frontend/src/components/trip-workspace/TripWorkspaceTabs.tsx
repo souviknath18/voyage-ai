@@ -62,8 +62,10 @@ export default function TripWorkspaceTabs({
     `/trips/${tripId}`;
 
   return (
-    <div className="overflow-x-auto border-b border-white/10 [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-track]:bg-transparent">
-      <div className="flex min-w-max gap-1">
+    <div className="voyage-day-scrollbar overflow-x-auto border-b border-white/10 pb-1">
+
+      <div className="flex min-w-max gap-1 pb-1">
+
         {tabs.map((tab) => {
           const Icon =
             tab.icon;
@@ -87,25 +89,41 @@ export default function TripWorkspaceTabs({
 
           return (
             <Link
-              key={tab.value}
-              href={href}
-              className={`relative flex items-center gap-2 px-3 py-3 text-sm font-medium transition ${
+              key={
+                tab.value
+              }
+              href={
+                href
+              }
+              className={`relative flex shrink-0 items-center gap-2 px-3 py-3 text-sm font-medium transition ${
                 active
                   ? "text-[#fb7185]"
                   : "text-[#948e9c] hover:text-[#cbc4d2]"
               }`}
             >
-              <Icon size={15} />
 
-              {tab.label}
+              <Icon
+                size={
+                  15
+                }
+              />
+
+
+              {
+                tab.label
+              }
+
 
               {active && (
                 <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[#fb7185]" />
               )}
+
             </Link>
           );
         })}
+
       </div>
+
     </div>
   );
 }

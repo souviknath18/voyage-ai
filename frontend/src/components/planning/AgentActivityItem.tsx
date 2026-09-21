@@ -149,16 +149,15 @@ export default function AgentActivityItem({
 
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p
-                className={`text-sm font-medium ${
-                  step.status ===
-                  "warning"
-                    ? "text-[#fcd34d]"
-                    : "text-[#e6e0e8]"
-                }`}
-              >
+              <p className={`text-sm font-medium ${step.status === "warning" ? "text-[#fcd34d]" : "text-[#e6e0e8]"}`}>
                 {step.title}
               </p>
+
+              {step.duration && (
+                <span className="font-mono text-[10px] text-[#7f8798]">
+                  {step.duration}
+                </span>
+              )}
 
               {step.status ===
                 "running" && (
