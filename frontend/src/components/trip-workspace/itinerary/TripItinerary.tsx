@@ -14,22 +14,30 @@ import {
 
 import type {
   ItineraryDayData,
+  TripMapDay,
 } from "@/types/trip-workspace";
 
 import ItineraryAIPrompt from "./ItineraryAIPrompt";
 import ItineraryDay from "./ItineraryDay";
 import ItineraryMapPanel from "./ItineraryMapPanel";
+import {
+  useRouter,
+} from "next/navigation";
 
 interface TripItineraryProps {
+  tripId: string;
+
   itinerary: ItineraryDayData[];
 
   currency: string;
 }
 
 export default function TripItinerary({
+  tripId,
   itinerary,
   currency,
 }: TripItineraryProps) {
+  const router = useRouter();
   const [
     selectedDayIndex,
     setSelectedDayIndex,
@@ -39,6 +47,17 @@ export default function TripItinerary({
     itinerary[
       selectedDayIndex
     ];
+
+  const openSelectedDayMap =
+    () => {
+      if (!selectedDay) {
+        return;
+      }
+
+      router.push(
+        `/trips/${tripId}/map?day=${selectedDay.dayNumber}`,
+      );
+    };
 
   if (
     itinerary.length === 0
@@ -114,6 +133,9 @@ export default function TripItinerary({
           <Button
             variant="outline"
             size="sm"
+            onClick={
+              openSelectedDayMap
+            }
           >
             <Map size={14} />
 
@@ -191,6 +213,9 @@ export default function TripItinerary({
       {/* Map */}
       <aside className="hidden lg:col-span-4 lg:block">
         <ItineraryMapPanel
+          tripId={
+            tripId
+          }
           day={
             selectedDay
           }

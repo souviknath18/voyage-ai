@@ -1,13 +1,13 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
 
 import type {
   TripMapDay,
-  TripMapLocation,
 } from "@/types/trip-workspace";
 
 import MapDaySelector from "./MapDaySelector";
@@ -15,32 +15,101 @@ import MapItineraryPanel from "./MapItineraryPanel";
 import MapRouteOptimizer from "./MapRouteOptimizer";
 import TripMapCanvas from "./TripMapCanvas";
 
+
 interface TripMapProps {
   days: TripMapDay[];
 
   currency: string;
 
   destination: string;
+
+  initialDay?: number;
 }
+
 
 export default function TripMap({
   days,
   currency,
   destination,
+  initialDay,
 }: TripMapProps) {
+  /*
+   * Check whether the requested URL
+   * day actually exists.
+   *
+   * Example:
+   *
+   * ?day=2
+   *
+   * If Day 2 exists -> open Day 2.
+   *
+   * If someone manually enters:
+   *
+   * ?day=999
+   *
+   * fall back safely to Day 1.
+   */
+  const initialSelectedDay =
+    initialDay &&
+    days.some(
+      (day) =>
+        day.dayNumber ===
+        initialDay,
+    )
+      ? initialDay
+      : (
+          days[0]
+            ?.dayNumber ??
+          1
+        );
+
+
   const [
     selectedDay,
     setSelectedDay,
   ] =
     useState<
       number | "all"
-    >(1);
+    >(
+      initialSelectedDay,
+    );
+
 
   const [
     selectedLocationId,
     setSelectedLocationId,
   ] =
-    useState<string>();
+    useState<
+      string | undefined
+    >();
+
+
+  /*
+   * Keep selected day synchronized if
+   * the URL day changes.
+   */
+  useEffect(() => {
+    if (
+      initialDay &&
+      days.some(
+        (day) =>
+          day.dayNumber ===
+          initialDay,
+      )
+    ) {
+      setSelectedDay(
+        initialDay,
+      );
+
+      setSelectedLocationId(
+        undefined,
+      );
+    }
+  }, [
+    initialDay,
+    days,
+  ]);
+
 
   const visibleLocations =
     useMemo(() => {
@@ -54,20 +123,24 @@ export default function TripMap({
         );
       }
 
+
       return (
         days.find(
           (day) =>
             day.dayNumber ===
             selectedDay,
-        )?.locations ?? []
+        )?.locations ??
+        []
       );
     }, [
       days,
       selectedDay,
     ]);
 
+
   const selectedDayData =
-    selectedDay === "all"
+    selectedDay ===
+    "all"
       ? undefined
       : days.find(
           (day) =>
@@ -75,17 +148,22 @@ export default function TripMap({
             selectedDay,
         );
 
+
   const handleDayChange = (
     day:
       | number
       | "all",
   ) => {
-    setSelectedDay(day);
+    setSelectedDay(
+      day,
+    );
+
 
     setSelectedLocationId(
       undefined,
     );
   };
+
 
   const handleOptimize =
     () => {
@@ -93,6 +171,7 @@ export default function TripMap({
         "Optimize route",
       );
     };
+
 
   const handleModify =
     (
@@ -104,27 +183,39 @@ export default function TripMap({
       );
     };
 
+
   return (
     <div className="space-y-5">
+
       {/* Header */}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+
         <div>
+
           <h2 className="text-lg font-semibold text-[#e6e0e8] sm:text-xl">
             Trip Map
           </h2>
 
+
           <p className="mt-1 text-sm text-[#948e9c]">
             Visualize your itinerary
             and travel route across{" "}
-            {destination}.
+            {
+              destination
+            }.
           </p>
+
         </div>
 
+
         <MapDaySelector
-          days={days.map(
-            (day) =>
-              day.dayNumber,
-          )}
+          days={
+            days.map(
+              (day) =>
+                day.dayNumber,
+            )
+          }
           selectedDay={
             selectedDay
           }
@@ -132,13 +223,19 @@ export default function TripMap({
             handleDayChange
           }
         />
+
       </div>
 
+
       {/* Workspace */}
+
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+
         {/* Itinerary panel */}
+
         <div className="lg:col-span-4 xl:col-span-3">
-          <div className="h-[520px] lg:h-[650px]">
+
+          <div className="h-auto lg:h-[650px]">
             <MapItineraryPanel
               locations={
                 visibleLocations
@@ -164,8 +261,11 @@ export default function TripMap({
           </div>
         </div>
 
+
         {/* Map */}
+
         <div className="lg:col-span-8 xl:col-span-9">
+
           <TripMapCanvas
             locations={
               visibleLocations
@@ -188,17 +288,24 @@ export default function TripMap({
               handleModify
             }
           />
+
         </div>
+
       </div>
 
+
       {/* Optimize */}
+
       <div className="flex justify-center pt-1">
+
         <MapRouteOptimizer
           onOptimizeAction={
             handleOptimize
           }
         />
+
       </div>
+
     </div>
   );
 }

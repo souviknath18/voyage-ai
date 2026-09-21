@@ -99,6 +99,36 @@ class Trip(Base):
     nullable=False,
   )
 
+  origin_name: Mapped[str | None] = mapped_column(
+    String(255),
+    nullable=True,
+  )
+
+  origin_country: Mapped[str | None] = mapped_column(
+    String(100),
+    nullable=True,
+  )
+
+  origin_country_code: Mapped[str | None] = mapped_column(
+    String(10),
+    nullable=True,
+  )
+
+  origin_latitude: Mapped[Decimal | None] = mapped_column(
+    Numeric(9, 6),
+    nullable=True,
+  )
+
+  origin_longitude: Mapped[Decimal | None] = mapped_column(
+    Numeric(9, 6),
+    nullable=True,
+  )
+
+  origin_timezone: Mapped[str | None] = mapped_column(
+    String(100),
+    nullable=True,
+  )
+
   destination_name: Mapped[str | None] = mapped_column(
     String(255),
     nullable=True,

@@ -65,42 +65,42 @@ async def execute_planning_graph(
     planning_graph = build_planning_graph(
       load_context_node=tracked_step(
         db=db,
-        agent_run_id=agent_run.id,
+        agent_run=agent_run,
         step_name="load_context",
         node=load_context,
       ),
 
       generate_itinerary_node=tracked_step(
         db=db,
-        agent_run_id=agent_run.id,
+        agent_run=agent_run,
         step_name="generate_itinerary",
         node=generate_itinerary,
       ),
 
       validate_itinerary_node=tracked_step(
         db=db,
-        agent_run_id=agent_run.id,
+        agent_run=agent_run,
         step_name="validate_itinerary",
         node=validate_itinerary,
       ),
 
       replan_itinerary_node=tracked_step(
         db=db,
-        agent_run_id=agent_run.id,
+        agent_run=agent_run,
         step_name="replan_itinerary",
         node=replan_itinerary,
       ),
 
       planning_failed_node=tracked_step(
         db=db,
-        agent_run_id=agent_run.id,
+        agent_run=agent_run,
         step_name="planning_failed",
         node=planning_failed,
       ),
 
       research_trip_node=tracked_step(
         db=db,
-        agent_run_id=agent_run.id,
+        agent_run=agent_run,
         step_name="research_trip",
         node=research_trip,
         inject_context=True,

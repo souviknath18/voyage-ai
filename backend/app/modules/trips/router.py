@@ -125,8 +125,8 @@ async def update_destination(
   current_user: User = Depends(get_current_user),
 ):
   return await set_trip_destination(
-      db=db,
-      public_trip_id=trip_id,
-      user_id=current_user.id,
-      destination_data=payload,
+    db=db,
+    public_trip_id=trip_id,
+    user_id=current_user.id,
+    destination_data=payload,
   )

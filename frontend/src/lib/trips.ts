@@ -1,4 +1,7 @@
-import { apiRequest } from "@/lib/api";
+import {
+  apiBlobRequest,
+  apiRequest,
+} from "@/lib/api";
 import type { TravelPace } from "@/types/trip";
 
 export interface CreateTripRequest {
@@ -17,6 +20,21 @@ export interface Trip {
   user_id: string;
   origin: string;
   destination: string;
+
+  origin_name: string | null;
+  origin_country: string | null;
+  origin_country_code: string | null;
+  origin_latitude: string | null;
+  origin_longitude: string | null;
+  origin_timezone: string | null;
+
+  destination_name: string | null;
+  destination_country: string | null;
+  destination_country_code: string | null;
+  destination_latitude: string | null;
+  destination_longitude: string | null;
+  destination_timezone: string | null;
+
   start_date: string;
   end_date: string;
   travelers: number;
@@ -35,6 +53,15 @@ export interface UpdateTripRequest {
   travelers?: number;
   budget?: number;
   currency?: string;
+}
+
+export interface TripDestinationRequest {
+  name: string;
+  country: string;
+  country_code: string;
+  latitude: number;
+  longitude: number;
+  timezone?: string;
 }
 
 export interface TripPreference {
@@ -69,6 +96,39 @@ export interface AgentRun {
   updated_at: string;
 }
 
+export interface ToolCallActivity {
+  id: string;
+  tool_name: string;
+  status: "pending" | "running" | "completed" | "failed";
+  attempt: number;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface AgentStepActivity {
+  id: string;
+  step_name: string;
+  status: "pending" | "running" | "completed" | "failed";
+  attempt: number;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  tool_calls: ToolCallActivity[];
+}
+
+export interface AgentRunActivity {
+  id: string;
+  trip_id: string;
+  status: "pending" | "running" | "completed" | "failed";
+  current_step: string | null;
+  attempt: number;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  steps: AgentStepActivity[];
+}
+
 export type ItineraryGroundingType =
   | "verified_place"
   | "generic";
@@ -80,6 +140,7 @@ export interface ItineraryItem {
   description: string;
   location: string | null;
   activity_type: ItineraryGroundingType;
+  cost_category: BudgetCategory;
   place_id: string | null;
   estimated_cost: string;
 }
@@ -103,6 +164,33 @@ export interface TripItinerary {
   days: ItineraryDay[];
   created_at: string;
   updated_at: string;
+}
+
+export type BudgetCategory =
+  | "food"
+  | "transport"
+  | "activity"
+  | "shopping"
+  | "other";
+
+export interface TripBudgetCategory {
+  category: BudgetCategory;
+  estimated_cost: string;
+  percentage: number;
+}
+
+export interface TripBudget {
+  trip_id: string;
+  currency: string;
+  total_budget: string | null;
+  estimated_cost: string;
+  remaining_budget: string | null;
+  utilization_percentage: number | null;
+  status:
+    | "within_budget"
+    | "over_budget"
+    | "no_budget";
+  categories: TripBudgetCategory[];
 }
 
 export interface TripPlace {
@@ -211,6 +299,32 @@ export async function getTrip(
   );
 }
 
+export async function getTripBudget(
+  tripId: string,
+): Promise<TripBudget> {
+  const token =
+    localStorage.getItem(
+      "access_token",
+    );
+
+  if (!token) {
+    throw new Error(
+      "You are not logged in",
+    );
+  }
+
+  return apiRequest<TripBudget>(
+    `/trips/${tripId}/budget`,
+    {
+      method: "GET",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    },
+  );
+}
+
 export async function updateTrip(
   tripId: string,
   data: UpdateTripRequest,
@@ -239,6 +353,28 @@ export async function updateTrip(
       body: JSON.stringify(
         data,
       ),
+    },
+  );
+}
+
+export async function setTripDestination(
+  tripId: string,
+  data: TripDestinationRequest,
+): Promise<Trip> {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    throw new Error("You are not logged in");
+  }
+
+  return apiRequest<Trip>(
+    `/trips/${tripId}/destination`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
     },
   );
 }
@@ -324,6 +460,46 @@ export async function planTrip(
   );
 }
 
+export async function getAgentRun(
+  agentRunId: string,
+): Promise<AgentRun> {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    throw new Error("You are not logged in");
+  }
+
+  return apiRequest<AgentRun>(
+    `/trips/agent-runs/${agentRunId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+}
+
+export async function getAgentRunActivity(
+  agentRunId: string,
+): Promise<AgentRunActivity> {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    throw new Error("You are not logged in");
+  }
+
+  return apiRequest<AgentRunActivity>(
+    `/trips/agent-runs/${agentRunId}/activity`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+}
+
 export async function getTripItinerary(
   tripId: string,
 ): Promise<TripItinerary> {
@@ -392,6 +568,36 @@ export async function getTripWeather(
     `/trips/${tripId}/weather`,
     {
       method: "GET",
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+    },
+  );
+}
+
+export async function getTripMapPreview(
+  tripId: string,
+  dayNumber: number,
+): Promise<Blob> {
+  const token =
+    localStorage.getItem(
+      "access_token",
+    );
+
+
+  if (!token) {
+    throw new Error(
+      "You are not logged in",
+    );
+  }
+
+
+  return apiBlobRequest(
+    `/trips/${tripId}/map-preview?day=${dayNumber}`,
+    {
+      method: "GET",
+
       headers: {
         Authorization:
           `Bearer ${token}`,

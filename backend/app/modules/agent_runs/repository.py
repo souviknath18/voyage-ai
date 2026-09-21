@@ -108,3 +108,25 @@ async def mark_agent_run_failed(
   await db.refresh(agent_run)
 
   return agent_run
+
+
+async def get_user_agent_run(
+  db: AsyncSession,
+  agent_run_id: uuid.UUID,
+  user_id: uuid.UUID,
+) -> AgentRun | None:
+  from app.modules.trips.models import Trip
+
+  result = await db.execute(
+    select(AgentRun)
+    .join(
+      Trip,
+      AgentRun.trip_id == Trip.id,
+    )
+    .where(
+      AgentRun.id == agent_run_id,
+      Trip.user_id == user_id,
+    )
+  )
+
+  return result.scalar_one_or_none()

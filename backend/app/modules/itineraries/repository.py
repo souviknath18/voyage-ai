@@ -67,15 +67,23 @@ async def save_itinerary(
     # itinerary items.
     await db.flush()
 
-    for activity in day_data["activities"]:
+    for sort_order, activity in enumerate(
+      day_data["activities"],
+      start=1,
+    ):
       itinerary_item = ItineraryItem(
         itinerary_day_id=itinerary_day.id,
+
+        sort_order=sort_order,
+
         time=activity["time"],
         title=activity["title"],
         description=activity["description"],
         location=activity.get("location"),
         activity_type=activity["activity_type"],
+        cost_category=activity["cost_category"],
         place_id=activity.get("place_id"),
+
         estimated_cost=Decimal(
           str(
             activity.get(

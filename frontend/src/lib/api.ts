@@ -31,3 +31,32 @@ export async function apiRequest<T>(
 
   return response.json();
 }
+
+export async function apiBlobRequest(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<Blob> {
+  const response = await fetch(
+    `${API_URL}${endpoint}`,
+    {
+      ...options,
+
+      headers: {
+        ...options.headers,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => null);
+
+    throw new Error(
+      error?.detail ??
+        "Something went wrong",
+    );
+  }
+
+  return response.blob();
+}

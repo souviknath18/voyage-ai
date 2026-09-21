@@ -22,6 +22,8 @@ export interface PlanningStep {
   description?: string;
   status: PlanningStepStatus;
   icon: PlanningStepIcon;
+  duration?: string;
+  children?: PlanningStep[];
 }
 
 export interface PlanningTrip {

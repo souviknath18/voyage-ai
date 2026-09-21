@@ -11,6 +11,10 @@ import {
   useRouter,
 } from "next/navigation";
 
+import type {
+  PlanningStep,
+} from "@/types/planning";
+
 import {
   Button,
   Card,
@@ -21,29 +25,24 @@ import PlanningFailureTripSummary from "./PlanningFailureTripSummary";
 
 interface PlanningFailureProps {
   tripId: string;
-
   runId: string;
-
   origin: string;
-
   destination: string;
-
   startDate: string;
-
   endDate: string;
-
   travelers: number;
-
   currency: string;
-
   budget: number;
 
-  onRetryAction?: () => void;
+  errorMessage?: string | null;
+  steps: PlanningStep[];
+  retrying?: boolean;
+
+  onRetryAction: () => void;
 }
 
 export default function PlanningFailure({
   tripId,
-  runId,
   origin,
   destination,
   startDate,
@@ -51,37 +50,21 @@ export default function PlanningFailure({
   travelers,
   currency,
   budget,
+  errorMessage,
+  steps,
+  retrying = false,
   onRetryAction,
 }: PlanningFailureProps) {
-  const router =
-    useRouter();
+  const router = useRouter();
 
-  const handleRetry =
-    () => {
-      if (onRetryAction) {
-        onRetryAction();
+  const handleRetry = () => {
+    if (retrying) {
+      return;
+    }
 
-        return;
-      }
+    onRetryAction();
+  };
 
-      console.log(
-        "Retry planning run:",
-        runId,
-      );
-
-      /*
-       * Later:
-       *
-       * await retryPlanningRun(
-       *   runId,
-       * );
-       *
-       * Backend:
-       *
-       * POST
-       * /api/v1/planning-runs/{runId}/retry
-       */
-    };
 
   const handleEdit =
     () => {
@@ -154,7 +137,9 @@ export default function PlanningFailure({
               }
             />
 
-            <PlanningFailureProgress />
+            <PlanningFailureProgress
+              steps={steps}
+            />
           </div>
 
           {/* Agent Status */}
@@ -171,7 +156,9 @@ export default function PlanningFailure({
               </p>
 
               <p className="mt-1 text-xs leading-5 text-[#948e9c]">
-                The planning agent couldn&apos;t complete the itinerary. This may be temporary, and you can retry without losing your trip details.
+                {errorMessage
+                  ? errorMessage
+                  : "The planning agent couldn't complete the itinerary. You can retry without losing your trip details."}
               </p>
             </div>
           </div>
@@ -190,15 +177,17 @@ export default function PlanningFailure({
 
             <Button
               size="md"
-              onClick={
-                handleRetry
-              }
+              onClick={handleRetry}
+              disabled={retrying}
             >
               <RefreshCw
                 size={14}
+                className={retrying ? "animate-spin" : ""}
               />
 
-              Try Again
+              {retrying
+                ? "Starting again..."
+                : "Try Again"}
             </Button>
           </div>
 
