@@ -23,6 +23,7 @@ from app.modules.map_previews.router import (
 from app.modules.budgets.router import (
   router as budgets_router,
 )
+from app.api.v1.images import router as images_router
 
 router = APIRouter()
 
@@ -88,4 +89,10 @@ router.include_router(
 router.include_router(
   weather_router,
   tags=["Weather"],
+)
+
+router.include_router(
+  images_router,
+  prefix="/images",
+  tags=["Images"],
 )

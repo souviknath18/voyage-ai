@@ -11,9 +11,7 @@ import { PageLoader } from "@/components/ui";
 import MyTripsHeader from "@/components/trips/MyTripsHeader";
 import TripTabs from "@/components/trips/TripTabs";
 import TripsGrid from "@/components/trips/TripsGrid";
-import {
-  getDestinationImage,
-} from "@/lib/destination-images";
+import { getDestinationImageFromApi } from "@/lib/api";
 
 import {
   getTrips,
@@ -33,6 +31,7 @@ import type {
  */
 function mapTripToListItem(
   trip: Trip,
+  image?: string,
 ): TripListItem {
   const startDate =
     new Date(trip.start_date);
@@ -96,15 +95,7 @@ function mapTripToListItem(
         ? Number(trip.budget)
         : undefined,
 
-    // Temporary image.
-    // Later we can generate/select images
-    // based on destination.
-    // image:
-    //   "/images/trips/tokyo.jpg",
-    image:
-      getDestinationImage(
-        trip.destination,
-      ),
+    image,
 
     status:
       trip.status as TripListItem["status"],
@@ -139,51 +130,85 @@ export default function MyTripsPage() {
   ] = useState<string | null>(null);
 
 
-  /**
-   * Fetch real trips from FastAPI.
-   */
   useEffect(() => {
-    const loadTrips =
-      async () => {
-        try {
-          setLoading(true);
-          setError(null);
+    let cancelled = false;
 
-          const data =
-            await getTrips();
+    const loadTrips = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-          const mappedTrips =
-            data.map(
-              mapTripToListItem,
-            );
+        const data = await getTrips();
 
-          setTrips(
-            mappedTrips,
-          );
-        } catch (error) {
-          console.error(
-            "Failed to load trips:",
-            error,
-          );
-
-          setError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load trips",
-          );
-        } finally {
-          setLoading(false);
+        if (cancelled) {
+          return;
         }
-      };
+
+        const initialTrips = data.map((trip) =>
+          mapTripToListItem(trip),
+        );
+
+        setTrips(initialTrips);
+        setLoading(false);
+
+        await Promise.allSettled(
+          data.map(async (trip) => {
+            try {
+              const image = await getDestinationImageFromApi(
+                trip.destination_name || trip.destination,
+                trip.destination_country,
+              );
+
+              if (cancelled || !image) {
+                return;
+              }
+
+              setTrips((currentTrips) =>
+                currentTrips.map((currentTrip) =>
+                  currentTrip.id === trip.trip_id
+                    ? {
+                        ...currentTrip,
+                        image: image.url,
+                      }
+                    : currentTrip,
+                ),
+              );
+            } catch (error) {
+              console.warn(
+                `Failed to load image for ${trip.destination}:`,
+                error,
+              );
+            }
+          }),
+        );
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error(
+          "Failed to load trips:",
+          error,
+        );
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load trips",
+        );
+
+        setLoading(false);
+      }
+    };
 
     loadTrips();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
 
-  /**
-   * Calculate tab counts using
-   * the real backend trips.
-   */
   const counts =
     useMemo(() => {
       return {

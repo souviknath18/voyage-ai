@@ -1,7 +1,3 @@
-import {
-  getDestinationImage,
-} from "@/lib/destination-images";
-
 import type {
   Trip,
   TripItinerary,
@@ -15,6 +11,7 @@ import type {
 export function mapTripToWorkspaceHeader(
   trip: Trip,
   itinerary: TripItinerary | null,
+  image?: string,
 ): TripWorkspaceHeaderData {
   const startDate =
     new Date(trip.start_date);
@@ -75,9 +72,6 @@ export function mapTripToWorkspaceHeader(
     estimatedCost,
     remainingBudget,
 
-    image:
-      getDestinationImage(
-        trip.destination,
-      ),
+    image,
   };
 }

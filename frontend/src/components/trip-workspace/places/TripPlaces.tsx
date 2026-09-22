@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -45,6 +46,38 @@ export default function TripPlaces({
     useState<TripPlace[]>(
       places,
     );
+
+  useEffect(() => {
+    setLocalPlaces(
+      (currentPlaces) =>
+        places.map(
+          (place) => {
+            const currentPlace =
+              currentPlaces.find(
+                (item) =>
+                  item.id ===
+                  place.id,
+              );
+
+            return {
+              ...place,
+
+              saved:
+                currentPlace?.saved ??
+                place.saved,
+
+              status:
+                currentPlace?.status ??
+                place.status,
+
+              itineraryDay:
+                currentPlace?.itineraryDay ??
+                place.itineraryDay,
+            };
+          },
+        ),
+    );
+  }, [places]);
 
   const visiblePlaces =
     useMemo(() => {

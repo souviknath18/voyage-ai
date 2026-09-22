@@ -1,3 +1,4 @@
+import uuid
 from fastapi import (
   APIRouter,
   Depends,
@@ -16,6 +17,7 @@ from app.core.security import (
 )
 from app.db.dependencies import get_db
 from app.modules.auth.dependencies import get_current_user
+from app.modules.users.repository import get_user_by_id
 from app.modules.auth.schemas import (
   LoginRequest,
   RegisterRequest,
@@ -91,6 +93,7 @@ async def login(
 )
 async def refresh_access_token(
   request: Request,
+  db: AsyncSession = Depends(get_db),
 ):
   refresh_token = request.cookies.get(
     "refresh_token"
@@ -107,29 +110,49 @@ async def refresh_access_token(
       refresh_token
     )
 
-    token_type = payload.get("type")
-    subject = payload.get("sub")
+    token_type = payload.get(
+      "type"
+    )
 
-    if token_type != "refresh":
+    subject = payload.get(
+      "sub"
+    )
+
+    if (
+      token_type != "refresh"
+      or not subject
+    ):
       raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid refresh token",
       )
 
-    if not subject:
-      raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid refresh token",
-      )
+    user_id = uuid.UUID(
+      subject
+    )
 
-  except JWTError:
+  except (
+    JWTError,
+    ValueError,
+  ):
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
       detail="Invalid or expired refresh token",
     )
 
+  user = await get_user_by_id(
+    db=db,
+    user_id=user_id,
+  )
+
+  if user is None:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="User no longer exists",
+    )
+
   access_token = create_access_token(
-    subject=subject
+    subject=str(user.id)
   )
 
   return TokenResponse(

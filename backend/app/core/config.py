@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     openai_model: str = "gpt-4o-mini"
 
     geoapify_api_key: str
+    unsplash_access_key: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

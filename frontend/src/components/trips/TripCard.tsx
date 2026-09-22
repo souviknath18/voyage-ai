@@ -68,18 +68,18 @@ export default function TripCard({
   trip,
 }: TripCardProps) {
   return (
-    <Card className="group flex h-full flex-col overflow-hidden p-0 transition-all duration-300 hover:-translate-y-1 hover:border-white/20">
+    <Card className="group flex h-full flex-col overflow-hidden p-0 transition-colors duration-300 hover:border-white/20">
       {/* Image */}
       <div className="relative h-40 overflow-hidden sm:h-44">
         <DestinationImage
           src={trip.image}
           alt={trip.title}
-          className="absolute -left-[2px] -top-[2px] h-[calc(100%+4px)] w-[calc(100%+4px)]"
-          imageClassName="object-center backface-hidden transform-gpu transition-transform duration-500 ease-out will-change-transform group-hover:scale-105"
+          className="h-full w-full"
+          imageClassName="object-center transform-gpu transition-transform duration-500 group-hover:scale-[1.04]"
         />
 
         {/* Image Overlay */}
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#070B18] via-[#070B18]/25 to-black/20" />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#070B18]/70 via-transparent to-black/15" />
 
         {/* Status */}
         <div className="absolute right-3 top-3 z-10">

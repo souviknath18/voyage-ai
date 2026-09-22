@@ -37,38 +37,61 @@ function clearAccessToken(): void {
 }
 
 
+let refreshPromise:
+  Promise<string | null> | null =
+  null;
+
+
 async function refreshAccessToken(): Promise<string | null> {
-  try {
-    const response = await fetch(
-      `${API_URL}/auth/refresh`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      clearAccessToken();
-      return null;
-    }
-
-    const data: {
-      access_token: string;
-      token_type: string;
-    } = await response.json();
-
-    setAccessToken(
-      data.access_token,
-    );
-
-    return data.access_token;
-  } catch {
-    clearAccessToken();
-    return null;
+  if (refreshPromise) {
+    return refreshPromise;
   }
+
+  refreshPromise = (async () => {
+    try {
+      const response =
+        await fetch(
+          `${API_URL}/auth/refresh`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+          },
+        );
+
+      if (!response.ok) {
+        clearAccessToken();
+        return null;
+      }
+
+      const data: {
+        access_token: string;
+        token_type: string;
+      } = await response.json();
+
+      setAccessToken(
+        data.access_token,
+      );
+
+      return data.access_token;
+    } catch (error) {
+      console.error(
+        "Token refresh failed:",
+        error,
+      );
+
+      clearAccessToken();
+
+      return null;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 
@@ -230,4 +253,91 @@ export async function apiBlobRequest(
   }
 
   return response.blob();
+}
+
+
+export interface PlaceImage {
+  provider: string;
+  provider_image_id: string;
+  url: string;
+  thumbnail_url: string;
+  alt: string;
+  photographer_name: string;
+  photographer_url: string;
+  attribution_url: string;
+}
+
+
+export async function getDestinationImageFromApi(
+  destination: string,
+  country?: string | null,
+): Promise<PlaceImage | null> {
+  const params = new URLSearchParams({
+    destination,
+  });
+
+  if (country) {
+    params.set(
+      "country",
+      country,
+    );
+  }
+
+  return apiRequest<PlaceImage | null>(
+    `/images/destination?${params.toString()}`,
+  );
+}
+
+
+export async function getPlaceImageFromApi(
+  placeName: string,
+  destination: string,
+  country?: string | null,
+): Promise<PlaceImage | null> {
+  const params = new URLSearchParams({
+    place_name: placeName,
+    destination,
+  });
+
+  if (country) {
+    params.set(
+      "country",
+      country,
+    );
+  }
+
+  return apiRequest<PlaceImage | null>(
+    `/images/place?${params.toString()}`,
+  );
+}
+
+
+export interface PlaceImageBatchRequestItem {
+  key: string;
+  place_name: string;
+  destination: string;
+  country?: string | null;
+}
+
+export interface PlaceImageBatchItem {
+  key: string;
+  image: PlaceImage | null;
+}
+
+export interface PlaceImageBatchResponse {
+  images: PlaceImageBatchItem[];
+}
+
+export async function getPlaceImagesBatch(
+  places: PlaceImageBatchRequestItem[],
+): Promise<PlaceImageBatchResponse> {
+  return apiRequest<PlaceImageBatchResponse>(
+    "/images/places/batch",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        places,
+      }),
+    },
+  );
 }

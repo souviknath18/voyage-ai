@@ -53,6 +53,7 @@ function inferPlaceCategory(
 export function mapTripPlaces(
   places: ApiTripPlace[],
   itinerary: TripItinerary,
+  placeImages: Record<string, string> = {},
 ): TripPlace[] {
   const itineraryPlaceMap =
     new Map<
@@ -119,6 +120,11 @@ export function mapTripPlaces(
       description:
         itineraryUsage?.description ??
         "Discovered during VoyageAI trip research.",
+
+      image:
+        placeImages[
+          place.id
+        ],
 
       visitDuration: "",
 

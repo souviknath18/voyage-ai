@@ -157,3 +157,27 @@ async def update_trip_destination(
   await db.refresh(trip)
 
   return trip
+
+
+async def update_trip_origin(
+  db: AsyncSession,
+  trip: Trip,
+  *,
+  name: str,
+  country: str,
+  country_code: str,
+  latitude: float,
+  longitude: float,
+  timezone: str | None,
+) -> Trip:
+  trip.origin_name = name
+  trip.origin_country = country
+  trip.origin_country_code = country_code
+  trip.origin_latitude = latitude
+  trip.origin_longitude = longitude
+  trip.origin_timezone = timezone
+
+  await db.commit()
+  await db.refresh(trip)
+
+  return trip

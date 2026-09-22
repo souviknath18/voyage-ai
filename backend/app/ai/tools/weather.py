@@ -5,12 +5,15 @@ from typing import Any
 
 import httpx
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
-TIMEOUT_SECONDS = 10.0
-
-MAX_RETRIES = 3
+TIMEOUT_SECONDS = 5.0
+MAX_RETRIES = 2
 
 RETRYABLE_STATUS_CODES = {
   429,
@@ -125,6 +128,12 @@ async def get_weather(
           params=params,
         )
 
+        logger.info(
+          "Open-Meteo response status=%s url=%s",
+          response.status_code,
+          response.url,
+        )
+
         if (
           response.status_code
           in RETRYABLE_STATUS_CODES
@@ -154,28 +163,30 @@ async def get_weather(
 
         break
 
-      except (
-        httpx.TimeoutException,
-        httpx.NetworkError,
-      ):
-          if attempt < MAX_RETRIES:
-            await asyncio.sleep(
-              2 ** (attempt - 1)
-            )
-            continue
+      except httpx.RequestError as exc:
+        logger.warning(
+          "Open-Meteo request failed: %s",
+          exc,
+        )
 
-          return unavailable_weather(
-            destination=destination,
-            latitude=latitude,
-            longitude=longitude,
-            timezone=timezone,
-            start_date=start_date,
-            end_date=end_date,
-            reason=(
-              "Weather provider could "
-              "not be reached."
-            ),
+        if attempt < MAX_RETRIES:
+          await asyncio.sleep(
+            2 ** (attempt - 1)
           )
+          continue
+
+        return unavailable_weather(
+          destination=destination,
+          latitude=latitude,
+          longitude=longitude,
+          timezone=timezone,
+          start_date=start_date,
+          end_date=end_date,
+          reason=(
+            "Weather provider could "
+            "not be reached."
+          ),
+        )
 
   if forecast_data is None:
     return unavailable_weather(

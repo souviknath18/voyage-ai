@@ -14,6 +14,10 @@ import TripWorkspaceTabs from "@/components/trip-workspace/TripWorkspaceTabs";
 import TripAssistantLauncher from "@/components/trip-workspace/assistant/TripAssistantLauncher";
 
 import {
+  getDestinationImageFromApi,
+} from "@/lib/api";
+
+import {
   getTrip,
   getTripItinerary,
   type Trip,
@@ -59,10 +63,19 @@ export default function TripWorkspaceLayout({
     null,
   );
 
+  const [
+    destinationImage,
+    setDestinationImage,
+  ] = useState<string | undefined>(
+    undefined,
+  );
+
   useEffect(() => {
     if (!tripId) {
       return;
     }
+
+    let cancelled = false;
 
     const loadTrip = async () => {
       try {
@@ -77,9 +90,49 @@ export default function TripWorkspaceLayout({
           getTripItinerary(tripId),
         ]);
 
+        if (cancelled) {
+          return;
+        }
+
         setTrip(tripData);
         setItinerary(itineraryData);
+
+        // Essential workspace data is ready.
+        setLoading(false);
+
+        // Destination imagery is optional.
+        try {
+          const image =
+            await getDestinationImageFromApi(
+              tripData.destination_name ||
+                tripData.destination,
+              tripData.destination_country,
+            );
+
+          if (cancelled) {
+            return;
+          }
+
+          setDestinationImage(
+            image?.url,
+          );
+        } catch (imageError) {
+          console.warn(
+            "Destination image unavailable:",
+            imageError,
+          );
+
+          if (!cancelled) {
+            setDestinationImage(
+              undefined,
+            );
+          }
+        }
       } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
         console.error(
           "Failed to load trip:",
           error,
@@ -90,12 +143,16 @@ export default function TripWorkspaceLayout({
             ? error.message
             : "Failed to load trip",
         );
-      } finally {
+
         setLoading(false);
       }
     };
 
     loadTrip();
+
+    return () => {
+      cancelled = true;
+    };
   }, [tripId]);
 
   if (loading) {
@@ -131,6 +188,7 @@ export default function TripWorkspaceLayout({
     mapTripToWorkspaceHeader(
       trip,
       itinerary,
+      destinationImage,
     );
 
   return (
