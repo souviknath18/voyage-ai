@@ -235,51 +235,22 @@ export interface TripWeather {
 }
 
 export async function createTrip(
-  data: CreateTripRequest
+  data: CreateTripRequest,
 ): Promise<Trip> {
-  const token = localStorage.getItem(
-    "access_token"
-  );
-
-  if (!token) {
-    throw new Error("You are not logged in");
-  }
-
   return apiRequest<Trip>(
     "/trips",
     {
       method: "POST",
-
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
 export async function getTrips(): Promise<Trip[]> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<Trip[]>(
     "/trips",
     {
       method: "GET",
-
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
@@ -287,23 +258,10 @@ export async function getTrips(): Promise<Trip[]> {
 export async function getTrip(
   tripId: string,
 ): Promise<Trip> {
-  const token =
-    localStorage.getItem("access_token");
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<Trip>(
     `/trips/${tripId}`,
     {
       method: "GET",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
@@ -311,25 +269,10 @@ export async function getTrip(
 export async function getTripBudget(
   tripId: string,
 ): Promise<TripBudget> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<TripBudget>(
     `/trips/${tripId}/budget`,
     {
       method: "GET",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
@@ -338,30 +281,11 @@ export async function updateTrip(
   tripId: string,
   data: UpdateTripRequest,
 ): Promise<Trip> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<Trip>(
     `/trips/${tripId}`,
     {
       method: "PATCH",
-
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
-
-      body: JSON.stringify(
-        data,
-      ),
+      body: JSON.stringify(data),
     },
   );
 }
@@ -423,25 +347,10 @@ export async function setTripOrigin(
 export async function getTripPreferences(
   tripId: string,
 ): Promise<TripPreference> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<TripPreference>(
     `/trips/${tripId}/preferences`,
     {
       method: "GET",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
@@ -451,25 +360,10 @@ export async function saveTripPreferences(
   tripId: string,
   data: SaveTripPreferenceRequest,
 ): Promise<TripPreference> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<TripPreference>(
     `/trips/${tripId}/preferences`,
     {
       method: "PUT",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
       body: JSON.stringify(data),
     },
   );
@@ -478,25 +372,10 @@ export async function saveTripPreferences(
 export async function planTrip(
   tripId: string,
 ): Promise<AgentRun> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<AgentRun>(
     `/trips/${tripId}/plan`,
     {
       method: "POST",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
@@ -544,23 +423,10 @@ export async function getAgentRunActivity(
 export async function getTripItinerary(
   tripId: string,
 ): Promise<TripItinerary> {
-  const token =
-    localStorage.getItem("access_token");
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<TripItinerary>(
     `/trips/${tripId}/itinerary`,
     {
       method: "GET",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
@@ -568,25 +434,10 @@ export async function getTripItinerary(
 export async function getTripPlaces(
   tripId: string,
 ): Promise<TripPlace[]> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<TripPlace[]>(
     `/trips/${tripId}/places`,
     {
       method: "GET",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
@@ -594,25 +445,10 @@ export async function getTripPlaces(
 export async function getTripWeather(
   tripId: string,
 ): Promise<TripWeather> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
   return apiRequest<TripWeather>(
     `/trips/${tripId}/weather`,
     {
       method: "GET",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
@@ -621,28 +457,10 @@ export async function getTripMapPreview(
   tripId: string,
   dayNumber: number,
 ): Promise<Blob> {
-  const token =
-    localStorage.getItem(
-      "access_token",
-    );
-
-
-  if (!token) {
-    throw new Error(
-      "You are not logged in",
-    );
-  }
-
-
   return apiBlobRequest(
     `/trips/${tripId}/map-preview?day=${dayNumber}`,
     {
       method: "GET",
-
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-      },
     },
   );
 }
