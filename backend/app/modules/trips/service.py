@@ -4,8 +4,14 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.tools.location import search_locations
-from app.modules.trips.repository import update_trip_destination
-from app.modules.trips.schemas import TripDestinationRequest
+from app.modules.trips.repository import (
+  update_trip_destination,
+  update_trip_origin,
+)
+from app.modules.trips.schemas import (
+  TripDestinationRequest,
+  TripOriginRequest,
+)
 
 from app.modules.trips.models import Trip
 from app.modules.trips.repository import (
@@ -134,7 +140,7 @@ async def set_trip_destination(
   )
 
   candidates = await search_locations(
-    destination=trip.destination,
+    destination=destination_data.name,
   )
 
   matched_location = None
@@ -162,6 +168,58 @@ async def set_trip_destination(
     )
 
   return await update_trip_destination(
+    db=db,
+    trip=trip,
+    name=matched_location["name"],
+    country=matched_location["country"],
+    country_code=matched_location["country_code"],
+    latitude=matched_location["latitude"],
+    longitude=matched_location["longitude"],
+    timezone=matched_location["timezone"],
+  )
+
+
+async def set_trip_origin(
+  db: AsyncSession,
+  public_trip_id: str,
+  user_id,
+  origin_data: TripOriginRequest,
+):
+  trip = await get_user_trip(
+    db=db,
+    trip_id=public_trip_id,
+    user_id=user_id,
+  )
+
+  candidates = await search_locations(
+    destination=origin_data.name,
+  )
+
+  matched_location = None
+
+  for candidate in candidates:
+    if (
+      candidate["name"] == origin_data.name
+      and candidate["country_code"] == origin_data.country_code
+      and abs(
+        candidate["latitude"]
+        - origin_data.latitude
+      ) < 0.001
+      and abs(
+        candidate["longitude"]
+        - origin_data.longitude
+      ) < 0.001
+    ):
+      matched_location = candidate
+      break
+
+  if matched_location is None:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail="Selected origin could not be verified.",
+    )
+
+  return await update_trip_origin(
     db=db,
     trip=trip,
     name=matched_location["name"],

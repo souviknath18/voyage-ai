@@ -92,12 +92,49 @@ async def start_agent_run(
       ),
     )
 
+  if (
+    not trip.origin_country_code
+    or not trip.destination_country_code
+  ):
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail=(
+        "Trip origin and destination must "
+        "be resolved before planning"
+      ),
+    )
+
+  trip_scope = (
+    "domestic"
+    if trip.origin_country_code
+    == trip.destination_country_code
+    else "international"
+  )
+
   input_snapshot = {
     "trip": {
       "trip_id": trip.trip_id,
-      "origin": trip.origin,
-      "destination": trip.destination,
 
+      "origin": trip.origin,
+      "origin_name": trip.origin_name,
+      "origin_country": trip.origin_country,
+      "origin_country_code": trip.origin_country_code,
+
+      "origin_latitude": (
+        float(trip.origin_latitude)
+        if trip.origin_latitude is not None
+        else None
+      ),
+
+      "origin_longitude": (
+        float(trip.origin_longitude)
+        if trip.origin_longitude is not None
+        else None
+      ),
+
+      "origin_timezone": trip.origin_timezone,
+
+      "destination": trip.destination,
       "destination_name": trip.destination_name,
       "destination_country": trip.destination_country,
       "destination_country_code": trip.destination_country_code,
@@ -115,6 +152,8 @@ async def start_agent_run(
       ),
 
       "destination_timezone": trip.destination_timezone,
+
+      "trip_scope": trip_scope,
 
       "start_date": trip.start_date.isoformat(),
       "end_date": trip.end_date.isoformat(),

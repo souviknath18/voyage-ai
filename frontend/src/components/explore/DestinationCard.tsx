@@ -28,12 +28,12 @@ export default function DestinationCard({
       <DestinationImage
         src={destination.image}
         alt={`${destination.city}, ${destination.country}`}
-        className="absolute -left-[2px] -top-[2px] h-[calc(100%+4px)] w-[calc(100%+4px)]"
-        imageClassName="object-center backface-hidden transform-gpu transition-transform duration-700 ease-out will-change-transform group-hover:scale-[1.05]"
+        className="absolute inset-0 h-full w-full"
+        imageClassName="object-center transform-gpu transition-transform duration-500 group-hover:scale-[1.04]"
       />
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#070B18] via-[#070B18]/45 to-black/10" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070B18]/70 via-transparent to-black/15" />
 
       {/* Save */}
       <button

@@ -16,14 +16,20 @@ import {
 } from "@/components/ui";
 
 import {
+  getTrip,
   getTripItinerary,
   getTripWeather,
   type TripItinerary as TripItineraryResponse,
+  type TripWeather,
 } from "@/lib/trips";
 
 import {
   mapItineraryToWorkspace,
 } from "@/lib/itinerary-mappers";
+
+import {
+  getPlaceImagesBatch,
+} from "@/lib/api";
 
 import type {
   ItineraryDayData,
@@ -81,69 +87,163 @@ export default function TripItineraryPage() {
       return;
     }
 
+    let cancelled = false;
 
-    const loadItinerary =
-      async () => {
-        try {
-          setLoading(
-            true,
-          );
+    const loadItinerary = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-          setError(
-            null,
-          );
+        const [
+          itineraryData,
+          tripData,
+        ] = await Promise.all([
+          getTripItinerary(
+            tripId,
+          ),
+          getTrip(
+            tripId,
+          ),
+        ]);
 
-
-          const [
-            itineraryData,
-            weatherData,
-          ] =
-            await Promise.all([
-              getTripItinerary(
-                tripId,
-              ),
-
-              getTripWeather(
-                tripId,
-              ),
-            ]);
-
-
-          setItineraryResponse(
-            itineraryData,
-          );
-
-
-          setItinerary(
-            mapItineraryToWorkspace(
-              itineraryData,
-              weatherData,
-            ),
-          );
-        } catch (error) {
-          console.error(
-            "Failed to load itinerary:",
-            error,
-          );
-
-
-          setError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load itinerary",
-          );
-        } finally {
-          setLoading(
-            false,
-          );
+        if (cancelled) {
+          return;
         }
-      };
 
+        setItineraryResponse(
+          itineraryData,
+        );
+
+        // Essential itinerary renders immediately.
+        setItinerary(
+          mapItineraryToWorkspace(
+            itineraryData,
+            null,
+          ),
+        );
+
+        setLoading(false);
+
+        const activityImages: Record<
+          string,
+          string
+        > = {};
+
+        let weatherData: TripWeather | null = null;
+
+        // Optional weather.
+        const weatherPromise =
+          getTripWeather(
+            tripId,
+          )
+            .then((weather) => {
+              weatherData = weather;
+
+              if (cancelled) {
+                return;
+              }
+
+              setItinerary(
+                mapItineraryToWorkspace(
+                  itineraryData,
+                  weather,
+                  activityImages,
+                ),
+              );
+            })
+            .catch((weatherError) => {
+              console.warn(
+                "Weather unavailable:",
+                weatherError,
+              );
+            });
+
+        const placeRequests =
+          itineraryData.days.flatMap(
+            (day) =>
+              day.activities.map(
+                (activity) => ({
+                  key: activity.id,
+                  place_name:
+                    activity.title,
+                  destination:
+                    tripData.destination_name ||
+                    tripData.destination,
+                  country:
+                    tripData.destination_country,
+                }),
+              ),
+          );
+
+        const imagesPromise =
+          placeRequests.length > 0
+            ? getPlaceImagesBatch(
+                placeRequests,
+              )
+                .then((response) => {
+                  if (cancelled) {
+                    return;
+                  }
+
+                  for (
+                    const item
+                    of response.images
+                  ) {
+                    if (item.image) {
+                      activityImages[
+                        item.key
+                      ] =
+                        item.image
+                          .thumbnail_url;
+                    }
+                  }
+
+                  setItinerary(
+                    mapItineraryToWorkspace(
+                      itineraryData,
+                      weatherData,
+                      activityImages,
+                    ),
+                  );
+                })
+                .catch((imageError) => {
+                  console.warn(
+                    "Activity images unavailable:",
+                    imageError,
+                  );
+                })
+            : Promise.resolve();
+
+        await Promise.allSettled([
+          weatherPromise,
+          imagesPromise,
+        ]);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error(
+          "Failed to load itinerary:",
+          error,
+        );
+
+        setLoading(false);
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load itinerary",
+        );
+      }
+    };
 
     loadItinerary();
-  }, [
-    tripId,
-  ]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tripId]);
 
 
   if (loading) {

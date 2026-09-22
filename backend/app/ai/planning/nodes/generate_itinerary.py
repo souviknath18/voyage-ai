@@ -141,12 +141,25 @@ Create a travel itinerary using the supplied trip
 information.
 
 TRIP
-Origin: {trip["origin"]}
-Destination: {trip["destination"]}
+Origin: {trip["origin_name"]}, {trip["origin_country"]}
+Destination: {trip["destination_name"]}, {trip["destination_country"]}
+Trip scope: {trip["trip_scope"]}
 Start date: {trip["start_date"]}
 End date: {trip["end_date"]}
 Travelers: {trip["travelers"]}
 Budget: {trip["budget"]} {trip["currency"]}
+
+TRIP SCOPE RULES
+- "domestic" means the origin and destination are in the
+  same country.
+- "international" means the origin and destination are in
+  different countries.
+- Treat Trip scope as deterministic trip context.
+- Do not change or reinterpret the trip scope.
+- Do not infer visa, immigration, passport, customs,
+  vaccination, entry, or other regulatory requirements.
+- Do not claim that any transport, accommodation, ticket,
+  or transfer has been booked.
 
 PREFERENCES
 Travel pace: {preferences["pace"]}
@@ -290,6 +303,10 @@ IMPORTANT DATE RULES
 
   draft_itinerary = (
     itinerary.model_dump()
+  )
+
+  draft_itinerary["destination"] = (
+    trip["destination"]
   )
 
   draft_itinerary = (

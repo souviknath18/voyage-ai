@@ -123,3 +123,12 @@ class TripDestinationRequest(BaseModel):
   latitude: float
   longitude: float
   timezone: str | None = None
+
+
+class TripOriginRequest(BaseModel):
+  name: str
+  country: str
+  country_code: str
+  latitude: float
+  longitude: float
+  timezone: str | None = None

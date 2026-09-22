@@ -41,7 +41,7 @@ export default function SavedPlaceCard({
   onDetailsAction,
 }: SavedPlaceCardProps) {
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] transition-all duration-300 hover:border-[#fb7185]/25 hover:bg-white/[0.05]">
+    <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-white/10 bg-white/[0.03] transition-colors duration-300 hover:border-[#fb7185]/25 hover:bg-white/[0.05]">
       {/* Selection */}
       <button
         type="button"
@@ -65,11 +65,11 @@ export default function SavedPlaceCard({
         <DestinationImage
           src={place.image}
           alt={place.name}
-          className="absolute inset-0 h-full w-full"
-          imageClassName="object-center transition-transform duration-700 group-hover:scale-[1.05]"
+          className="h-full w-full"
+          imageClassName="object-center transform-gpu transition-transform duration-500 group-hover:scale-[1.04]"
         />
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070B18] via-transparent to-black/20" />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#070B18]/70 via-transparent to-black/15" />
 
         {/* Category */}
         <div className="absolute right-3 top-3 z-20">

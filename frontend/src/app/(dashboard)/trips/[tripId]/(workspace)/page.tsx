@@ -76,44 +76,89 @@ export default function TripOverviewPage() {
   );
 
   useEffect(() => {
-    const loadTrip =
-      async () => {
-        try {
-          setLoading(true);
-          setError(null);
-
-          const [
-            tripData,
-            itineraryData,
-            weatherData,
-          ] = await Promise.all([
-            getTrip(params.tripId),
-            getTripItinerary(params.tripId),
-            getTripWeather(params.tripId),
-          ]);
-
-          setTrip(tripData);
-          setItinerary(itineraryData);
-          setWeather(weatherData);
-        } catch (error) {
-          console.error(
-            "Failed to load trip:",
-            error,
-          );
-
-          setError(
-            error instanceof Error
-              ? error.message
-              : "Failed to load trip",
-          );
-        } finally {
-          setLoading(false);
-        }
-      };
-
-    if (params.tripId) {
-      loadTrip();
+    if (!params.tripId) {
+      return;
     }
+
+    let cancelled = false;
+
+    const loadTrip = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Load the essential Overview data first.
+        const [
+          tripData,
+          itineraryData,
+        ] = await Promise.all([
+          getTrip(params.tripId),
+          getTripItinerary(
+            params.tripId,
+          ),
+        ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        setTrip(tripData);
+        setItinerary(
+          itineraryData,
+        );
+
+        // The Overview can now render.
+        setLoading(false);
+
+        // Weather is optional and should never block the page.
+        try {
+          const weatherData =
+            await getTripWeather(
+              params.tripId,
+            );
+
+          if (cancelled) {
+            return;
+          }
+
+          setWeather(
+            weatherData,
+          );
+        } catch (weatherError) {
+          console.warn(
+            "Weather unavailable:",
+            weatherError,
+          );
+
+          if (!cancelled) {
+            setWeather(null);
+          }
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        console.error(
+          "Failed to load trip:",
+          error,
+        );
+
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load trip",
+        );
+
+        setLoading(false);
+      }
+    };
+
+    loadTrip();
+
+    return () => {
+      cancelled = true;
+    };
   }, [params.tripId]);
 
 
@@ -312,17 +357,9 @@ export default function TripOverviewPage() {
 
 
         <div className="lg:col-span-2">
-          {weatherCardData ? (
-            <TripWeatherCard
-              weather={weatherCardData}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center rounded-xl border p-5">
-              <p className="text-sm text-muted-foreground">
-                Weather forecast unavailable.
-              </p>
-            </div>
-          )}
+          <TripWeatherCard
+            weather={weatherCardData}
+          />
         </div>
 
       </div>

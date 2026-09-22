@@ -9,6 +9,7 @@ from app.modules.trips.schemas import (
   TripResponse,
   TripUpdate,
   TripDestinationRequest,
+  TripOriginRequest,
 )
 from app.modules.trips.service import (
   create_user_trip,
@@ -17,6 +18,7 @@ from app.modules.trips.service import (
   list_user_trips,
   update_user_trip,
   set_trip_destination,
+  set_trip_origin,
 )
 
 
@@ -129,4 +131,22 @@ async def update_destination(
     public_trip_id=trip_id,
     user_id=current_user.id,
     destination_data=payload,
+  )
+
+
+@router.put(
+  "/{trip_id}/origin",
+  response_model=TripResponse,
+)
+async def update_origin(
+  trip_id: str,
+  payload: TripOriginRequest,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  return await set_trip_origin(
+    db=db,
+    public_trip_id=trip_id,
+    user_id=current_user.id,
+    origin_data=payload,
   )

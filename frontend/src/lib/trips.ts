@@ -64,6 +64,15 @@ export interface TripDestinationRequest {
   timezone?: string;
 }
 
+export interface TripOriginRequest {
+  name: string;
+  country: string;
+  country_code: string;
+  latitude: number;
+  longitude: number;
+  timezone?: string;
+}
+
 export interface TripPreference {
   id: string;
   trip_id: string;
@@ -375,6 +384,38 @@ export async function setTripDestination(
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
+    },
+  );
+}
+
+export async function setTripOrigin(
+  tripId: string,
+  data: TripOriginRequest,
+): Promise<Trip> {
+  const token =
+    localStorage.getItem(
+      "access_token",
+    );
+
+  if (!token) {
+    throw new Error(
+      "You are not logged in",
+    );
+  }
+
+  return apiRequest<Trip>(
+    `/trips/${tripId}/origin`,
+    {
+      method: "PUT",
+
+      headers: {
+        Authorization:
+          `Bearer ${token}`,
+      },
+
+      body: JSON.stringify(
+        data,
+      ),
     },
   );
 }

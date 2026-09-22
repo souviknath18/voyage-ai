@@ -25,6 +25,7 @@ import {
   saveTripPreferences,
   updateTrip,
   setTripDestination,
+  setTripOrigin,
   planTrip,
 } from "@/lib/trips";
 import { PageLoader } from "@/components/ui";
@@ -84,8 +85,45 @@ export default function PlanTripPage() {
             ...previous,
 
             origin: existingTrip.origin,
+
+            originLocation:
+              existingTrip.origin_name &&
+              existingTrip.origin_country &&
+              existingTrip.origin_country_code &&
+              existingTrip.origin_latitude &&
+              existingTrip.origin_longitude
+                ? {
+                    id: `origin-${existingTrip.id}`,
+                    name: existingTrip.origin_name,
+                    formattedName: existingTrip.origin,
+                    country: existingTrip.origin_country,
+                    countryCode: existingTrip.origin_country_code,
+                    latitude: Number(existingTrip.origin_latitude),
+                    longitude: Number(existingTrip.origin_longitude),
+                    timezone: existingTrip.origin_timezone ?? undefined,
+                  }
+                : null,
+
             destination:
               existingTrip.destination,
+
+            destinationLocation:
+              existingTrip.destination_name &&
+              existingTrip.destination_country &&
+              existingTrip.destination_country_code &&
+              existingTrip.destination_latitude &&
+              existingTrip.destination_longitude
+                ? {
+                    id: `destination-${existingTrip.id}`,
+                    name: existingTrip.destination_name,
+                    formattedName: existingTrip.destination,
+                    country: existingTrip.destination_country,
+                    countryCode: existingTrip.destination_country_code,
+                    latitude: Number(existingTrip.destination_latitude),
+                    longitude: Number(existingTrip.destination_longitude),
+                    timezone: existingTrip.destination_timezone ?? undefined,
+                  }
+                : null,
 
             startDate:
               existingTrip.start_date,
@@ -151,6 +189,11 @@ export default function PlanTripPage() {
   const handlePlanTrip = async () => {
     if (!trip.origin.trim()) {
       alert("Please enter your origin.");
+      return;
+    }
+
+    if (!trip.originLocation) {
+      alert("Please select an origin from the suggestions.");
       return;
     }
 
@@ -223,6 +266,18 @@ export default function PlanTripPage() {
           interests: trip.interests,
           ai_brief: trip.aiBrief.trim() || null,
           budget_level: trip.budgetLevel,
+        },
+      );
+
+      await setTripOrigin(
+        savedTrip.trip_id,
+        {
+          name: trip.originLocation.name,
+          country: trip.originLocation.country,
+          country_code: trip.originLocation.countryCode,
+          latitude: trip.originLocation.latitude,
+          longitude: trip.originLocation.longitude,
+          timezone: trip.originLocation.timezone,
         },
       );
 
