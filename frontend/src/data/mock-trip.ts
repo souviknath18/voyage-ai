@@ -197,6 +197,8 @@ export const mockTrip: TripWorkspaceData = {
 
           type: "transport",
 
+          groundingType: "generic",
+
           startTime: "3:30 PM",
 
           duration: "1h 30m",
@@ -205,8 +207,7 @@ export const mockTrip: TripWorkspaceData = {
 
           estimatedCost: 3200,
 
-          image:
-            "/images/itinerary/tokyo-transfer.jpg",
+          image: "/images/itinerary/tokyo-transfer.jpg",
         },
 
         {
@@ -218,6 +219,8 @@ export const mockTrip: TripWorkspaceData = {
             "Check in, refresh and take a short break before your first evening in Tokyo.",
 
           type: "hotel",
+
+          groundingType: "generic",
 
           startTime: "5:30 PM",
 
@@ -240,6 +243,8 @@ export const mockTrip: TripWorkspaceData = {
 
           type: "food",
 
+          groundingType: "generic",
+
           startTime: "7:30 PM",
 
           duration: "1h 30m",
@@ -250,20 +255,20 @@ export const mockTrip: TripWorkspaceData = {
 
           booked: false,
 
-          image:
-            "/images/itinerary/tokyo-food.jpg",
+          image: "/images/itinerary/tokyo-food.jpg",
         },
 
         {
           id: "activity-4",
 
-          title:
-            "Tokyo Metropolitan Government Observatory",
+          title: "Tokyo Metropolitan Government Observatory",
 
           description:
             "Finish your first evening with panoramic nighttime views over Tokyo.",
 
           type: "attraction",
+
+          groundingType: "generic",
 
           startTime: "9:15 PM",
 
@@ -273,8 +278,7 @@ export const mockTrip: TripWorkspaceData = {
 
           estimatedCost: 0,
 
-          image:
-            "/images/itinerary/tokyo-night.jpg",
+          image: "/images/itinerary/tokyo-night.jpg",
         },
       ],
     },
@@ -306,6 +310,8 @@ export const mockTrip: TripWorkspaceData = {
 
           type: "attraction",
 
+          groundingType: "generic",
+
           startTime: "9:00 AM",
 
           duration: "1h 30m",
@@ -325,6 +331,8 @@ export const mockTrip: TripWorkspaceData = {
 
           type: "shopping",
 
+          groundingType: "generic",
+
           startTime: "11:00 AM",
 
           duration: "2h",
@@ -343,6 +351,8 @@ export const mockTrip: TripWorkspaceData = {
             "Experience panoramic sunset views from one of Tokyo's most impressive observation decks.",
 
           type: "attraction",
+
+          groundingType: "generic",
 
           startTime: "5:00 PM",
 
@@ -384,6 +394,8 @@ export const mockTrip: TripWorkspaceData = {
 
           type: "experience",
 
+          groundingType: "generic",
+
           startTime: "10:00 AM",
 
           duration: "2h 30m",
@@ -404,6 +416,8 @@ export const mockTrip: TripWorkspaceData = {
             "Spend the afternoon exploring electronics, gaming, anime and technology culture.",
 
           type: "shopping",
+
+          groundingType: "generic",
 
           startTime: "2:00 PM",
 
