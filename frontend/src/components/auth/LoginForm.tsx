@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { login } from "@/lib/auth";
+import {
+  useAuth,
+} from "@/components/auth/AuthProvider";
 
 import {
   ArrowRight,
@@ -28,6 +31,10 @@ import {
 export default function LoginForm() {
   const router =
     useRouter();
+
+  const {
+    refreshUser,
+  } = useAuth();
 
   const [
     email,
@@ -66,17 +73,16 @@ export default function LoginForm() {
       setLoading(true);
 
       try {
-        const response = await login(
+        await login(
           email,
           password,
         );
 
-        localStorage.setItem(
-          "access_token",
-          response.access_token,
-        );
+        await refreshUser();
 
-        router.push("/dashboard");
+        router.replace(
+          "/dashboard",
+        );
       } catch (error) {
         console.error(
           "Login failed:",

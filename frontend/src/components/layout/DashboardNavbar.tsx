@@ -22,10 +22,12 @@ import {
 } from "next/navigation";
 
 import {
-  CurrentUser,
-  getCurrentUser,
   logout,
 } from "@/lib/auth";
+
+import {
+  useAuth,
+} from "@/components/auth/AuthProvider";
 
 
 interface DashboardNavbarProps {
@@ -39,6 +41,11 @@ export default function DashboardNavbar({
   const router =
     useRouter();
 
+  const {
+    user: currentUser,
+    clearUser,
+  } = useAuth();
+
   const [
     profileOpen,
     setProfileOpen,
@@ -48,11 +55,6 @@ export default function DashboardNavbar({
     loggingOut,
     setLoggingOut,
   ] = useState(false);
-
-  const [
-    currentUser,
-    setCurrentUser,
-  ] = useState<CurrentUser | null>(null);
 
   const profileMenuRef =
     useRef<HTMLDivElement>(null);
@@ -95,7 +97,14 @@ export default function DashboardNavbar({
 
     try {
       await logout();
+    } catch (error) {
+      console.error(
+        "Logout failed:",
+        error,
+      );
     } finally {
+      clearUser();
+
       setProfileOpen(false);
 
       router.replace(
@@ -103,25 +112,6 @@ export default function DashboardNavbar({
       );
     }
   }
-
-
-  useEffect(() => {
-    async function loadCurrentUser() {
-      try {
-        const user =
-          await getCurrentUser();
-
-        setCurrentUser(user);
-      } catch (error) {
-        console.error(
-          "Failed to load current user:",
-          error,
-        );
-      }
-    }
-
-    loadCurrentUser();
-  }, []);
 
 
   const displayName =
