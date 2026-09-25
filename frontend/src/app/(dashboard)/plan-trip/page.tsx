@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 import {
@@ -53,6 +54,7 @@ export default function PlanTripPage() {
 
   const [planning, setPlanning] = useState(false);
   const [loadingDraft, setLoadingDraft] = useState(false);
+  const planningRequestLock = useRef(false);
 
   useEffect(() => {
     if (!draftTripId) {
@@ -187,6 +189,11 @@ export default function PlanTripPage() {
   };
 
   const handlePlanTrip = async () => {
+    // Prevent duplicate requests from rapid double-clicks.
+    if (planningRequestLock.current) {
+      return;
+    }
+
     if (!trip.origin.trim()) {
       alert("Please enter your origin.");
       return;
@@ -216,26 +223,22 @@ export default function PlanTripPage() {
     const endDate = new Date(trip.endDate);
 
     if (endDate <= startDate) {
-      alert(
-        "End date must be after the start date.",
-      );
+      alert("End date must be after the start date.");
       return;
     }
 
     if (trip.travelers < 1) {
-      alert(
-        "At least one traveler is required.",
-      );
+      alert("At least one traveler is required.");
       return;
     }
 
     if (trip.budget <= 0) {
-      alert(
-        "Please enter a valid trip budget.",
-      );
+      alert("Please enter a valid trip budget.");
       return;
     }
 
+    // Lock immediately before starting API work.
+    planningRequestLock.current = true;
     setPlanning(true);
 
     try {
@@ -249,47 +252,60 @@ export default function PlanTripPage() {
         currency: trip.currency,
       };
 
-      const savedTrip =
-        draftTripId
-          ? await updateTrip(
-              draftTripId,
-              payload,
-            )
-          : await createTrip(
-              payload,
-            );
+      const savedTrip = draftTripId
+        ? await updateTrip(
+            draftTripId,
+            payload,
+          )
+        : await createTrip(
+            payload,
+          );
 
       await saveTripPreferences(
         savedTrip.trip_id,
         {
           pace: trip.pace,
           interests: trip.interests,
-          ai_brief: trip.aiBrief.trim() || null,
-          budget_level: trip.budgetLevel,
+          ai_brief:
+            trip.aiBrief.trim() || null,
+          budget_level:
+            trip.budgetLevel,
         },
       );
 
       await setTripOrigin(
         savedTrip.trip_id,
         {
-          name: trip.originLocation.name,
-          country: trip.originLocation.country,
-          country_code: trip.originLocation.countryCode,
-          latitude: trip.originLocation.latitude,
-          longitude: trip.originLocation.longitude,
-          timezone: trip.originLocation.timezone,
+          name:
+            trip.originLocation.name,
+          country:
+            trip.originLocation.country,
+          country_code:
+            trip.originLocation.countryCode,
+          latitude:
+            trip.originLocation.latitude,
+          longitude:
+            trip.originLocation.longitude,
+          timezone:
+            trip.originLocation.timezone,
         },
       );
 
       await setTripDestination(
         savedTrip.trip_id,
         {
-          name: trip.destinationLocation.name,
-          country: trip.destinationLocation.country,
-          country_code: trip.destinationLocation.countryCode,
-          latitude: trip.destinationLocation.latitude,
-          longitude: trip.destinationLocation.longitude,
-          timezone: trip.destinationLocation.timezone,
+          name:
+            trip.destinationLocation.name,
+          country:
+            trip.destinationLocation.country,
+          country_code:
+            trip.destinationLocation.countryCode,
+          latitude:
+            trip.destinationLocation.latitude,
+          longitude:
+            trip.destinationLocation.longitude,
+          timezone:
+            trip.destinationLocation.timezone,
         },
       );
 
@@ -312,6 +328,7 @@ export default function PlanTripPage() {
           : "Failed to plan trip",
       );
     } finally {
+      planningRequestLock.current = false;
       setPlanning(false);
     }
   };
