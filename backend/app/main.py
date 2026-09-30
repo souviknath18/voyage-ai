@@ -31,3 +31,9 @@ async def root():
   return {
     "message": "Welcome to VoyageAI API"
   }
+
+
+
+@app.get("/health")
+async def health_check():
+  return {"status": "ok"}
