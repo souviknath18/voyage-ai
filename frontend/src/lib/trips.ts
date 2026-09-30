@@ -383,19 +383,10 @@ export async function planTrip(
 export async function getAgentRun(
   agentRunId: string,
 ): Promise<AgentRun> {
-  const token = localStorage.getItem("access_token");
-
-  if (!token) {
-    throw new Error("You are not logged in");
-  }
-
   return apiRequest<AgentRun>(
     `/trips/agent-runs/${agentRunId}`,
     {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     },
   );
 }

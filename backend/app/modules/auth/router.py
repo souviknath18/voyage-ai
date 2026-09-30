@@ -75,8 +75,8 @@ async def login(
     key="refresh_token",
     value=refresh_token,
     httponly=True,
-    secure=settings.environment == "production",
-    samesite="lax",
+    secure=True,
+    samesite="none",
     max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
     path="/api/v1/auth",
   )
@@ -171,8 +171,8 @@ async def logout(
   response.delete_cookie(
     key="refresh_token",
     path="/api/v1/auth",
-    secure=settings.environment == "production",
-    samesite="lax",
+    secure=True,
+    samesite="none",
     httponly=True,
   )
 
