@@ -10,11 +10,11 @@ import {
 } from "@/components/ui";
 
 import type {
-  TripWorkspaceData,
+  TripWorkspaceHeaderData,
 } from "@/types/trip-workspace";
 
 interface OptimizeTripHeroProps {
-  trip: TripWorkspaceData;
+  trip: TripWorkspaceHeaderData;
 }
 
 export default function OptimizeTripHero({

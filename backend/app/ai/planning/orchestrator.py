@@ -38,6 +38,9 @@ from app.modules.trips.repository import (
 from app.modules.places.repository import (
   replace_trip_places,
 )
+from app.ai.planning.nodes.optimize_itinerary import (
+  optimize_itinerary,
+)
 
 
 async def execute_planning_graph(
@@ -51,9 +54,29 @@ async def execute_planning_graph(
       current_step="load_context",
     )
 
+    input_snapshot = (
+      agent_run.input_snapshot or {}
+    )
+
     initial_state: PlanningState = {
       "agent_run_id": agent_run.id,
-      "input_snapshot": agent_run.input_snapshot or {},
+      "input_snapshot": input_snapshot,
+
+      "mode": input_snapshot.get(
+        "mode",
+        "planning",
+      ),
+
+      "base_itinerary": input_snapshot.get(
+        "base_itinerary"
+      ),
+
+      "optimization_request": (
+        input_snapshot.get(
+          "optimization_request"
+        )
+      ),
+
       "research_results": {},
       "draft_itinerary": None,
       "validation_errors": [],
@@ -75,6 +98,13 @@ async def execute_planning_graph(
         agent_run=agent_run,
         step_name="generate_itinerary",
         node=generate_itinerary,
+      ),
+
+      optimize_itinerary_node=tracked_step(
+        db=db,
+        agent_run=agent_run,
+        step_name="optimize_itinerary",
+        node=optimize_itinerary,
       ),
 
       validate_itinerary_node=tracked_step(

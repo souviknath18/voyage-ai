@@ -245,6 +245,55 @@ export default function AgentWorkflowItem({
             VoyageAI is evaluating alternatives
           </div>
         )}
+
+        {event.children &&
+          event.children.length > 0 && (
+            <div className="mt-4 space-y-2 border-t border-white/[0.06] pt-3">
+              {event.children.map(
+                (child) => {
+                  const ChildIcon =
+                    activityIcons[
+                      child.type
+                    ];
+
+                  return (
+                    <div
+                      key={child.id}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-black/10 px-3 py-2.5"
+                    >
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <CheckCircle2
+                          size={14}
+                          className="shrink-0 text-[#d1bcff]"
+                        />
+
+                        <ChildIcon
+                          size={14}
+                          className="shrink-0 text-[#948e9c]"
+                        />
+
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-[#d8d2dc]">
+                            {child.title}
+                          </p>
+
+                          <p className="mt-0.5 truncate text-[10px] text-[#7f8798]">
+                            {child.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {child.duration && (
+                        <span className="shrink-0 text-[10px] text-[#7f8798]">
+                          {child.duration}
+                        </span>
+                      )}
+                    </div>
+                  );
+                },
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

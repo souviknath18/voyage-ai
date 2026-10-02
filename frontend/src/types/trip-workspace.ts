@@ -401,6 +401,8 @@ export interface AgentActivityEvent {
   result?: string;
 
   timestamp?: string;
+
+  children?: AgentActivityEvent[];
 }
 
 export interface AgentRunData {
@@ -426,13 +428,9 @@ export interface AgentRunData {
 
 export type OptimizationPreset =
   | "cheaper"
-  | "comfortable"
-  | "less-busy"
-  | "more-activities"
-  | "local-experiences"
-  | "better-food"
-  | "less-travel"
-  | "family-friendly";
+  | "more_comfortable"
+  | "less_busy"
+  | "more_activities";
 
 export interface FlightComparisonOption {
   id: string;

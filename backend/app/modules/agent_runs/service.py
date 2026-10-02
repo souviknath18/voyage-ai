@@ -34,6 +34,15 @@ from app.modules.agent_runs.activity_schemas import (
   ToolCallActivityResponse,
 )
 
+from app.modules.itineraries.repository import (
+  get_itinerary_by_trip_id,
+  serialize_itinerary,
+)
+
+from app.modules.agent_runs.schemas import (
+  TripOptimizationRequest,
+)
+
 
 def serialize_value(value: Any) -> Any:
   if isinstance(value, Decimal):
@@ -171,6 +180,173 @@ async def start_agent_run(
       "pace": preferences.pace,
       "interests": preferences.interests,
       "ai_brief": preferences.ai_brief,
+      "budget_level":
+        preferences.budget_level,
+    },
+  }
+
+  agent_run = await create_agent_run(
+    db=db,
+    trip_id=trip.id,
+    input_snapshot=input_snapshot,
+  )
+
+  asyncio.create_task(
+    run_planning_in_background(
+      agent_run_id=agent_run.id,
+    )
+  )
+
+  return agent_run
+
+
+async def start_optimization_run(
+  db: AsyncSession,
+  public_trip_id: str,
+  user_id: uuid.UUID,
+  data: TripOptimizationRequest,
+) -> AgentRun:
+
+  trip = await get_user_trip(
+    db=db,
+    trip_id=public_trip_id,
+    user_id=user_id,
+  )
+
+  preferences = await get_trip_preference(
+    db=db,
+    trip_id=trip.id,
+  )
+
+  if preferences is None:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail="Trip preferences not found",
+    )
+
+  itinerary = await get_itinerary_by_trip_id(
+    db=db,
+    trip_id=trip.id,
+  )
+
+  if itinerary is None:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail=(
+        "Trip must have an itinerary "
+        "before it can be optimized"
+      ),
+    )
+
+  trip_scope = (
+    "domestic"
+    if trip.origin_country_code
+    == trip.destination_country_code
+    else "international"
+  )
+
+  input_snapshot = {
+    "mode": "optimization",
+
+    "optimization_request": {
+      "optimization_type":
+        data.optimization_type,
+
+      "instructions":
+        data.instructions,
+    },
+
+    "base_itinerary":
+      serialize_itinerary(
+        itinerary
+      ),
+
+    "trip": {
+      "trip_id": trip.trip_id,
+
+      "origin": trip.origin,
+      "origin_name": trip.origin_name,
+      "origin_country": trip.origin_country,
+      "origin_country_code":
+        trip.origin_country_code,
+
+      "origin_latitude": (
+        float(trip.origin_latitude)
+        if trip.origin_latitude
+        is not None
+        else None
+      ),
+
+      "origin_longitude": (
+        float(trip.origin_longitude)
+        if trip.origin_longitude
+        is not None
+        else None
+      ),
+
+      "origin_timezone":
+        trip.origin_timezone,
+
+      "destination":
+        trip.destination,
+
+      "destination_name":
+        trip.destination_name,
+
+      "destination_country":
+        trip.destination_country,
+
+      "destination_country_code":
+        trip.destination_country_code,
+
+      "destination_latitude": (
+        float(trip.destination_latitude)
+        if trip.destination_latitude
+        is not None
+        else None
+      ),
+
+      "destination_longitude": (
+        float(trip.destination_longitude)
+        if trip.destination_longitude
+        is not None
+        else None
+      ),
+
+      "destination_timezone":
+        trip.destination_timezone,
+
+      "trip_scope": trip_scope,
+
+      "start_date":
+        trip.start_date.isoformat(),
+
+      "end_date":
+        trip.end_date.isoformat(),
+
+      "travelers":
+        trip.travelers,
+
+      "budget": (
+        float(trip.budget)
+        if trip.budget is not None
+        else None
+      ),
+
+      "currency":
+        trip.currency,
+    },
+
+    "preferences": {
+      "pace":
+        preferences.pace,
+
+      "interests":
+        preferences.interests,
+
+      "ai_brief":
+        preferences.ai_brief,
+
       "budget_level":
         preferences.budget_level,
     },

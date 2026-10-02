@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,18 +21,26 @@ async def save_itinerary(
   agent_run_id,
   itinerary_data: dict[str, Any],
 ) -> Itinerary:
-  # MVP: one current itinerary per trip.
-  # Deleting the old itinerary also deletes its
-  # days/items because of ON DELETE CASCADE.
-  await db.execute(
-    delete(Itinerary).where(
+
+  result = await db.execute(
+    select(
+      func.coalesce(
+        func.max(Itinerary.version),
+        0,
+      )
+    ).where(
       Itinerary.trip_id == trip_id
     )
   )
 
+  current_version = result.scalar_one()
+
+  next_version = current_version + 1
+
   itinerary = Itinerary(
     trip_id=trip_id,
     agent_run_id=agent_run_id,
+    version=next_version,
     destination=itinerary_data["destination"],
     summary=itinerary_data["summary"],
     currency=itinerary_data["currency"],
@@ -118,6 +126,48 @@ async def get_itinerary_by_trip_id(
         ItineraryDay.activities
       )
     )
+    .order_by(
+      Itinerary.version.desc()
+    )
+    .limit(1)
   )
 
   return result.scalar_one_or_none()
+
+
+def serialize_itinerary(
+  itinerary: Itinerary,
+) -> dict[str, Any]:
+  return {
+    "id": str(itinerary.id),
+    "version": itinerary.version,
+    "destination": itinerary.destination,
+    "summary": itinerary.summary,
+    "currency": itinerary.currency,
+    "estimated_total_cost": float(
+      itinerary.estimated_total_cost
+    ),
+    "days": [
+      {
+        "day_number": day.day_number,
+        "date": day.date.isoformat(),
+        "title": day.title,
+        "activities": [
+          {
+            "time": activity.time,
+            "title": activity.title,
+            "description": activity.description,
+            "location": activity.location,
+            "activity_type": activity.activity_type,
+            "cost_category": activity.cost_category,
+            "place_id": activity.place_id,
+            "estimated_cost": float(
+              activity.estimated_cost
+            ),
+          }
+          for activity in day.activities
+        ],
+      }
+      for day in itinerary.days
+    ],
+  }

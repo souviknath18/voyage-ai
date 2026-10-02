@@ -2,13 +2,9 @@
 
 import {
   Armchair,
-  Baby,
   Clock3,
   DollarSign,
-  MapPinned,
   Plus,
-  Route,
-  Utensils,
 } from "lucide-react";
 
 import type {
@@ -28,75 +24,24 @@ interface OptimizationPresetsProps {
 
 const presets = [
   {
-    id:
-      "cheaper" as OptimizationPreset,
-    label:
-      "Make It Cheaper",
-    icon:
-      DollarSign,
+    id: "cheaper" as OptimizationPreset,
+    label: "Make It Cheaper",
+    icon: DollarSign,
   },
-
   {
-    id:
-      "comfortable" as OptimizationPreset,
-    label:
-      "More Comfortable",
-    icon:
-      Armchair,
+    id: "more_comfortable" as OptimizationPreset,
+    label: "More Comfortable",
+    icon: Armchair,
   },
-
   {
-    id:
-      "less-busy" as OptimizationPreset,
-    label:
-      "Less Busy",
-    icon:
-      Clock3,
+    id: "less_busy" as OptimizationPreset,
+    label: "Less Busy",
+    icon: Clock3,
   },
-
   {
-    id:
-      "more-activities" as OptimizationPreset,
-    label:
-      "More Activities",
-    icon:
-      Plus,
-  },
-
-  {
-    id:
-      "local-experiences" as OptimizationPreset,
-    label:
-      "Local Experiences",
-    icon:
-      MapPinned,
-  },
-
-  {
-    id:
-      "better-food" as OptimizationPreset,
-    label:
-      "Better Food",
-    icon:
-      Utensils,
-  },
-
-  {
-    id:
-      "less-travel" as OptimizationPreset,
-    label:
-      "Less Travel Time",
-    icon:
-      Route,
-  },
-
-  {
-    id:
-      "family-friendly" as OptimizationPreset,
-    label:
-      "Family Friendly",
-    icon:
-      Baby,
+    id: "more_activities" as OptimizationPreset,
+    label: "More Activities",
+    icon: Plus,
   },
 ];
 
@@ -112,7 +57,7 @@ export default function OptimizationPresets({
         </h2>
 
         <p className="mt-1 text-xs text-[#948e9c]">
-          Select one or more areas you want VoyageAI to improve.
+          Choose an area you want VoyageAI to improve.
         </p>
       </div>
 

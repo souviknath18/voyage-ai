@@ -100,6 +100,12 @@ function mapAgentStep(
       icon: "itinerary",
     },
 
+    optimize_itinerary: {
+      title: "Optimizing your itinerary",
+      description: "Applying your requested changes while preserving the rest of your trip.",
+      icon: "itinerary",
+    },
+
     validate_itinerary: {
       title: "Validating your itinerary",
       description: "Checking the generated plan against your trip constraints.",
@@ -182,13 +188,6 @@ function mapToolCall(
   };
 }
 
-const planningSequence = [
-  "load_context",
-  "research_trip",
-  "generate_itinerary",
-  "validate_itinerary",
-] as const;
-
 function createExpectedRunningStep(
   activity: AgentRunActivity,
   currentStep: string | null,
@@ -199,6 +198,15 @@ function createExpectedRunningStep(
   ) {
     return null;
   }
+
+  const mode =
+    activity.steps.some(
+      (step) =>
+        step.step_name ===
+        "optimize_itinerary",
+    )
+      ? "optimization"
+      : "planning";
 
   const existingStepNames = activity.steps.map(
     (step) => step.step_name,
@@ -244,6 +252,12 @@ function createExpectedRunningStep(
         icon: "itinerary",
       },
 
+      optimize_itinerary: {
+        title: "Optimizing your itinerary",
+        description: "Applying your requested changes while preserving the rest of your trip.",
+        icon: "itinerary",
+      },
+
       validate_itinerary: {
         title: "Validating your itinerary",
         description: "Checking the generated plan against your trip constraints.",
@@ -271,12 +285,20 @@ function createExpectedRunningStep(
     }
   }
 
-  const planningSequence = [
-    "load_context",
-    "research_trip",
-    "generate_itinerary",
-    "validate_itinerary",
-  ] as const;
+  const planningSequence =
+    mode === "optimization"
+      ? [
+          "load_context",
+          "research_trip",
+          "optimize_itinerary",
+          "validate_itinerary",
+        ]
+      : [
+          "load_context",
+          "research_trip",
+          "generate_itinerary",
+          "validate_itinerary",
+        ];
 
   const nextStepName =
     planningSequence.find(

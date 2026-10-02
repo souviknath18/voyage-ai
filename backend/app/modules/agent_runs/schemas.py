@@ -1,9 +1,20 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
+
+class TripOptimizationRequest(BaseModel):
+  optimization_type: Literal[
+    "cheaper",
+    "less_busy",
+    "more_activities",
+    "more_comfortable",
+    "custom",
+  ]
+
+  instructions: str | None = None
 
 class AgentRunResponse(BaseModel):
   id: uuid.UUID

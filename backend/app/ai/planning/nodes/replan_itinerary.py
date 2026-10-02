@@ -32,6 +32,72 @@ async def replan_itinerary(
   trip = snapshot["trip"]
   preferences = snapshot["preferences"]
 
+  mode = state.get(
+    "mode",
+    "planning",
+  )
+
+  optimization_request = state.get(
+    "optimization_request"
+  )
+
+  optimization_context = ""
+
+  if (
+    mode == "optimization"
+    and optimization_request
+  ):
+    optimization_type = (
+      optimization_request.get(
+        "optimization_type",
+        "custom",
+      )
+    )
+
+    optimization_instructions = (
+      optimization_request.get(
+        "instructions"
+      )
+      or "None"
+    )
+
+    optimization_context = f"""
+  OPTIMIZATION CONTEXT
+  This itinerary is the result of an optimization request.
+
+  Optimization type:
+  {optimization_type}
+
+  Custom optimization instructions:
+  {optimization_instructions}
+
+  The purpose of replanning is to fix validation errors
+  without undoing the requested optimization.
+
+  Preserve the optimization goal while making the smallest
+  changes necessary to produce a valid itinerary.
+
+  Do not regenerate the itinerary from scratch.
+
+  Keep portions of the previous itinerary unchanged unless
+  they are directly related to a validation error.
+
+  If the optimization type is "cheaper", do not increase
+  costs unnecessarily.
+
+  If the optimization type is "less_busy", do not make the
+  schedule busier.
+
+  If the optimization type is "more_activities", do not
+  remove activities unless required to fix validation.
+
+  If the optimization type is "more_comfortable", do not
+  make the schedule more rushed.
+
+  For custom optimization, continue respecting the custom
+  instructions above.
+  """
+
   required_dates = get_required_trip_dates(
     start_date=trip["start_date"],
     end_date=trip["end_date"],
@@ -144,6 +210,8 @@ Additional instructions:
 Budget preference level:
 {preferences["budget_level"]}/100
 
+{optimization_context}
+
 VALIDATION ERRORS
 {validation_errors}
 
@@ -223,6 +291,14 @@ PREVIOUS ITINERARY
 
 RULES
 - Fix every validation error.
+- Make the minimum changes required to fix validation.
+- Preserve activities that are unrelated to the
+  validation errors.
+- Preserve valid activity titles, times, descriptions,
+  locations, place_ids, costs and ordering whenever
+  possible.
+- Do not add unrelated activities during replanning.
+- Do not rename itinerary days unless necessary.
 - Do not change the origin.
 - Do not change the destination.
 - Do not change the start or end date.
@@ -259,6 +335,10 @@ IMPORTANT DATE RULES
 
   draft_itinerary["destination"] = (
     trip["destination"]
+  )
+
+  draft_itinerary["currency"] = (
+    trip["currency"]
   )
 
   draft_itinerary = (

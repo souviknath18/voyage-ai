@@ -9,20 +9,25 @@ class PlanningState(TypedDict):
   # Immutable Trip + TripPreference snapshot
   input_snapshot: dict[str, Any]
 
+  # Planning or optimization
+  mode: str
+
+  # Existing itinerary when optimizing
+  base_itinerary: dict[str, Any] | None
+
+  # Requested optimization
+  optimization_request: dict[str, Any] | None
+
   # Data collected by research/tool nodes
   research_results: dict[str, Any]
 
   # Initial itinerary produced by the LLM
   draft_itinerary: dict[str, Any] | None
 
-  # Problems found during validation
   validation_errors: list[str]
 
-  # Number of replanning attempts
   replan_count: int
 
-  # Valid itinerary ready for persistence
   final_itinerary: dict[str, Any] | None
 
-  # Fatal graph-level error
   error: str | None

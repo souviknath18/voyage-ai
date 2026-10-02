@@ -18,7 +18,11 @@ from app.ai.planning.nodes.validate_itinerary import (
 from app.ai.planning.state import PlanningState
 
 from app.ai.planning.nodes.research_trip import (
-    research_trip,
+  research_trip,
+)
+
+from app.ai.planning.nodes.optimize_itinerary import (
+  optimize_itinerary,
 )
 
 
@@ -76,6 +80,7 @@ def build_planning_graph(
   load_context_node=load_context,
   research_trip_node=research_trip,
   generate_itinerary_node=generate_itinerary,
+  optimize_itinerary_node=optimize_itinerary,
   validate_itinerary_node=validate_itinerary,
   replan_itinerary_node=replan_itinerary,
   planning_failed_node=planning_failed,
@@ -90,6 +95,11 @@ def build_planning_graph(
   builder.add_node(
     "generate_itinerary",
     generate_itinerary_node,
+  )
+
+  builder.add_node(
+    "optimize_itinerary",
+    optimize_itinerary_node,
   )
 
   builder.add_node(
@@ -122,9 +132,18 @@ def build_planning_graph(
     "research_trip",
   )
 
-  builder.add_edge(
+  builder.add_conditional_edges(
     "research_trip",
-    "generate_itinerary",
+    route_after_research,
+    {
+      "planning": "generate_itinerary",
+      "optimization": "optimize_itinerary",
+    },
+  )
+
+  builder.add_edge(
+    "optimize_itinerary",
+    "validate_itinerary",
   )
 
   builder.add_edge(
@@ -153,3 +172,15 @@ def build_planning_graph(
   )
 
   return builder.compile()
+
+
+def route_after_research(
+  state: PlanningState,
+) -> Literal[
+  "planning",
+  "optimization",
+]:
+  if state.get("mode") == "optimization":
+    return "optimization"
+
+  return "planning"
