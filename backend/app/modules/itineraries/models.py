@@ -10,6 +10,7 @@ from sqlalchemy import (
   Numeric,
   String,
   Text,
+  UniqueConstraint,
   func,
 )
 
@@ -27,6 +28,14 @@ from app.db.base import Base
 class Itinerary(Base):
   __tablename__ = "itineraries"
 
+  __table_args__ = (
+    UniqueConstraint(
+      "trip_id",
+      "version",
+      name="uq_itineraries_trip_version",
+    ),
+  )
+
   id: Mapped[uuid.UUID] = mapped_column(
     UUID(as_uuid=True),
     primary_key=True,
@@ -40,7 +49,6 @@ class Itinerary(Base):
       ondelete="CASCADE",
     ),
     nullable=False,
-    unique=True,
     index=True,
   )
 
@@ -91,6 +99,12 @@ class Itinerary(Base):
     server_default=func.now(),
     onupdate=func.now(),
     nullable=False,
+  )
+
+  version: Mapped[int] = mapped_column(
+    Integer,
+    nullable=False,
+    default=1,
   )
 
 

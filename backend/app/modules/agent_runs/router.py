@@ -14,9 +14,11 @@ from app.modules.users.models import User
 
 from app.modules.agent_runs.schemas import (
   AgentRunResponse,
+  TripOptimizationRequest,
 )
 from app.modules.agent_runs.service import (
   start_agent_run,
+  start_optimization_run,
   get_user_agent_run_status,
   get_user_agent_run_activity,
 )
@@ -79,4 +81,25 @@ async def get_agent_run_activity(
     db=db,
     agent_run_id=agent_run_id,
     user_id=current_user.id,
+  )
+
+
+@router.post(
+  "/{trip_id}/optimize",
+  response_model=AgentRunResponse,
+  status_code=status.HTTP_202_ACCEPTED,
+)
+async def optimize_trip(
+  trip_id: str,
+  data: TripOptimizationRequest,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(
+    get_current_user
+  ),
+):
+  return await start_optimization_run(
+    db=db,
+    public_trip_id=trip_id,
+    user_id=current_user.id,
+    data=data,
   )

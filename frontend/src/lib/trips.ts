@@ -105,6 +105,18 @@ export interface AgentRun {
   updated_at: string;
 }
 
+export type TripOptimizationType =
+  | "cheaper"
+  | "less_busy"
+  | "more_activities"
+  | "more_comfortable"
+  | "custom";
+
+export interface OptimizeTripRequest {
+  optimization_type: TripOptimizationType;
+  instructions: string | null;
+}
+
 export interface ToolCallActivity {
   id: string;
   tool_name: string;
@@ -173,6 +185,7 @@ export interface TripItinerary {
   days: ItineraryDay[];
   created_at: string;
   updated_at: string;
+  version: number;
 }
 
 export type BudgetCategory =
@@ -380,6 +393,19 @@ export async function planTrip(
   );
 }
 
+export async function optimizeTrip(
+  tripId: string,
+  data: OptimizeTripRequest,
+): Promise<AgentRun> {
+  return apiRequest<AgentRun>(
+    `/trips/${tripId}/optimize`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
 export async function getAgentRun(
   agentRunId: string,
 ): Promise<AgentRun> {
@@ -394,19 +420,10 @@ export async function getAgentRun(
 export async function getAgentRunActivity(
   agentRunId: string,
 ): Promise<AgentRunActivity> {
-  const token = localStorage.getItem("access_token");
-
-  if (!token) {
-    throw new Error("You are not logged in");
-  }
-
   return apiRequest<AgentRunActivity>(
     `/trips/agent-runs/${agentRunId}/activity`,
     {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     },
   );
 }

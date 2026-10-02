@@ -54,4 +54,6 @@ class ItineraryResponse(BaseModel):
   created_at: datetime
   updated_at: datetime
 
+  version: int
+
   model_config = {"from_attributes": True}

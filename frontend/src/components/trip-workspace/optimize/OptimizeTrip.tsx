@@ -16,7 +16,7 @@ import {
 
 import type {
   OptimizationPreset,
-  TripWorkspaceData,
+  TripWorkspaceHeaderData,
 } from "@/types/trip-workspace";
 
 import OptimizationCustomRequest from "./OptimizationCustomRequest";
@@ -24,7 +24,7 @@ import OptimizationPresets from "./OptimizationPresets";
 import OptimizeTripHero from "./OptimizeTripHero";
 
 interface OptimizeTripProps {
-  trip: TripWorkspaceData;
+  trip: TripWorkspaceHeaderData;
 
   onCloseAction: () => void;
 
@@ -58,18 +58,9 @@ export default function OptimizeTrip({
   ) => {
     setSelectedPresets(
       (previous) =>
-        previous.includes(
-          preset,
-        )
-          ? previous.filter(
-              (item) =>
-                item !==
-                preset,
-            )
-          : [
-              ...previous,
-              preset,
-            ],
+        previous.includes(preset)
+          ? []
+          : [preset],
     );
   };
 
@@ -155,7 +146,7 @@ export default function OptimizeTrip({
               </p>
 
               <p className="mt-0.5 text-[11px] text-[#7f8798]">
-                VoyageAI will create a proposal before changing your current trip.
+                VoyageAI will create a new optimized version while preserving your current itinerary history.
               </p>
             </div>
 
