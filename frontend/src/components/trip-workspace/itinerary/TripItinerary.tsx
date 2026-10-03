@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  History,
   Map,
 } from "lucide-react";
 
@@ -13,6 +14,10 @@ import {
 } from "@/components/ui";
 
 import type {
+  ItineraryVersion,
+} from "@/lib/trips";
+
+import type {
   ItineraryDayData,
   TripMapDay,
 } from "@/types/trip-workspace";
@@ -20,28 +25,53 @@ import type {
 import ItineraryAIPrompt from "./ItineraryAIPrompt";
 import ItineraryDay from "./ItineraryDay";
 import ItineraryMapPanel from "./ItineraryMapPanel";
+import ItineraryVersionHistory from "./ItineraryVersionHistory";
 import {
   useRouter,
 } from "next/navigation";
 
 interface TripItineraryProps {
   tripId: string;
-
   itinerary: ItineraryDayData[];
-
   currency: string;
+
+  version: number;
+  currentVersion: number;
+
+  versions: ItineraryVersion[];
+
+  restoringVersion: number | null;
+
+  onViewVersionAction: (
+    version: number,
+  ) => void;
+
+  onRestoreVersionAction: (
+    version: number,
+  ) => void;
 }
 
 export default function TripItinerary({
   tripId,
   itinerary,
   currency,
+  version,
+  currentVersion,
+  versions,
+  restoringVersion,
+  onViewVersionAction,
+  onRestoreVersionAction,
 }: TripItineraryProps) {
   const router = useRouter();
   const [
     selectedDayIndex,
     setSelectedDayIndex,
   ] = useState(0);
+
+  const [
+    historyOpen,
+    setHistoryOpen,
+  ] = useState(false);
 
   const selectedDay =
     itinerary[
@@ -130,18 +160,79 @@ export default function TripItinerary({
             </p>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={
-              openSelectedDayMap
-            }
-          >
-            <Map size={14} />
+          <div className="flex items-center gap-2">
 
-            Map View
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setHistoryOpen(
+                  (previous) => !previous,
+                )
+              }
+            >
+              <History size={14} />
+
+              Version {version}
+
+              {version !== currentVersion && (
+                <span className="text-[9px] font-semibold text-amber-400">
+                  HISTORY
+                </span>
+              )}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={
+                openSelectedDayMap
+              }
+            >
+              <Map size={14} />
+
+              Map View
+            </Button>
+
+          </div>
         </div>
+
+        {historyOpen && (
+          <ItineraryVersionHistory
+            versions={versions}
+            currentVersion={
+              currentVersion
+            }
+            viewingVersion={
+              version
+            }
+            restoringVersion={
+              restoringVersion
+            }
+            onViewAction={(
+              selectedVersion,
+            ) => {
+              onViewVersionAction(
+                selectedVersion,
+              );
+
+              setSelectedDayIndex(
+                0,
+              );
+            }}
+            onRestoreAction={(
+              selectedVersion,
+            ) => {
+              onRestoreVersionAction(
+                selectedVersion,
+              );
+
+              setSelectedDayIndex(
+                0,
+              );
+            }}
+          />
+        )}
 
         {/* Day Selector */}
         <div className="overflow-x-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-track]:bg-transparent">

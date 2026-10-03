@@ -15,6 +15,7 @@ import { getDestinationImageFromApi } from "@/lib/api";
 
 import {
   getTrips,
+  updateTripSavedStatus,
   type Trip,
 } from "@/lib/trips";
 
@@ -91,9 +92,18 @@ function mapTripToListItem(
       trip.currency,
 
     estimatedCost:
-      trip.budget
-        ? Number(trip.budget)
+      trip.estimated_total_cost
+        ? Number(
+            trip.estimated_total_cost,
+          )
         : undefined,
+
+    version:
+      trip.itinerary_version ??
+      undefined,
+
+    isSaved:
+      trip.is_saved,
 
     image,
 
@@ -107,7 +117,7 @@ export default function MyTripsPage() {
   const [
     activeTab,
     setActiveTab,
-  ] = useState<TripTab>("draft");
+  ] = useState<TripTab>("upcoming");
 
   const [
     search,
@@ -127,6 +137,11 @@ export default function MyTripsPage() {
   const [
     error,
     setError,
+  ] = useState<string | null>(null);
+
+  const [
+    savingTripId,
+    setSavingTripId,
   ] = useState<string | null>(null);
 
 
@@ -236,8 +251,7 @@ export default function MyTripsPage() {
         saved:
           trips.filter(
             (trip) =>
-              trip.status ===
-              "saved",
+              trip.isSaved,
           ).length,
       };
     }, [trips]);
@@ -257,8 +271,9 @@ export default function MyTripsPage() {
       return trips.filter(
         (trip) => {
           const matchesTab =
-            trip.status ===
-            activeTab;
+            activeTab === "saved"
+              ? trip.isSaved
+              : trip.status === activeTab;
 
           if (!matchesTab) {
             return false;
@@ -288,6 +303,45 @@ export default function MyTripsPage() {
       activeTab,
       search,
     ]);
+
+  const handleSavedChange =
+    async (
+      tripId: string,
+      isSaved: boolean,
+    ) => {
+      if (savingTripId) {
+        return;
+      }
+
+      try {
+        setSavingTripId(tripId);
+
+        const updatedTrip =
+          await updateTripSavedStatus(
+            tripId,
+            isSaved,
+          );
+
+        setTrips((currentTrips) =>
+          currentTrips.map((trip) =>
+            trip.id === tripId
+              ? {
+                  ...trip,
+                  isSaved:
+                    updatedTrip.is_saved,
+                }
+              : trip,
+          ),
+        );
+      } catch (error) {
+        console.error(
+          "Failed to update saved trip:",
+          error,
+        );
+      } finally {
+        setSavingTripId(null);
+      }
+    };
 
 
   /**
@@ -360,11 +414,11 @@ export default function MyTripsPage() {
           {/* Trips */}
 
           <TripsGrid
-            trips={
-              filteredTrips
-            }
-            activeTab={
-              activeTab
+            trips={filteredTrips}
+            activeTab={activeTab}
+            savingTripId={savingTripId}
+            onSavedChangeAction={
+              handleSavedChange
             }
           />
 
