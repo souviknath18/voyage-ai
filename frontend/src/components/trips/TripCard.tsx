@@ -1,7 +1,9 @@
 "use client";
 
 import {
+  Bookmark,
   CalendarDays,
+  Loader2,
   PlaneTakeoff,
   Users,
 } from "lucide-react";
@@ -20,6 +22,13 @@ import TripCardActions from "./TripCardActions";
 
 interface TripCardProps {
   trip: TripListItem;
+
+  isSaving: boolean;
+
+  onSavedChangeAction: (
+    tripId: string,
+    isSaved: boolean,
+  ) => void;
 }
 
 function getStatusVariant(
@@ -33,9 +42,6 @@ function getStatusVariant(
       return "warning";
 
     case "completed":
-      return "neutral";
-
-    case "saved":
       return "neutral";
 
     default:
@@ -56,9 +62,6 @@ function getStatusLabel(
     case "completed":
       return "Completed";
 
-    case "saved":
-      return "Saved";
-
     default:
       return status;
   }
@@ -66,6 +69,8 @@ function getStatusLabel(
 
 export default function TripCard({
   trip,
+  isSaving,
+  onSavedChangeAction,
 }: TripCardProps) {
   return (
     <Card className="group flex h-full flex-col overflow-hidden p-0 transition-colors duration-300 hover:border-white/20">
@@ -82,7 +87,7 @@ export default function TripCard({
         <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#070B18]/70 via-transparent to-black/15" />
 
         {/* Status */}
-        <div className="absolute right-3 top-3 z-10">
+        <div className="absolute left-3 top-3 z-10">
           <Badge
             variant={
               getStatusVariant(
@@ -95,6 +100,45 @@ export default function TripCard({
             )}
           </Badge>
         </div>
+
+        {/* Save / Unsave */}
+        <button
+          type="button"
+          disabled={isSaving}
+          onClick={() =>
+            onSavedChangeAction(
+              trip.id,
+              !trip.isSaved,
+            )
+          }
+          aria-label={
+            trip.isSaved
+              ? "Remove from saved trips"
+              : "Save trip"
+          }
+          title={
+            trip.isSaved
+              ? "Remove from saved trips"
+              : "Save trip"
+          }
+          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-lg border border-[#fb7185]/30 bg-[#fb7185]/15 text-[#fb7185] backdrop-blur-md transition hover:bg-[#fb7185]/25 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSaving ? (
+            <Loader2
+              size={15}
+              className="animate-spin"
+            />
+          ) : (
+            <Bookmark
+              size={15}
+              className={
+                trip.isSaved
+                  ? "fill-current"
+                  : ""
+              }
+            />
+          )}
+        </button>
       </div>
 
       {/* Content */}
@@ -145,7 +189,8 @@ export default function TripCard({
         </div>
 
         {/* Stats */}
-        <div className="mt-5 flex items-end justify-between border-t border-white/10 pt-4">
+        <div className="mt-5 grid grid-cols-3 gap-4 border-t border-white/10 pt-4">
+
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[#7f8798]">
               Est. Cost
@@ -153,24 +198,45 @@ export default function TripCard({
 
             <p
               className={`mt-1 text-base font-semibold ${
-                trip.estimatedCost
+                trip.estimatedCost !== undefined
                   ? "text-[#fcd34d]"
                   : "text-[#948e9c]"
               }`}
             >
-              {trip.estimatedCost
-                ? `${trip.currency} ${trip.estimatedCost.toLocaleString()}`
+              {trip.estimatedCost !== undefined
+                ? `${trip.currency} ${trip.estimatedCost.toLocaleString("en-IN")}`
                 : "TBD"}
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[#948e9c]">
-            <Users size={15} />
 
-            <span className="text-xs">
-              {trip.travelers}
-            </span>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#7f8798]">
+              Version
+            </p>
+
+            <p className="mt-1 text-base font-semibold text-[#eee8f0]">
+              {trip.version !== undefined
+                ? `v${trip.version}`
+                : "—"}
+            </p>
           </div>
+
+
+          <div className="text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#7f8798]">
+              Travelers
+            </p>
+
+            <div className="mt-1 flex items-center justify-end gap-1.5 text-[#eee8f0]">
+              <Users size={15} />
+
+              <span className="text-sm font-semibold">
+                {trip.travelers}
+              </span>
+            </div>
+          </div>
+
         </div>
 
         {/* Actions */}

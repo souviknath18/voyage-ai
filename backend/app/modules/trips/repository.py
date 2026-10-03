@@ -2,10 +2,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.trips.models import Trip
+from app.modules.itineraries.models import Itinerary
 
 
 async def create_trip(
@@ -86,14 +87,76 @@ async def get_trip_by_id(
 async def get_user_trips(
   db: AsyncSession,
   user_id: uuid.UUID,
-) -> list[Trip]:
-  result = await db.execute(
-    select(Trip)
-    .where(Trip.user_id == user_id)
-    .order_by(Trip.created_at.desc())
+) -> list[dict[str, Any]]:
+
+  latest_version_subquery = (
+    select(
+      Itinerary.trip_id,
+      Itinerary.version,
+    )
+    .distinct(
+      Itinerary.trip_id
+    )
+    .order_by(
+      Itinerary.trip_id,
+      Itinerary.version.desc(),
+    )
+    .subquery()
   )
 
-  return list(result.scalars().all())
+  result = await db.execute(
+    select(
+      Trip,
+      Itinerary.id.label(
+        "itinerary_id"
+      ),
+      Itinerary.version.label(
+        "itinerary_version"
+      ),
+      Itinerary.estimated_total_cost.label(
+        "estimated_total_cost"
+      ),
+    )
+    .outerjoin(
+      latest_version_subquery,
+      latest_version_subquery.c.trip_id
+      == Trip.id,
+    )
+    .outerjoin(
+      Itinerary,
+      and_(
+        Itinerary.trip_id
+        == latest_version_subquery.c.trip_id,
+
+        Itinerary.version
+        == latest_version_subquery.c.version,
+      ),
+    )
+    .where(
+      Trip.user_id == user_id
+    )
+    .order_by(
+      Trip.created_at.desc()
+    )
+  )
+
+  rows = result.all()
+
+  return [
+    {
+      **row.Trip.__dict__,
+
+      "itinerary_id":
+        row.itinerary_id,
+
+      "itinerary_version":
+        row.itinerary_version,
+
+      "estimated_total_cost":
+        row.estimated_total_cost,
+    }
+    for row in rows
+  ]
 
 
 async def update_trip(
@@ -176,6 +239,19 @@ async def update_trip_origin(
   trip.origin_latitude = latitude
   trip.origin_longitude = longitude
   trip.origin_timezone = timezone
+
+  await db.commit()
+  await db.refresh(trip)
+
+  return trip
+
+
+async def update_trip_saved_status(
+  db: AsyncSession,
+  trip: Trip,
+  is_saved: bool,
+) -> Trip:
+  trip.is_saved = is_saved
 
   await db.commit()
   await db.refresh(trip)

@@ -39,6 +39,24 @@ class ItineraryDayResponse(BaseModel):
   model_config = {"from_attributes": True}
 
 
+class ItineraryVersionResponse(BaseModel):
+  id: uuid.UUID
+  agent_run_id: uuid.UUID
+
+  version: int
+
+  destination: str
+  summary: str
+  currency: str
+  estimated_total_cost: Decimal
+
+  created_at: datetime
+
+  model_config = {
+    "from_attributes": True,
+  }
+
+
 class ItineraryResponse(BaseModel):
   id: uuid.UUID
   trip_id: uuid.UUID

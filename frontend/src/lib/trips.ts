@@ -41,8 +41,13 @@ export interface Trip {
   budget: string | null;
   currency: string;
   status: string;
+  is_saved: boolean;
   created_at: string;
   updated_at: string;
+
+  estimated_total_cost: string | null;
+  itinerary_version: number | null;
+  itinerary_id: string | null;
 }
 
 export interface UpdateTripRequest {
@@ -186,6 +191,17 @@ export interface TripItinerary {
   created_at: string;
   updated_at: string;
   version: number;
+}
+
+export interface ItineraryVersion {
+  id: string;
+  agent_run_id: string;
+  version: number;
+  destination: string;
+  summary: string;
+  currency: string;
+  estimated_total_cost: string;
+  created_at: string;
 }
 
 export type BudgetCategory =
@@ -439,6 +455,43 @@ export async function getTripItinerary(
   );
 }
 
+export async function getTripItineraryVersions(
+  tripId: string,
+): Promise<ItineraryVersion[]> {
+  return apiRequest<ItineraryVersion[]>(
+    `/trips/${tripId}/itineraries`,
+    {
+      method: "GET",
+    },
+  );
+}
+
+
+export async function getTripItineraryVersion(
+  tripId: string,
+  version: number,
+): Promise<TripItinerary> {
+  return apiRequest<TripItinerary>(
+    `/trips/${tripId}/itineraries/${version}`,
+    {
+      method: "GET",
+    },
+  );
+}
+
+
+export async function restoreTripItineraryVersion(
+  tripId: string,
+  version: number,
+): Promise<TripItinerary> {
+  return apiRequest<TripItinerary>(
+    `/trips/${tripId}/itineraries/${version}/restore`,
+    {
+      method: "POST",
+    },
+  );
+}
+
 export async function getTripPlaces(
   tripId: string,
 ): Promise<TripPlace[]> {
@@ -469,6 +522,21 @@ export async function getTripMapPreview(
     `/trips/${tripId}/map-preview?day=${dayNumber}`,
     {
       method: "GET",
+    },
+  );
+}
+
+export async function updateTripSavedStatus(
+  tripId: string,
+  isSaved: boolean,
+): Promise<Trip> {
+  return apiRequest<Trip>(
+    `/trips/${tripId}/saved`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        is_saved: isSaved,
+      }),
     },
   );
 }

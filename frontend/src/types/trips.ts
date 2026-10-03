@@ -18,14 +18,13 @@ export interface TripFormData {
 }
 
 /* ===================================
-   My Trips
+  My Trips
 =================================== */
 
 export type TripStatus =
   | "upcoming"
   | "draft"
-  | "completed"
-  | "saved";
+  | "completed";
 
 export type TripTab =
   | "upcoming"
@@ -50,10 +49,10 @@ export interface TripListItem {
 
   currency: string;
   estimatedCost?: number;
+  version?: number;
+  isSaved: boolean;
 
   image?: string;
 
   status: TripStatus;
-
-  saved?: boolean;
 }

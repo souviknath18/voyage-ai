@@ -93,6 +93,7 @@ class TripResponse(BaseModel):
   budget: Decimal | None
   currency: str
   status: str
+  is_saved: bool
 
   created_at: datetime
   updated_at: datetime
@@ -116,6 +117,12 @@ class TripResponse(BaseModel):
   destination_timezone: str | None = None
 
 
+class TripListResponse(TripResponse):
+  estimated_total_cost: Decimal | None = None
+  itinerary_version: int | None = None
+  itinerary_id: uuid.UUID | None = None
+
+
 class TripDestinationRequest(BaseModel):
   name: str
   country: str
@@ -132,3 +139,7 @@ class TripOriginRequest(BaseModel):
   latitude: float
   longitude: float
   timezone: str | None = None
+
+
+class TripSavedUpdate(BaseModel):
+  is_saved: bool

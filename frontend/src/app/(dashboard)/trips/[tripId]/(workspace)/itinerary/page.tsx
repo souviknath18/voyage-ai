@@ -10,6 +10,7 @@ import {
 } from "next/navigation";
 
 import TripItinerary from "@/components/trip-workspace/itinerary/TripItinerary";
+import ItineraryVersionHistory from "@/components/trip-workspace/itinerary/ItineraryVersionHistory";
 
 import {
   PageLoader,
@@ -18,7 +19,11 @@ import {
 import {
   getTrip,
   getTripItinerary,
+  getTripItineraryVersion,
+  getTripItineraryVersions,
   getTripWeather,
+  restoreTripItineraryVersion,
+  type ItineraryVersion,
   type TripItinerary as TripItineraryResponse,
   type TripWeather,
 } from "@/lib/trips";
@@ -65,6 +70,30 @@ export default function TripItineraryPage() {
 
 
   const [
+    versions,
+    setVersions,
+  ] = useState<ItineraryVersion[]>([]);
+
+
+  const [
+    currentVersion,
+    setCurrentVersion,
+  ] = useState<number | null>(null);
+
+
+  const [
+    restoringVersion,
+    setRestoringVersion,
+  ] = useState<number | null>(null);
+
+
+  const [
+    historyError,
+    setHistoryError,
+  ] = useState<string | null>(null);
+
+
+  const [
     loading,
     setLoading,
   ] =
@@ -97,11 +126,17 @@ export default function TripItineraryPage() {
         const [
           itineraryData,
           tripData,
+          versionData,
         ] = await Promise.all([
           getTripItinerary(
             tripId,
           ),
+
           getTrip(
+            tripId,
+          ),
+
+          getTripItineraryVersions(
             tripId,
           ),
         ]);
@@ -112,6 +147,14 @@ export default function TripItineraryPage() {
 
         setItineraryResponse(
           itineraryData,
+        );
+
+        setVersions(
+          versionData,
+        );
+
+        setCurrentVersion(
+          itineraryData.version,
         );
 
         // Essential itinerary renders immediately.
@@ -246,6 +289,112 @@ export default function TripItineraryPage() {
   }, [tripId]);
 
 
+  const handleViewVersion =
+    async (
+      version: number,
+    ) => {
+      try {
+        setHistoryError(
+          null,
+        );
+
+        const versionData =
+          await getTripItineraryVersion(
+            tripId,
+            version,
+          );
+
+
+        setItineraryResponse(
+          versionData,
+        );
+
+
+        setItinerary(
+          mapItineraryToWorkspace(
+            versionData,
+            null,
+          ),
+        );
+      } catch (error) {
+        setHistoryError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load itinerary version",
+        );
+      }
+    };
+
+
+  const handleRestoreVersion =
+    async (
+      version: number,
+    ) => {
+      if (
+        restoringVersion !== null
+      ) {
+        return;
+      }
+
+
+      try {
+        setRestoringVersion(
+          version,
+        );
+
+        setHistoryError(
+          null,
+        );
+
+
+        const restored =
+          await restoreTripItineraryVersion(
+            tripId,
+            version,
+          );
+
+
+        const refreshedVersions =
+          await getTripItineraryVersions(
+            tripId,
+          );
+
+
+        setVersions(
+          refreshedVersions,
+        );
+
+
+        setCurrentVersion(
+          restored.version,
+        );
+
+
+        setItineraryResponse(
+          restored,
+        );
+
+
+        setItinerary(
+          mapItineraryToWorkspace(
+            restored,
+            null,
+          ),
+        );
+      } catch (error) {
+        setHistoryError(
+          error instanceof Error
+            ? error.message
+            : "Failed to restore itinerary version",
+        );
+      } finally {
+        setRestoringVersion(
+          null,
+        );
+      }
+    };
+
+
   if (loading) {
     return (
       <PageLoader
@@ -294,16 +443,40 @@ export default function TripItineraryPage() {
 
 
   return (
-    <TripItinerary
-      tripId={
-        tripId
-      }
-      itinerary={
-        itinerary
-      }
-      currency={
-        itineraryResponse.currency
-      }
-    />
+    <div className="space-y-5">
+
+      {historyError && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400">
+          {historyError}
+        </div>
+      )}
+
+
+      <TripItinerary
+        tripId={tripId}
+        itinerary={itinerary}
+        currency={
+          itineraryResponse.currency
+        }
+        version={
+          itineraryResponse.version
+        }
+        currentVersion={
+          currentVersion ??
+          itineraryResponse.version
+        }
+        versions={versions}
+        restoringVersion={
+          restoringVersion
+        }
+        onViewVersionAction={
+          handleViewVersion
+        }
+        onRestoreVersionAction={
+          handleRestoreVersion
+        }
+      />
+
+    </div>
   );
 }
