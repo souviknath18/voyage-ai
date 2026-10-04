@@ -31,6 +31,19 @@ interface TripBudgetProps {
     BudgetRecommendation[];
 }
 
+interface TripBudgetProps {
+  currency: string;
+  totalBudget: number;
+  estimatedCost: number;
+  remainingBudget: number;
+  potentialSavings: number;
+  categories: TripBudgetCategory[];
+  insight: string;
+  recommendations: BudgetRecommendation[];
+
+  onOptimizeAction: () => void;
+}
+
 export default function TripBudget({
   currency,
   totalBudget,
@@ -40,13 +53,8 @@ export default function TripBudget({
   categories,
   insight,
   recommendations,
+  onOptimizeAction,
 }: TripBudgetProps) {
-  const handleOptimize =
-    () => {
-      console.log(
-        "Optimize complete budget",
-      );
-    };
 
   const handleApplyRecommendation =
     (
@@ -81,18 +89,10 @@ export default function TripBudget({
 
         <div className="lg:col-span-4">
           <BudgetOptimizationCard
-            currency={
-              currency
-            }
-            potentialSavings={
-              potentialSavings
-            }
-            recommendationCount={
-              recommendations.length
-            }
-            onOptimizeAction={
-              handleOptimize
-            }
+            currency={currency}
+            potentialSavings={potentialSavings}
+            recommendationCount={recommendations.length}
+            onOptimizeAction={onOptimizeAction}
           />
         </div>
       </div>

@@ -3,6 +3,10 @@ import {
   apiRequest,
 } from "@/lib/api";
 import type { TravelPace } from "@/types/trip";
+import type {
+  TripAssistantResponse,
+  TripChangeProposal,
+} from "@/types/trip-assistant";
 
 export interface CreateTripRequest {
   origin: string;
@@ -217,6 +221,23 @@ export interface TripBudgetCategory {
   percentage: number;
 }
 
+export interface BudgetPotentialSavings {
+  amount: string;
+  percentage: number;
+}
+
+export interface BudgetInsight {
+  title: string;
+  description: string;
+}
+
+export interface BudgetRecommendationResponse {
+  title: string;
+  description: string;
+  category: BudgetCategory;
+  estimated_savings: string;
+}
+
 export interface TripBudget {
   trip_id: string;
   currency: string;
@@ -224,11 +245,20 @@ export interface TripBudget {
   estimated_cost: string;
   remaining_budget: string | null;
   utilization_percentage: number | null;
+
   status:
     | "within_budget"
     | "over_budget"
     | "no_budget";
+
   categories: TripBudgetCategory[];
+
+  potential_savings: BudgetPotentialSavings;
+
+  insight: BudgetInsight;
+
+  recommendations:
+    BudgetRecommendationResponse[];
 }
 
 export interface TripPlace {
@@ -418,6 +448,36 @@ export async function optimizeTrip(
     {
       method: "POST",
       body: JSON.stringify(data),
+    },
+  );
+}
+
+export async function sendTripAssistantMessage(
+  tripId: string,
+  message: string,
+): Promise<TripAssistantResponse> {
+  return apiRequest<TripAssistantResponse>(
+    `/trips/${tripId}/assistant/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+      }),
+    },
+  );
+}
+
+export async function applyTripAssistantProposal(
+  tripId: string,
+  proposal: TripChangeProposal,
+): Promise<AgentRun> {
+  return apiRequest<AgentRun>(
+    `/trips/${tripId}/assistant/apply`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        proposal,
+      }),
     },
   );
 }

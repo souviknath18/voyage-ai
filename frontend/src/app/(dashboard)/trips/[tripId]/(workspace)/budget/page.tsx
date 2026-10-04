@@ -6,28 +6,28 @@ import {
 } from "react";
 import {
   useParams,
+  useRouter,
 } from "next/navigation";
 
 import TripBudget from "@/components/trip-workspace/budget/TripBudget";
 
 import {
   getTripBudget,
+  optimizeTrip,
 } from "@/lib/trips";
 
 import type {
   TripBudget as TripBudgetData,
 } from "@/lib/trips";
 
-import {
-  mockTrip,
-} from "@/data/mock-trip";
-
 import type {
+  BudgetRecommendation,
   TripBudgetCategory,
 } from "@/types/trip-workspace";
 
 
 export default function TripBudgetPage() {
+  const router = useRouter();
   const params = useParams<{
     tripId: string;
   }>();
@@ -41,6 +41,11 @@ export default function TripBudgetPage() {
   ] = useState<TripBudgetData | null>(
     null,
   );
+
+  const [
+    optimizing,
+    setOptimizing,
+  ] = useState(false);
 
   const [
     loading,
@@ -157,42 +162,100 @@ export default function TripBudgetPage() {
       }),
     );
 
+  const recommendations: BudgetRecommendation[] =
+    budget.recommendations.map(
+      (
+        recommendation,
+        index,
+      ) => ({
+        id: `budget-recommendation-${index}`,
+
+        title:
+          recommendation.title,
+
+        description:
+          recommendation.description,
+
+        savings: Number(
+          recommendation.estimated_savings,
+        ),
+
+        type:
+          recommendation.category ===
+          "activity"
+            ? "activity"
+            : recommendation.category ===
+                "food"
+              ? "food"
+              : recommendation.category ===
+                  "transport"
+                ? "transport"
+                : "activity",
+      }),
+    );
+
+  const handleOptimizeBudget =
+    async () => {
+      if (optimizing) {
+        return;
+      }
+
+      try {
+        setOptimizing(true);
+        setError(null);
+
+        const run =
+          await optimizeTrip(
+            tripId,
+            {
+              optimization_type:
+                "cheaper",
+
+              instructions:
+                "Reduce the trip cost while preserving the core itinerary experience. Prioritize the budget optimization opportunities identified in the current itinerary.",
+            },
+          );
+
+        router.push(
+          `/planning/${run.id}`,
+        );
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to start budget optimization",
+        );
+
+        setOptimizing(false);
+      }
+    };
+
   return (
     <TripBudget
       currency={budget.currency}
-
       totalBudget={
         budget.total_budget !== null
-          ? Number(
-              budget.total_budget,
-            )
+          ? Number(budget.total_budget)
           : 0
       }
-
       estimatedCost={Number(
         budget.estimated_cost,
       )}
-
       remainingBudget={
         budget.remaining_budget !== null
-          ? Number(
-              budget.remaining_budget,
-            )
+          ? Number(budget.remaining_budget)
           : 0
       }
-
       categories={categories}
-
-      potentialSavings={
-        mockTrip.potentialSavings
-      }
-
+      potentialSavings={Number(
+        budget.potential_savings.amount,
+      )}
       insight={
-        mockTrip.budgetInsight
+        `${budget.insight.title}. ${budget.insight.description}`
       }
-
-      recommendations={
-        mockTrip.budgetRecommendations
+      recommendations={recommendations}
+      onOptimizeAction={
+        handleOptimizeBudget
       }
     />
   );

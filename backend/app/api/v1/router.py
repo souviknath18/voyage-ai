@@ -23,6 +23,9 @@ from app.modules.map_previews.router import (
 from app.modules.budgets.router import (
   router as budgets_router,
 )
+from app.modules.trip_assistant.router import (
+  router as trip_assistant_router,
+)
 from app.api.v1.images import router as images_router
 
 router = APIRouter()
@@ -95,4 +98,10 @@ router.include_router(
   images_router,
   prefix="/images",
   tags=["Images"],
+)
+
+router.include_router(
+  trip_assistant_router,
+  prefix="/trips",
+  tags=["Trip Assistant"],
 )
