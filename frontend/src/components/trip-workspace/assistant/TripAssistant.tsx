@@ -4,14 +4,24 @@ import {
   useState,
 } from "react";
 
+import {
+  useRouter,
+} from "next/navigation";
+
 import type {
   TripWorkspaceData,
 } from "@/types/trip-workspace";
+
+import {
+  applyTripAssistantProposal,
+  sendTripAssistantMessage,
+} from "@/lib/trips";
 
 import type {
   AssistantMessage,
   AssistantProposalData,
   AssistantStep,
+  TripChangeProposal,
 } from "@/types/trip-assistant";
 
 import AssistantComposer from "./AssistantComposer";
@@ -29,23 +39,10 @@ interface TripAssistantProps {
 
 const initialMessages: AssistantMessage[] = [
   {
-    id: "message-1",
-
-    role: "user",
-
-    content:
-      "Can you find me a better hotel without making the trip much more expensive?",
-
-    time: "2:18 PM",
-  },
-
-  {
-    id: "message-2",
-
+    id: "assistant-welcome",
     role: "assistant",
-
     content:
-      "Yes. I can compare hotels that fit your current itinerary, maintain good transport access and keep the total trip close to your existing budget.",
+      "Ask me anything about your trip, or tell me what you'd like to change.",
   },
 ];
 
@@ -152,6 +149,25 @@ export default function TripAssistant({
   trip,
   onBackAction,
 }: TripAssistantProps) {
+  const router = useRouter();
+
+  const [
+    proposal,
+    setProposal,
+  ] = useState<TripChangeProposal | null>(
+    null,
+  );
+
+  const [
+    sending,
+    setSending,
+  ] = useState(false);
+
+  const [
+    applying,
+    setApplying,
+  ] = useState(false);
+
   const [
     messages,
     setMessages,
@@ -160,25 +176,98 @@ export default function TripAssistant({
       initialMessages,
     );
 
-  const handleSubmit = (
+  const handleSubmit = async (
     message: string,
   ) => {
-    setMessages(
-      (previous) => [
+    if (sending) {
+      return;
+    }
+
+    const userMessage: AssistantMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: message,
+    };
+
+    setMessages((previous) => [
+      ...previous,
+      userMessage,
+    ]);
+
+    setSending(true);
+
+    try {
+      const response =
+        await sendTripAssistantMessage(
+          trip.id,
+          message,
+        );
+
+      const assistantMessage: AssistantMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: response.message,
+      };
+
+      setMessages((previous) => [
         ...previous,
+        assistantMessage,
+      ]);
 
+      if (
+        response.action ===
+          "change_requested" &&
+        response.proposal
+      ) {
+        setProposal(response.proposal);
+      } else {
+        setProposal(null);
+      }
+    } catch (error) {
+      console.error(
+        "Failed to send assistant message:",
+        error,
+      );
+
+      setMessages((previous) => [
+        ...previous,
         {
-          id:
-            crypto.randomUUID(),
-
-          role:
-            "user",
-
+          id: crypto.randomUUID(),
+          role: "assistant",
           content:
-            message,
+            "I couldn't process that request. Please try again.",
         },
-      ],
-    );
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleApplyProposal = async () => {
+    if (!proposal || applying) {
+      return;
+    }
+
+    setApplying(true);
+
+    try {
+      const run =
+        await applyTripAssistantProposal(
+          trip.id,
+          proposal,
+        );
+
+      router.push(
+        `/planning/${run.id}`,
+      );
+    } catch (error) {
+      console.error(
+        "Failed to apply assistant proposal:",
+        error,
+      );
+
+      setApplying(false);
+    }
   };
 
   return (
@@ -224,32 +313,28 @@ export default function TripAssistant({
               ),
             )}
 
-            <AssistantThinking
-              steps={
-                mockSteps
-              }
-            />
+            {sending && (
+              <AssistantThinking
+                steps={mockSteps}
+              />
+            )}
 
-            <AssistantProposal
-              proposal={
-                mockProposal
-              }
-              onAcceptAction={() =>
-                console.log(
-                  "Accept proposal",
-                )
-              }
-              onRejectAction={() =>
-                console.log(
-                  "Keep current",
-                )
-              }
-              onDiscussAction={() =>
-                console.log(
-                  "Discuss options",
-                )
-              }
-            />
+            {false && (
+              <AssistantProposal
+                proposal={mockProposal}
+                onAcceptAction={
+                  handleApplyProposal
+                }
+                onRejectAction={() =>
+                  setProposal(null)
+                }
+                onDiscussAction={() =>
+                  console.log(
+                    "Discuss options",
+                  )
+                }
+              />
+            )}
           </div>
         </div>
 

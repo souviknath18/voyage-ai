@@ -135,6 +135,48 @@ async def get_itinerary_by_trip_id(
   return result.scalar_one_or_none()
 
 
+async def get_itinerary_versions(
+  db: AsyncSession,
+  trip_id: uuid.UUID,
+) -> list[Itinerary]:
+  result = await db.execute(
+    select(Itinerary)
+    .where(
+      Itinerary.trip_id == trip_id
+    )
+    .order_by(
+      Itinerary.version.desc()
+    )
+  )
+
+  return list(
+    result.scalars().all()
+  )
+
+
+async def get_itinerary_by_version(
+  db: AsyncSession,
+  trip_id: uuid.UUID,
+  version: int,
+) -> Itinerary | None:
+  result = await db.execute(
+    select(Itinerary)
+    .where(
+      Itinerary.trip_id == trip_id,
+      Itinerary.version == version,
+    )
+    .options(
+      selectinload(
+        Itinerary.days
+      ).selectinload(
+        ItineraryDay.activities
+      )
+    )
+  )
+
+  return result.scalar_one_or_none()
+
+
 def serialize_itinerary(
   itinerary: Itinerary,
 ) -> dict[str, Any]:

@@ -7,9 +7,11 @@ from app.modules.users.models import User
 from app.modules.trips.schemas import (
   TripCreate,
   TripResponse,
+  TripListResponse,
   TripUpdate,
   TripDestinationRequest,
   TripOriginRequest,
+  TripSavedUpdate,
 )
 from app.modules.trips.service import (
   create_user_trip,
@@ -19,6 +21,7 @@ from app.modules.trips.service import (
   update_user_trip,
   set_trip_destination,
   set_trip_origin,
+  update_trip_saved,
 )
 
 
@@ -44,7 +47,9 @@ async def create_trip(
 
 @router.get(
   "",
-  response_model=list[TripResponse],
+  response_model=list[
+    TripListResponse
+  ],
 )
 async def get_trips(
   db: AsyncSession = Depends(get_db),
@@ -149,4 +154,22 @@ async def update_origin(
     public_trip_id=trip_id,
     user_id=current_user.id,
     origin_data=payload,
+  )
+
+
+@router.patch(
+  "/{trip_id}/saved",
+  response_model=TripResponse,
+)
+async def update_saved_status(
+  trip_id: str,
+  data: TripSavedUpdate,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  return await update_trip_saved(
+    db=db,
+    trip_id=trip_id,
+    user_id=current_user.id,
+    is_saved=data.is_saved,
   )

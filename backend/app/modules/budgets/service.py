@@ -1,4 +1,3 @@
-from collections import defaultdict
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -7,14 +6,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.itineraries.repository import get_itinerary_by_trip_id
 from app.modules.trips.repository import get_trip_by_id
 
-
-CATEGORIES = [
-  "food",
-  "transport",
-  "activity",
-  "shopping",
-  "other",
-]
+from app.modules.budgets.analyzer import (
+  build_budget_insight,
+  build_budget_recommendations,
+  calculate_potential_savings,
+)
+from app.modules.budgets.constants import (
+  BUDGET_CATEGORIES,
+  DEFAULT_BUDGET_CATEGORY,
+)
+from app.modules.budgets.utils import (
+  calculate_percentage,
+  normalize_money,
+)
 
 
 async def get_trip_budget(
@@ -48,29 +52,35 @@ async def get_trip_budget(
       detail="Itinerary not found",
     )
 
-  category_totals = defaultdict(
-    lambda: Decimal("0.00")
-  )
+  category_totals = {
+    category: Decimal("0.00")
+    for category in BUDGET_CATEGORIES
+  }
 
   estimated_cost = Decimal("0.00")
 
   for day in itinerary.days:
     for activity in day.activities:
 
-      cost = activity.estimated_cost or Decimal("0.00")
+      cost = normalize_money(
+        activity.estimated_cost
+      )
 
-      category = activity.cost_category
+      category = (
+        activity.cost_category
+        or DEFAULT_BUDGET_CATEGORY
+      )
 
-      if category not in CATEGORIES:
-        category = "other"
+      if category not in BUDGET_CATEGORIES:
+        category = DEFAULT_BUDGET_CATEGORY
 
       category_totals[category] += cost
       estimated_cost += cost
 
   # Keep the calculated value authoritative instead of trusting
   # a separately stored total.
-  estimated_cost = estimated_cost.quantize(
-    Decimal("0.01")
+  estimated_cost = normalize_money(
+    estimated_cost
   )
 
   total_budget = trip.budget
@@ -85,17 +95,15 @@ async def get_trip_budget(
     remaining_budget = (
       total_budget - estimated_cost
     ).quantize(
-      Decimal("0.01")
+      Decimal("0.01"),
     )
 
     if total_budget > 0:
-      utilization_percentage = round(
-        float(
-          estimated_cost
-          / total_budget
-          * Decimal("100")
-        ),
-        2,
+      utilization_percentage = (
+        calculate_percentage(
+          estimated_cost,
+          total_budget,
+        )
       )
 
     if estimated_cost > total_budget:
@@ -105,23 +113,16 @@ async def get_trip_budget(
 
   categories = []
 
-  for category in CATEGORIES:
+  for category in BUDGET_CATEGORIES:
 
-    category_cost = category_totals[category].quantize(
-      Decimal("0.01")
+    category_cost = normalize_money(
+      category_totals[category]
     )
 
-    if estimated_cost > 0:
-      percentage = round(
-        float(
-          category_cost
-          / estimated_cost
-          * Decimal("100")
-        ),
-        2,
-      )
-    else:
-      percentage = 0.0
+    percentage = calculate_percentage(
+      category_cost,
+      estimated_cost,
+    )
 
     categories.append(
       {
@@ -130,6 +131,26 @@ async def get_trip_budget(
         "percentage": percentage,
       }
     )
+
+  recommendations = (
+    build_budget_recommendations(
+      dict(category_totals)
+    )
+  )
+
+  potential_savings = (
+    calculate_potential_savings(
+      estimated_cost=estimated_cost,
+      recommendations=recommendations,
+    )
+  )
+
+  insight = build_budget_insight(
+    total_budget=total_budget,
+    estimated_cost=estimated_cost,
+    remaining_budget=remaining_budget,
+    utilization_percentage=utilization_percentage,
+  )
 
   return {
     "trip_id": trip.trip_id,
@@ -140,4 +161,13 @@ async def get_trip_budget(
     "utilization_percentage": utilization_percentage,
     "status": budget_status,
     "categories": categories,
+
+    "potential_savings":
+      potential_savings,
+
+    "insight":
+      insight,
+
+    "recommendations":
+      recommendations,
   }

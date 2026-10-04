@@ -11,12 +11,21 @@ interface TripsGridProps {
   trips: TripListItem[];
   activeTab: TripTab;
   loading?: boolean;
+
+  savingTripId: string | null;
+
+  onSavedChangeAction: (
+    tripId: string,
+    isSaved: boolean,
+  ) => void;
 }
 
 export default function TripsGrid({
   trips,
   activeTab,
   loading = false,
+  savingTripId,
+  onSavedChangeAction,
 }: TripsGridProps) {
   if (loading) {
     return (
@@ -48,6 +57,12 @@ export default function TripsGrid({
         <TripCard
           key={trip.id}
           trip={trip}
+          isSaving={
+            savingTripId === trip.id
+          }
+          onSavedChangeAction={
+            onSavedChangeAction
+          }
         />
       ))}
     </div>

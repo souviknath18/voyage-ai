@@ -3,6 +3,10 @@ import {
   apiRequest,
 } from "@/lib/api";
 import type { TravelPace } from "@/types/trip";
+import type {
+  TripAssistantResponse,
+  TripChangeProposal,
+} from "@/types/trip-assistant";
 
 export interface CreateTripRequest {
   origin: string;
@@ -41,8 +45,13 @@ export interface Trip {
   budget: string | null;
   currency: string;
   status: string;
+  is_saved: boolean;
   created_at: string;
   updated_at: string;
+
+  estimated_total_cost: string | null;
+  itinerary_version: number | null;
+  itinerary_id: string | null;
 }
 
 export interface UpdateTripRequest {
@@ -188,6 +197,17 @@ export interface TripItinerary {
   version: number;
 }
 
+export interface ItineraryVersion {
+  id: string;
+  agent_run_id: string;
+  version: number;
+  destination: string;
+  summary: string;
+  currency: string;
+  estimated_total_cost: string;
+  created_at: string;
+}
+
 export type BudgetCategory =
   | "food"
   | "transport"
@@ -201,6 +221,23 @@ export interface TripBudgetCategory {
   percentage: number;
 }
 
+export interface BudgetPotentialSavings {
+  amount: string;
+  percentage: number;
+}
+
+export interface BudgetInsight {
+  title: string;
+  description: string;
+}
+
+export interface BudgetRecommendationResponse {
+  title: string;
+  description: string;
+  category: BudgetCategory;
+  estimated_savings: string;
+}
+
 export interface TripBudget {
   trip_id: string;
   currency: string;
@@ -208,11 +245,20 @@ export interface TripBudget {
   estimated_cost: string;
   remaining_budget: string | null;
   utilization_percentage: number | null;
+
   status:
     | "within_budget"
     | "over_budget"
     | "no_budget";
+
   categories: TripBudgetCategory[];
+
+  potential_savings: BudgetPotentialSavings;
+
+  insight: BudgetInsight;
+
+  recommendations:
+    BudgetRecommendationResponse[];
 }
 
 export interface TripPlace {
@@ -406,6 +452,36 @@ export async function optimizeTrip(
   );
 }
 
+export async function sendTripAssistantMessage(
+  tripId: string,
+  message: string,
+): Promise<TripAssistantResponse> {
+  return apiRequest<TripAssistantResponse>(
+    `/trips/${tripId}/assistant/messages`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+      }),
+    },
+  );
+}
+
+export async function applyTripAssistantProposal(
+  tripId: string,
+  proposal: TripChangeProposal,
+): Promise<AgentRun> {
+  return apiRequest<AgentRun>(
+    `/trips/${tripId}/assistant/apply`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        proposal,
+      }),
+    },
+  );
+}
+
 export async function getAgentRun(
   agentRunId: string,
 ): Promise<AgentRun> {
@@ -435,6 +511,43 @@ export async function getTripItinerary(
     `/trips/${tripId}/itinerary`,
     {
       method: "GET",
+    },
+  );
+}
+
+export async function getTripItineraryVersions(
+  tripId: string,
+): Promise<ItineraryVersion[]> {
+  return apiRequest<ItineraryVersion[]>(
+    `/trips/${tripId}/itineraries`,
+    {
+      method: "GET",
+    },
+  );
+}
+
+
+export async function getTripItineraryVersion(
+  tripId: string,
+  version: number,
+): Promise<TripItinerary> {
+  return apiRequest<TripItinerary>(
+    `/trips/${tripId}/itineraries/${version}`,
+    {
+      method: "GET",
+    },
+  );
+}
+
+
+export async function restoreTripItineraryVersion(
+  tripId: string,
+  version: number,
+): Promise<TripItinerary> {
+  return apiRequest<TripItinerary>(
+    `/trips/${tripId}/itineraries/${version}/restore`,
+    {
+      method: "POST",
     },
   );
 }
@@ -469,6 +582,21 @@ export async function getTripMapPreview(
     `/trips/${tripId}/map-preview?day=${dayNumber}`,
     {
       method: "GET",
+    },
+  );
+}
+
+export async function updateTripSavedStatus(
+  tripId: string,
+  isSaved: boolean,
+): Promise<Trip> {
+  return apiRequest<Trip>(
+    `/trips/${tripId}/saved`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        is_saved: isSaved,
+      }),
     },
   );
 }

@@ -20,6 +20,7 @@ from app.modules.trips.repository import (
   get_trip_by_id,
   get_user_trips,
   update_trip,
+  update_trip_saved_status,
 )
 from app.modules.trips.schemas import (
   TripCreate,
@@ -64,7 +65,7 @@ async def get_user_trip(
 async def list_user_trips(
   db: AsyncSession,
   user_id: uuid.UUID,
-) -> list[Trip]:
+) -> list[dict]:
   return await get_user_trips(
     db=db,
     user_id=user_id,
@@ -228,4 +229,23 @@ async def set_trip_origin(
     latitude=matched_location["latitude"],
     longitude=matched_location["longitude"],
     timezone=matched_location["timezone"],
+  )
+
+
+async def update_trip_saved(
+  db: AsyncSession,
+  trip_id: str,
+  user_id: uuid.UUID,
+  is_saved: bool,
+) -> Trip:
+  trip = await get_user_trip(
+    db=db,
+    trip_id=trip_id,
+    user_id=user_id,
+  )
+
+  return await update_trip_saved_status(
+    db=db,
+    trip=trip,
+    is_saved=is_saved,
   )
