@@ -455,6 +455,7 @@ export async function optimizeTrip(
 export async function sendTripAssistantMessage(
   tripId: string,
   message: string,
+  activeProposal?: TripChangeProposal | null,
 ): Promise<TripAssistantResponse> {
   return apiRequest<TripAssistantResponse>(
     `/trips/${tripId}/assistant/messages`,
@@ -462,6 +463,8 @@ export async function sendTripAssistantMessage(
       method: "POST",
       body: JSON.stringify({
         message,
+        active_proposal:
+          activeProposal ?? null,
       }),
     },
   );

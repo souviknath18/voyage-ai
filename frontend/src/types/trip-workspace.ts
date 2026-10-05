@@ -127,6 +127,8 @@ export interface TripWorkspaceData {
 
   highlights: string[];
 
+  preferences: string[];
+
   budgetBreakdown: TripBudgetItem[];
 
   itinerary: ItineraryDayData[];

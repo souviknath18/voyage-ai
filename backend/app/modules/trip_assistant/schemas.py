@@ -24,13 +24,6 @@ TripChangeCategory = Literal[
 ]
 
 
-class TripAssistantRequest(BaseModel):
-  message: str = Field(
-    min_length=1,
-    max_length=2000,
-  )
-
-
 class TripAssistantIntentResult(BaseModel):
   intent: TripAssistantIntent
 
@@ -59,6 +52,15 @@ class TripChangeProposal(BaseModel):
     min_length=1,
     max_length=1000,
   )
+
+
+class TripAssistantRequest(BaseModel):
+  message: str = Field(
+    min_length=1,
+    max_length=2000,
+  )
+
+  active_proposal: TripChangeProposal | None = None
 
 
 class TripAssistantResponse(BaseModel):

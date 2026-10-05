@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -46,104 +48,141 @@ const initialMessages: AssistantMessage[] = [
   },
 ];
 
-const mockSteps: AssistantStep[] = [
+const assistantSteps: AssistantStep[] = [
   {
     id: "step-1",
-
-    title:
-      "Reading current hotel and trip budget",
-
-    status:
-      "completed",
+    title: "Reading your current trip",
+    status: "completed",
   },
-
   {
     id: "step-2",
-
-    title:
-      "Comparing hotels near planned activities",
-
-    status:
-      "completed",
+    title: "Understanding your request",
+    status: "completed",
   },
-
   {
     id: "step-3",
-
-    title:
-      "Checking budget impact",
-
-    status:
-      "running",
+    title: "Reviewing your itinerary",
+    status: "running",
   },
-
   {
     id: "step-4",
-
-    title:
-      "Preparing proposed change",
-
-    status:
-      "queued",
+    title: "Preparing response",
+    status: "queued",
   },
 ];
 
-const mockProposal: AssistantProposalData = {
-  id:
-    "proposal-hotel",
+// const mockProposal: AssistantProposalData = {
+//   id:
+//     "proposal-hotel",
 
-  title:
-    "I found a better hotel option",
+//   title:
+//     "I found a better hotel option",
 
-  description:
-    "This alternative gives you better access to Shibuya and central Tokyo while keeping the additional trip cost relatively small.",
+//   description:
+//     "This alternative gives you better access to Shibuya and central Tokyo while keeping the additional trip cost relatively small.",
 
-  impact:
-    "+ INR 4,500 total",
+//   impact:
+//     "+ INR 4,500 total",
 
-  current: {
-    title:
-      "Shinjuku Granbell Hotel",
+//   current: {
+//     title:
+//       "Shinjuku Granbell Hotel",
 
-    subtitle:
-      "Superior Double Room",
+//     subtitle:
+//       "Superior Double Room",
 
-    image:
-      "/images/hotels/shinjuku.jpg",
+//     image:
+//       "/images/hotels/shinjuku.jpg",
 
-    details: [
-      "Shinjuku",
-      "5 nights",
-      "Good transport access",
-    ],
+//     details: [
+//       "Shinjuku",
+//       "5 nights",
+//       "Good transport access",
+//     ],
 
-    amount:
-      "INR 42,000",
-  },
+//     amount:
+//       "INR 42,000",
+//   },
 
-  proposed: {
-    title:
-      "Shibuya Stream Excel Hotel Tokyu",
+//   proposed: {
+//     title:
+//       "Shibuya Stream Excel Hotel Tokyu",
 
-    subtitle:
-      "Standard Double Room",
+//     subtitle:
+//       "Standard Double Room",
 
-    image:
-      "/images/hotels/shibuya.jpg",
+//     image:
+//       "/images/hotels/shibuya.jpg",
 
-    details: [
-      "Shibuya",
-      "5 nights",
-      "Closer to Day 2 activities",
-    ],
+//     details: [
+//       "Shibuya",
+//       "5 nights",
+//       "Closer to Day 2 activities",
+//     ],
 
-    amount:
-      "INR 46,500",
+//     amount:
+//       "INR 46,500",
 
-    label:
-      "VoyageAI Pick",
-  },
-};
+//     label:
+//       "VoyageAI Pick",
+//   },
+// };
+
+function mapProposalToUi(
+  proposal: TripChangeProposal,
+  trip: TripWorkspaceData,
+): AssistantProposalData {
+  const target =
+    proposal.scope === "day" &&
+    proposal.day_number
+      ? `Day ${proposal.day_number}`
+      : "Full itinerary";
+
+  return {
+    id: `proposal-${proposal.category}-${proposal.day_number ?? "trip"}`,
+
+    title: proposal.title,
+
+    description: proposal.summary,
+
+    current: {
+      title:
+        proposal.scope === "day" &&
+        proposal.day_number
+          ? `Current Day ${proposal.day_number}`
+          : "Current itinerary",
+
+      subtitle: trip.destination,
+
+      details: [
+        `Scope: ${target}`,
+        `Category: ${proposal.category}`,
+        "Your current itinerary remains unchanged",
+      ],
+
+      label: "Current",
+    },
+
+    proposed: {
+      title:
+        proposal.scope === "day" &&
+        proposal.day_number
+          ? `Proposed Day ${proposal.day_number} change`
+          : "Proposed itinerary change",
+
+      subtitle: proposal.title,
+
+      details: [
+        proposal.instructions,
+      ],
+
+      label: "VoyageAI Pick",
+    },
+
+    impact:
+      "Final cost impact will be calculated after VoyageAI applies and validates the change.",
+  };
+}
 
 export default function TripAssistant({
   trip,
@@ -157,6 +196,19 @@ export default function TripAssistant({
   ] = useState<TripChangeProposal | null>(
     null,
   );
+
+  const [
+    discussingProposal,
+    setDiscussingProposal,
+  ] = useState(false);
+
+  const proposalUi =
+    proposal
+      ? mapProposalToUi(
+          proposal,
+          trip,
+        )
+      : null;
 
   const [
     sending,
@@ -175,6 +227,22 @@ export default function TripAssistant({
     useState<AssistantMessage[]>(
       initialMessages,
     );
+
+  const conversationEndRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+
+  useEffect(() => {
+    conversationEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [
+    messages,
+    sending,
+    proposal,
+  ]);
 
   const handleSubmit = async (
     message: string,
@@ -201,6 +269,9 @@ export default function TripAssistant({
         await sendTripAssistantMessage(
           trip.id,
           message,
+          discussingProposal
+            ? proposal
+            : null,
         );
 
       const assistantMessage: AssistantMessage = {
@@ -215,13 +286,11 @@ export default function TripAssistant({
       ]);
 
       if (
-        response.action ===
-          "change_requested" &&
+        response.action === "change_requested" &&
         response.proposal
       ) {
         setProposal(response.proposal);
-      } else {
-        setProposal(null);
+        setDiscussingProposal(false);
       }
     } catch (error) {
       console.error(
@@ -315,26 +384,30 @@ export default function TripAssistant({
 
             {sending && (
               <AssistantThinking
-                steps={mockSteps}
+                steps={assistantSteps}
               />
             )}
 
-            {false && (
+            {proposalUi && (
               <AssistantProposal
-                proposal={mockProposal}
+                proposal={proposalUi}
                 onAcceptAction={
                   handleApplyProposal
                 }
-                onRejectAction={() =>
-                  setProposal(null)
-                }
-                onDiscussAction={() =>
-                  console.log(
-                    "Discuss options",
-                  )
-                }
+                onRejectAction={() => {
+                  setProposal(null);
+                  setDiscussingProposal(false);
+                }}
+                onDiscussAction={() => {
+                  setDiscussingProposal(true);
+                }}
               />
             )}
+
+            <div
+              ref={conversationEndRef}
+              aria-hidden="true"
+            />
           </div>
         </div>
 
@@ -343,9 +416,37 @@ export default function TripAssistant({
         {/* ================================= */}
 
         <div className="relative z-20 shrink-0 bg-[#0A0F1F]">
+          {discussingProposal && proposal && (
+            <div className="mx-auto w-full max-w-3xl px-4 pt-3">
+              <div className="flex items-center justify-between rounded-lg border border-[#d1bcff]/20 bg-[#2E1065]/20 px-3 py-2">
+                <p className="text-xs text-[#cbc4d2]">
+                  Discussing:{" "}
+                  <span className="font-medium text-[#e6e0e8]">
+                    {proposal.title}
+                  </span>
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDiscussingProposal(false)
+                  }
+                  className="text-xs text-[#948e9c] transition hover:text-[#e6e0e8]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           <AssistantComposer
             onSubmitAction={
               handleSubmit
+            }
+            placeholder={
+              discussingProposal
+                ? "Tell VoyageAI what you'd like to adjust about this proposal..."
+                : "Ask VoyageAI to change, explain or optimize this trip..."
             }
           />
         </div>

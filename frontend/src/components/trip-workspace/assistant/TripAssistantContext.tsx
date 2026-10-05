@@ -17,6 +17,17 @@ interface TripAssistantContextProps {
 export default function TripAssistantContext({
   trip,
 }: TripAssistantContextProps) {
+
+  function formatPreference(
+    value: string,
+  ) {
+    return value
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (character) =>
+        character.toUpperCase(),
+      );
+  }
+
   return (
     <aside className="hidden w-[280px] shrink-0 border-r border-white/10 bg-white/[0.02] p-4 xl:block">
       {/* Section Label */}
@@ -91,18 +102,13 @@ export default function TripAssistantContext({
         </p>
 
         <div className="mt-3 flex flex-wrap gap-2">
-          {[
-            "Balanced Pace",
-            "Technology",
-            "Food",
-            "Photography",
-          ].map(
+          {trip.preferences.map(
             (preference) => (
               <span
                 key={preference}
                 className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-medium text-[#cbc4d2]"
               >
-                {preference}
+                {formatPreference(preference)}
               </span>
             ),
           )}
