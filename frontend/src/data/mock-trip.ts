@@ -134,6 +134,13 @@ export const mockTrip: TripWorkspaceData = {
     "Tsukiji Outer Market",
   ],
 
+  preferences: [
+    "Technology",
+    "Food",
+    "Photography",
+    "Moderate pace",
+  ],
+
   // =========================================================
   // OVERVIEW BUDGET BREAKDOWN
   // =========================================================
