@@ -44,6 +44,7 @@ async def send_trip_assistant_message(
     public_trip_id=trip_id,
     user_id=current_user.id,
     message=data.message,
+    active_proposal=data.active_proposal,
   )
 
 

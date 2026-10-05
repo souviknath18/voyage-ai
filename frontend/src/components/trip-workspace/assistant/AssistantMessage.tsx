@@ -2,6 +2,8 @@ import {
   Bot,
 } from "lucide-react";
 
+import ReactMarkdown from "react-markdown";
+
 import type {
   AssistantMessage as AssistantMessageType,
 } from "@/types/trip-assistant";
@@ -18,9 +20,43 @@ export default function AssistantMessage({
     return (
       <div className="flex justify-end">
         <div className="max-w-[85%] rounded-2xl rounded-tr-sm border border-[#d1bcff]/20 bg-[#2E1065]/45 px-4 py-3 shadow-[0_8px_24px_rgba(46,16,101,0.12)] sm:max-w-[70%]">
-          <p className="text-sm leading-6 text-[#e6e0e8]">
-            {message.content}
-          </p>
+          <div className="text-sm leading-6 text-[#e6e0e8]">
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => (
+                  <p className="mb-2 last:mb-0">
+                    {children}
+                  </p>
+                ),
+
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-white">
+                    {children}
+                  </strong>
+                ),
+
+                ul: ({ children }) => (
+                  <ul className="my-2 list-disc space-y-1 pl-5">
+                    {children}
+                  </ul>
+                ),
+
+                ol: ({ children }) => (
+                  <ol className="my-2 list-decimal space-y-1 pl-5">
+                    {children}
+                  </ol>
+                ),
+
+                li: ({ children }) => (
+                  <li className="pl-1">
+                    {children}
+                  </li>
+                ),
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
 
           {message.time && (
             <p className="mt-2 text-right text-[9px] text-[#b8a9d4]">
@@ -42,9 +78,43 @@ export default function AssistantMessage({
 
       {/* AI Message */}
       <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-[#fb7185]/20 bg-[#fb7185]/[0.07] px-4 py-3 shadow-[0_8px_24px_rgba(251,113,133,0.05)] sm:max-w-[75%]">
-        <p className="text-sm leading-6 text-[#e6e0e8]">
-          {message.content}
-        </p>
+        <div className="text-sm leading-6 text-[#e6e0e8]">
+          <ReactMarkdown
+            components={{
+              p: ({ children }) => (
+                <p className="mb-2 last:mb-0">
+                  {children}
+                </p>
+              ),
+
+              strong: ({ children }) => (
+                <strong className="font-semibold text-white">
+                  {children}
+                </strong>
+              ),
+
+              ul: ({ children }) => (
+                <ul className="my-2 list-disc space-y-1 pl-5">
+                  {children}
+                </ul>
+              ),
+
+              ol: ({ children }) => (
+                <ol className="my-2 list-decimal space-y-1 pl-5">
+                  {children}
+                </ol>
+              ),
+
+              li: ({ children }) => (
+                <li className="pl-1">
+                  {children}
+                </li>
+              ),
+            }}
+          >
+            {message.content}
+          </ReactMarkdown>
+        </div>
 
         {message.time && (
           <p className="mt-2 text-[9px] text-[#b98d98]">

@@ -210,6 +210,9 @@ export default function TripWorkspaceLayout({
             destination={
               trip.destination
             }
+            image={
+              headerTrip.image
+            }
           />
         </div>
       </div>

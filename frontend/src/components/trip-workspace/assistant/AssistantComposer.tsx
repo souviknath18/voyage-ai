@@ -13,10 +13,14 @@ interface AssistantComposerProps {
   onSubmitAction: (
     message: string,
   ) => void;
+
+  placeholder?: string;
 }
 
 export default function AssistantComposer({
   onSubmitAction,
+  placeholder =
+    "Ask VoyageAI to change, explain or optimize this trip...",
 }: AssistantComposerProps) {
   const [
     value,
@@ -60,7 +64,7 @@ export default function AssistantComposer({
                 }
               }}
               rows={2}
-              placeholder="Ask VoyageAI to change, explain or optimize this trip..."
+              placeholder={placeholder}
               className="max-h-28 min-h-[56px] flex-1 resize-none border-0 bg-transparent px-2 py-2 text-sm leading-5 text-[#e6e0e8] outline-none placeholder:text-[#7f8798] focus:ring-0 sm:min-h-10"
             />
 

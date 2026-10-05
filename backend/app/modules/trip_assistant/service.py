@@ -91,7 +91,22 @@ USER MESSAGE:
 async def build_change_proposal(
   message: str,
   itinerary_context: str,
+  active_proposal: TripChangeProposal | None = None,
 ) -> TripChangeProposal:
+
+  proposal_context = ""
+
+  if active_proposal is not None:
+    proposal_context = f"""
+  CURRENT PROPOSAL
+
+  Title: {active_proposal.title}
+  Summary: {active_proposal.summary}
+  Scope: {active_proposal.scope}
+  Day number: {active_proposal.day_number}
+  Category: {active_proposal.category}
+  Instructions: {active_proposal.instructions}
+  """
 
   prompt = f"""
 You create structured itinerary change proposals for VoyageAI.
@@ -102,10 +117,17 @@ It does NOT apply or execute the change.
 CURRENT ITINERARY
 {itinerary_context}
 
+{proposal_context}
+
 USER REQUEST
 {message}
 
 RULES
+- If CURRENT PROPOSAL is supplied, treat the user's request
+  as a refinement of that proposal when relevant.
+- Preserve parts of the current proposal that the user did
+  not ask to change.
+- Return the complete revised proposal, not only the delta.
 
 scope:
 - trip: affects the overall itinerary
@@ -149,6 +171,7 @@ async def ask_trip_assistant(
   public_trip_id: str,
   user_id,
   message: str,
+  active_proposal: TripChangeProposal | None = None,
 ) -> TripAssistantResponse:
 
   trip = await get_user_trip(
@@ -223,6 +246,7 @@ async def ask_trip_assistant(
     proposal = await build_change_proposal(
       message=message,
       itinerary_context=itinerary_context,
+      active_proposal=active_proposal,
     )
 
     return TripAssistantResponse(

@@ -88,86 +88,95 @@ export default function FloatingAssistantDrawer({
     };
 
   return (
-    /*
-     * Full viewport layer.
-     *
-     * This guarantees that the overlay covers
-     * the entire viewport, including the gap
-     * below the floating drawer.
-     */
     <div className="fixed inset-0 z-[70]">
-      {/* Full Screen Dark Overlay */}
+      {/* ================================= */}
+      {/* OVERLAY */}
+      {/* ================================= */}
+
       <button
         type="button"
         aria-label="Close assistant"
         onClick={onCloseAction}
-        className="absolute inset-0 h-full w-full bg-black/30"
+        className="absolute inset-0 h-full w-full bg-black/60"
       />
 
-      {/* Floating Assistant */}
-      <aside className="absolute bottom-4 right-4 z-10 flex max-h-[540px] w-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#211f24] shadow-[0_22px_60px_rgba(0,0,0,0.55)] sm:bottom-6 sm:right-6 sm:h-[540px] sm:w-[360px]">
-        {/* Header */}
-        <header className="relative flex shrink-0 items-center justify-between border-b border-white/10 bg-white/[0.04] px-4 py-3">
-          {/* Accent */}
-          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#fb7185] via-[#fcd34d] to-transparent opacity-70" />
+      {/* ================================= */}
+      {/* QUICK CHAT */}
+      {/* ================================= */}
 
-          <div className="flex items-center gap-2.5">
-            {/* Avatar */}
-            <div className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#fb7185]/20 to-[#fcd34d]/20" />
+      <aside className="absolute bottom-4 right-4 z-10 flex max-h-[540px] w-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0D1324] shadow-[0_24px_70px_rgba(0,0,0,0.65)] sm:bottom-6 sm:right-6 sm:h-[540px] sm:w-[360px]">
+        {/* ================================= */}
+        {/* HEADER */}
+        {/* ================================= */}
 
+        <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            {/* VoyageAI Icon */}
+
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#fb7185]/20 bg-[#fb7185]/10 text-[#fb7185]">
               <Sparkles
                 size={15}
-                className="relative z-10 text-[#fb7185]"
               />
             </div>
 
-            <div>
+            {/* Title */}
+
+            <div className="min-w-0">
               <h2 className="text-sm font-semibold text-[#e6e0e8]">
                 VoyageAI
               </h2>
 
               <div className="mt-0.5 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#fcd34d]" />
+                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-400" />
 
-                <p className="text-[11px] text-[#aaa3b0]">
+                <p className="truncate text-[11px] text-[#948e9c]">
                   {destination} trip context active
                 </p>
               </div>
             </div>
           </div>
 
+          {/* Close */}
+
           <button
             type="button"
-            aria-label="Close"
+            aria-label="Close quick chat"
             onClick={onCloseAction}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-[#948e9c] transition hover:bg-white/[0.07] hover:text-[#e6e0e8]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.06] text-[#e6e0e8] transition hover:border-white/20 hover:bg-white/[0.10] active:scale-95 sm:h-8 sm:w-8"
           >
-            <X size={15} />
+            <X size={18} strokeWidth={2} />
           </button>
         </header>
 
-        {/* Scrollable Content */}
+        {/* ================================= */}
+        {/* CONTENT */}
+        {/* ================================= */}
+
         <main className="min-h-0 flex-1 overflow-y-auto p-4">
           <div className="flex min-h-full flex-col">
-            {/* Trip Context */}
-            <div className="group relative min-h-[115px] overflow-hidden rounded-xl border border-white/10">
-              {image && (
+            {/* ================================= */}
+            {/* TRIP CONTEXT */}
+            {/* ================================= */}
+
+            <div className="group relative h-[115px] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#070B18]">
+              {/* Destination Background Image */}
+              <div className="absolute inset-0">
                 <DestinationImage
                   src={image}
-                  alt={destination}
-                  className="absolute inset-0 h-full w-full"
-                  imageClassName="object-cover"
+                  alt={`${destination} trip`}
+                  className="h-full w-full"
+                  imageClassName="object-center"
                 />
-              )}
+              </div>
 
-              {!image && (
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2e1065] via-[#211f24] to-[#141218]" />
-              )}
+              {/* Dark Overlay */}
+              <div className="pointer-events-none absolute inset-0 bg-black/25" />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-[#141218] via-[#141218]/65 to-transparent" />
+              {/* Gradient Overlay */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070B18] via-[#070B18]/55 to-[#070B18]/10" />
 
-              <div className="relative z-10 flex min-h-[115px] flex-col justify-end p-3.5">
+              {/* Content */}
+              <div className="relative z-10 flex h-full flex-col justify-end p-3.5">
                 <div className="flex items-center gap-1.5">
                   <MapPin
                     size={12}
@@ -189,9 +198,12 @@ export default function FloatingAssistantDrawer({
               </div>
             </div>
 
-            {/* Suggestions */}
+            {/* ================================= */}
+            {/* SUGGESTIONS */}
+            {/* ================================= */}
+
             <section className="mt-4">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#948e9c]">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[#7f8798]">
                 Try asking VoyageAI
               </p>
 
@@ -214,7 +226,7 @@ export default function FloatingAssistantDrawer({
                             suggestion.label,
                           )
                         }
-                        className="group flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2 text-[11px] font-medium text-[#cbc4d2] transition hover:border-[#fb7185]/30 hover:bg-white/[0.07] hover:text-[#e6e0e8]"
+                        className="group flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2 text-[11px] font-medium text-[#cbc4d2] transition hover:border-[#fb7185]/30 hover:bg-white/[0.06] hover:text-[#e6e0e8]"
                       >
                         <Icon
                           size={13}
@@ -231,29 +243,35 @@ export default function FloatingAssistantDrawer({
               </div>
             </section>
 
-            {/* Open Full Assistant */}
+            {/* ================================= */}
+            {/* FULL ASSISTANT */}
+            {/* ================================= */}
+
             <div className="mt-auto pt-4">
               <button
                 type="button"
                 onClick={
                   openFullAssistant
                 }
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-xs font-semibold text-[#e6e0e8] transition hover:bg-white/[0.07]"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs font-semibold text-[#e6e0e8] transition hover:border-white/15 hover:bg-white/[0.06]"
               >
                 Open Full Assistant
 
                 <ArrowUpRight
                   size={14}
-                  className="text-[#d1bcff]"
+                  className="text-[#fb7185]"
                 />
               </button>
             </div>
           </div>
         </main>
 
-        {/* Composer */}
-        <footer className="shrink-0 border-t border-white/10 bg-[#2b292f] p-3">
-          <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-[#1d1b20] p-1.5 transition focus-within:border-[#fb7185]/30">
+        {/* ================================= */}
+        {/* COMPOSER */}
+        {/* ================================= */}
+
+        <footer className="shrink-0 border-t border-white/10 bg-[#0D1324] p-3">
+          <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-[#070B18] p-1.5 transition focus-within:border-[#fb7185]/30">
             <textarea
               value={message}
               onChange={(
@@ -279,8 +297,10 @@ export default function FloatingAssistantDrawer({
               }}
               rows={1}
               placeholder="Ask about this trip..."
-              className="max-h-[90px] min-h-[40px] min-w-0 flex-1 resize-none border-0 bg-transparent px-2.5 py-2.5 text-xs leading-5 text-[#e6e0e8] outline-none placeholder:text-[#7f7985] focus:ring-0"
+              className="max-h-[90px] min-h-[40px] min-w-0 flex-1 resize-none border-0 bg-transparent px-2.5 py-2.5 text-xs leading-5 text-[#e6e0e8] outline-none placeholder:text-[#7f8798] focus:ring-0"
             />
+
+            {/* Send */}
 
             <button
               type="button"
@@ -291,13 +311,13 @@ export default function FloatingAssistantDrawer({
               disabled={
                 !message.trim()
               }
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#fb7185] to-[#fcd34d] text-[#141218] transition active:scale-95 disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#fb7185] to-[#fcd34d] text-[#070B18] transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Send size={14} />
             </button>
           </div>
 
-          <p className="mt-2 text-center text-[10px] text-[#7f7985]">
+          <p className="mt-2 text-center text-[10px] text-[#7f8798]">
             AI can make mistakes. Check important info.
           </p>
         </footer>
