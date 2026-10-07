@@ -1268,6 +1268,8 @@ export const mockTrip: TripWorkspaceData = {
 
       price: 48900,
 
+      currency: "INR",
+
       label: "recommended",
 
       current: true,
@@ -1276,8 +1278,7 @@ export const mockTrip: TripWorkspaceData = {
     {
       id: "flight-singapore",
 
-      airline:
-        "Singapore Airlines",
+      airline: "Singapore Airlines",
 
       flightNumber: "SQ511",
 
@@ -1303,14 +1304,15 @@ export const mockTrip: TripWorkspaceData = {
 
       price: 56400,
 
+      currency: "INR",
+
       label: "fastest",
     },
 
     {
       id: "flight-malaysia",
 
-      airline:
-        "Malaysia Airlines",
+      airline: "Malaysia Airlines",
 
       flightNumber: "MH193",
 
@@ -1326,8 +1328,7 @@ export const mockTrip: TripWorkspaceData = {
 
       stops: 2,
 
-      stopDescription:
-        "Kuala Lumpur",
+      stopDescription: "Kuala Lumpur",
 
       cabin: "Economy",
 
@@ -1336,6 +1337,8 @@ export const mockTrip: TripWorkspaceData = {
       wifi: false,
 
       price: 43800,
+
+      currency: "INR",
 
       label: "cheapest",
     },

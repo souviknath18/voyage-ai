@@ -293,6 +293,103 @@ export interface TripWeather {
   forecast: WeatherDay[];
 }
 
+export interface FlightSegment {
+  airline: string;
+  airline_code: string | null;
+  flight_number: string;
+
+  origin: string;
+  destination: string;
+
+  departure_at: string;
+  arrival_at: string;
+
+  duration: string | null;
+  cabin: string | null;
+}
+
+export interface FlightSlice {
+  origin: string;
+  destination: string;
+
+  departure_at: string;
+  arrival_at: string;
+
+  duration: string;
+
+  stops: number;
+  stop_description: string;
+
+  segments: FlightSegment[];
+}
+
+export interface FlightOffer {
+  id: string;
+
+  airline: string;
+  airline_code: string | null;
+
+  outbound: FlightSlice;
+  return_flight: FlightSlice | null;
+
+  baggage: string | null;
+  wifi: boolean | null;
+
+  price: string;
+  currency: string;
+
+  converted_price: string;
+  converted_currency: string;
+  exchange_rate: string;
+
+  expires_at: string | null;
+}
+
+export interface TripFlightsResponse {
+  trip_id: string;
+
+  origin: string;
+  destination: string;
+
+  origin_code: string;
+  destination_code: string;
+
+  travelers: number;
+  start_date: string;
+  end_date: string;
+
+  currency: string;
+
+  offers: FlightOffer[];
+}
+
+export interface SelectedFlightResponse {
+  id: string;
+  trip_id: string;
+
+  provider: string;
+  provider_offer_id: string;
+
+  airline: string;
+  airline_code: string | null;
+
+  original_price: string;
+  original_currency: string;
+
+  converted_price: string;
+  converted_currency: string;
+  exchange_rate: string;
+
+  outbound: FlightSlice;
+  return_flight: FlightSlice | null;
+
+  baggage: string | null;
+  expires_at: string | null;
+
+  selected_at: string;
+  updated_at: string;
+}
+
 export async function createTrip(
   data: CreateTripRequest,
 ): Promise<Trip> {
@@ -599,6 +696,46 @@ export async function updateTripSavedStatus(
       method: "PATCH",
       body: JSON.stringify({
         is_saved: isSaved,
+      }),
+    },
+  );
+}
+
+
+export async function getTripFlights(
+  tripId: string,
+): Promise<TripFlightsResponse> {
+  return apiRequest<TripFlightsResponse>(
+    `/trips/${tripId}/flights`,
+    {
+      method: "GET",
+    },
+  );
+}
+
+
+export async function getSelectedTripFlight(
+  tripId: string,
+): Promise<SelectedFlightResponse | null> {
+  return apiRequest<SelectedFlightResponse | null>(
+    `/trips/${tripId}/flights/selected`,
+    {
+      method: "GET",
+    },
+  );
+}
+
+
+export async function selectTripFlight(
+  tripId: string,
+  offerId: string,
+): Promise<SelectedFlightResponse> {
+  return apiRequest<SelectedFlightResponse>(
+    `/trips/${tripId}/flights/selected`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        offer_id: offerId,
       }),
     },
   );
