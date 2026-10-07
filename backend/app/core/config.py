@@ -20,6 +20,12 @@ class Settings(BaseSettings):
     geoapify_api_key: str
     unsplash_access_key: str
 
+    duffel_access_token: str
+    duffel_api_base_url: str = "https://api.duffel.com"
+    duffel_api_version: str = "v2"
+
+    currency_api_base_url: str = "https://api.frankfurter.dev"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

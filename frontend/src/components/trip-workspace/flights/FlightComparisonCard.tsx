@@ -37,7 +37,7 @@ export default function FlightComparisonCard({
     <Card
       className={`relative overflow-hidden p-4 transition-all duration-300 hover:-translate-y-0.5 ${
         flight.current
-          ? "border-[#fb7185]/30"
+          ? "border-[#fb7185]/60 bg-[#fb7185]/[0.04] ring-1 ring-[#fb7185]/20"
           : ""
       }`}
     >
@@ -168,15 +168,29 @@ export default function FlightComparisonCard({
         {/* Price */}
         <div className="flex min-w-[180px] flex-col justify-center border-t border-white/10 pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
           {flight.current && (
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-[#7f8798]">
-              Current Selection
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#fb7185]">
+              ✓ Selected Flight
             </p>
           )}
 
           <p className="mt-1 text-xl font-semibold text-[#fcd34d]">
-            {currency}{" "}
-            {flight.price.toLocaleString()}
+            {flight.convertedCurrency ??
+              flight.currency}{" "}
+            {(
+              flight.convertedPrice ??
+              flight.price
+            ).toLocaleString()}
           </p>
+
+          {flight.convertedPrice !==
+            undefined &&
+            flight.convertedCurrency !==
+              flight.currency && (
+              <p className="mt-1 text-xs text-[#7f8798]">
+                ≈ {flight.currency}{" "}
+                {flight.price.toLocaleString()}
+              </p>
+            )}
 
           <Button
             size="sm"
@@ -186,6 +200,7 @@ export default function FlightComparisonCard({
                 : undefined
             }
             className="mt-4"
+            disabled={flight.current}
             onClick={() =>
               onSelectAction(
                 flight,
@@ -193,7 +208,7 @@ export default function FlightComparisonCard({
             }
           >
             {flight.current
-              ? "Compare"
+              ? "Selected"
               : "Select Flight"}
           </Button>
         </div>

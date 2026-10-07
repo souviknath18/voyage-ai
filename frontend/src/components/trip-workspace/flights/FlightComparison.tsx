@@ -10,6 +10,10 @@ import type {
   TripWorkspaceData,
 } from "@/types/trip-workspace";
 
+import {
+  selectTripFlight,
+} from "@/lib/trips";
+
 import FlightAIRefine from "./FlightAIRefine";
 import FlightBudgetImpact from "./FlightBudgetImpact";
 import FlightComparisonCard from "./FlightComparisonCard";
@@ -18,12 +22,14 @@ import FlightFilters from "./FlightFilters";
 
 interface FlightComparisonProps {
   trip: TripWorkspaceData;
+  tripId: string;
 
   onBackAction: () => void;
 }
 
 export default function FlightComparison({
   trip,
+  tripId,
   onBackAction,
 }: FlightComparisonProps) {
   const [
@@ -48,10 +54,29 @@ export default function FlightComparison({
     FlightComparisonOption | undefined
   >();
 
+  const [
+    currentFlightId,
+    setCurrentFlightId,
+  ] = useState<string | undefined>(
+    trip.flightOptions.find(
+      (flight) => flight.current,
+    )?.id,
+  );
+
+  const [
+    selecting,
+    setSelecting,
+  ] = useState(false);
+
   /*
    * Current selected flight.
    */
   const currentFlight =
+    trip.flightOptions.find(
+      (flight) =>
+        flight.id ===
+        currentFlightId,
+    ) ??
     trip.flightOptions.find(
       (flight) =>
         flight.current,
@@ -209,12 +234,10 @@ export default function FlightComparison({
     flight:
       FlightComparisonOption,
   ) => {
-    /*
-     * Current flight is already
-     * selected, so don't show
-     * budget impact for it.
-     */
-    if (flight.current) {
+    if (
+      flight.id ===
+      currentFlightId
+    ) {
       return;
     }
 
@@ -223,40 +246,39 @@ export default function FlightComparison({
     );
   };
 
-  /*
-   * Confirm new flight.
-   */
   const handleConfirm =
-    () => {
+    async () => {
       if (
-        !selectedFlight
+        !selectedFlight ||
+        selecting
       ) {
         return;
       }
 
-      console.log(
-        "Selected flight:",
-        selectedFlight,
-      );
+      try {
+        setSelecting(true);
 
-      /*
-       * Later:
-       *
-       * PATCH /api/trips/:tripId/flight
-       *
-       * Backend should:
-       *
-       * 1. Change selected flight
-       * 2. Recalculate trip cost
-       * 3. Recalculate remaining budget
-       * 4. Recalculate airport transfer
-       * 5. Check hotel check-in timing
-       * 6. Check itinerary conflicts
-       */
+        const result =
+          await selectTripFlight(
+            tripId,
+            selectedFlight.id,
+          );
 
-      setSelectedFlight(
-        undefined,
-      );
+        setCurrentFlightId(
+          result.provider_offer_id,
+        );
+
+        setSelectedFlight(
+          undefined,
+        );
+      } catch (error) {
+        console.error(
+          "Failed to select flight:",
+          error,
+        );
+      } finally {
+        setSelecting(false);
+      }
     };
 
   return (
@@ -288,11 +310,13 @@ export default function FlightComparison({
           trip.travelers
         }
         currency={
+          currentFlight
+            ?.convertedCurrency ??
           trip.currency
         }
         flightBudget={
-          currentFlight?.price ??
-          trip.flights[0]?.price ??
+          currentFlight
+            ?.convertedPrice ??
           0
         }
         onBackAction={
@@ -361,9 +385,12 @@ export default function FlightComparison({
                   key={
                     flight.id
                   }
-                  flight={
-                    flight
-                  }
+                  flight={{
+                    ...flight,
+                    current:
+                      flight.id ===
+                      currentFlightId,
+                  }}
                   currency={
                     trip.currency
                   }

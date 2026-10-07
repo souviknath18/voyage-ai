@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -49,6 +49,17 @@ export default function FloatingAssistantDrawer({
   onCloseAction,
 }: FloatingAssistantDrawerProps) {
   const router = useRouter();
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   const [
     message,
@@ -109,7 +120,8 @@ export default function FloatingAssistantDrawer({
         {/* HEADER */}
         {/* ================================= */}
 
-        <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+        <header className="relative flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-[#fb7185] via-[#fcd34d] to-transparent opacity-70" />
           <div className="flex min-w-0 items-center gap-2.5">
             {/* VoyageAI Icon */}
 
@@ -271,7 +283,7 @@ export default function FloatingAssistantDrawer({
         {/* ================================= */}
 
         <footer className="shrink-0 border-t border-white/10 bg-[#0D1324] p-3">
-          <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-[#070B18] p-1.5 transition focus-within:border-[#fb7185]/30">
+          <div className="flex items-end gap-2 rounded-xl border border-white/10 bg-[#070B18] p-1.5 transition-all duration-200 focus-within:border-[#fb7185]/50 focus-within:ring-1 focus-within:ring-[#fb7185]/10">
             <textarea
               value={message}
               onChange={(

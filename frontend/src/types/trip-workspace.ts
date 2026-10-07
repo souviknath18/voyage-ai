@@ -434,39 +434,6 @@ export type OptimizationPreset =
   | "less_busy"
   | "more_activities";
 
-export interface FlightComparisonOption {
-  id: string;
-
-  airline: string;
-  flightNumber: string;
-
-  from: string;
-  to: string;
-
-  departureTime: string;
-  arrivalTime: string;
-
-  duration: string;
-
-  stops: number;
-
-  stopDescription?: string;
-
-  cabin: string;
-
-  baggage?: string;
-
-  wifi?: boolean;
-
-  price: number;
-
-  label?:
-    | "recommended"
-    | "cheapest"
-    | "fastest";
-
-  current?: boolean;
-}
 
 export interface HotelComparisonOption {
   id: string;
@@ -555,4 +522,79 @@ export interface PlaceDetailsData {
   };
 
   nearby: NearbyPlace[];
+}
+
+
+export interface FlightComparisonOption {
+  id: string;
+
+  airline: string;
+  airlineCode?: string;
+
+  flightNumber: string;
+
+  from: string;
+  to: string;
+
+  departureTime: string;
+  arrivalTime: string;
+
+  duration: string;
+
+  stops: number;
+
+  stopDescription?: string;
+
+  cabin: string;
+
+  baggage?: string;
+
+  wifi?: boolean;
+
+  price: number;
+  currency: string;
+
+  convertedPrice?: number;
+  convertedCurrency?: string;
+  exchangeRate?: number;
+
+  label?:
+    | "recommended"
+    | "cheapest"
+    | "fastest";
+
+  current?: boolean;
+
+  outboundSegments?: FlightSegmentOption[];
+  returnFlight?: FlightSliceOption;
+}
+
+export interface FlightSegmentOption {
+  airline: string;
+  airlineCode?: string;
+  flightNumber: string;
+
+  from: string;
+  to: string;
+
+  departureAt: string;
+  arrivalAt: string;
+
+  duration?: string;
+  cabin?: string;
+}
+
+export interface FlightSliceOption {
+  from: string;
+  to: string;
+
+  departureAt: string;
+  arrivalAt: string;
+
+  duration: string;
+  stops: number;
+
+  stopDescription?: string;
+
+  segments: FlightSegmentOption[];
 }
