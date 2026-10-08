@@ -21,6 +21,9 @@ class PlanningState(TypedDict):
   # Data collected by research/tool nodes
   research_results: dict[str, Any]
 
+  # Real flight recommended during planning
+  recommended_flight: dict[str, Any] | None
+
   # Initial itinerary produced by the LLM
   draft_itinerary: dict[str, Any] | None
 

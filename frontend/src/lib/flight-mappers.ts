@@ -2,12 +2,14 @@ import type {
   FlightOffer,
   FlightSegment,
   FlightSlice,
+  SelectedFlightResponse,
 } from "@/lib/trips";
 
 import type {
   FlightComparisonOption,
   FlightSegmentOption,
   FlightSliceOption,
+  TripFlight,
 } from "@/types/trip-workspace";
 
 function formatTime(
@@ -207,6 +209,249 @@ export function mapFlightOffer(
             offer.return_flight,
           )
         : undefined,
+  };
+}
+
+
+function formatFlightDateTime(
+  value: string,
+): string {
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    },
+  ).format(
+    new Date(value),
+  );
+}
+
+
+function buildRoute(
+  slice: FlightSlice,
+): string {
+  if (
+    slice.segments.length === 0
+  ) {
+    return `${slice.origin} → ${slice.destination}`;
+  }
+
+  const airports = [
+    slice.segments[0].origin,
+
+    ...slice.segments.map(
+      (segment) =>
+        segment.destination,
+    ),
+  ];
+
+  return airports.join(" → ");
+}
+
+
+export function mapSelectedFlightToTripFlights(
+  selected: SelectedFlightResponse,
+): TripFlight[] {
+  const flights: TripFlight[] = [];
+
+  const outboundFirstSegment =
+    selected.outbound.segments[0];
+
+  flights.push({
+    id: `${selected.id}-outbound`,
+
+    type: "departure",
+
+    airline:
+      selected.airline,
+
+    flightNumber:
+      outboundFirstSegment
+        ?.flight_number ??
+      selected.airline_code ??
+      "",
+
+    from:
+      selected.outbound.origin,
+
+    to:
+      selected.outbound.destination,
+
+    departureTime:
+      formatFlightDateTime(
+        selected.outbound
+          .departure_at,
+      ),
+
+    route:
+      buildRoute(
+        selected.outbound,
+      ),
+
+    cabin:
+      outboundFirstSegment
+        ?.cabin ??
+      "Economy",
+
+    price:
+      Number(
+        selected.converted_price,
+      ),
+  });
+
+  if (selected.return_flight) {
+    const returnFirstSegment =
+      selected.return_flight
+        .segments[0];
+
+    flights.push({
+      id: `${selected.id}-return`,
+
+      type: "return",
+
+      airline:
+        returnFirstSegment
+          ?.airline ??
+        selected.airline,
+
+      flightNumber:
+        returnFirstSegment
+          ?.flight_number ??
+        selected.airline_code ??
+        "",
+
+      from:
+        selected.return_flight
+          .origin,
+
+      to:
+        selected.return_flight
+          .destination,
+
+      departureTime:
+        formatFlightDateTime(
+          selected.return_flight
+            .departure_at,
+        ),
+
+      route:
+        buildRoute(
+          selected.return_flight,
+        ),
+
+      cabin:
+        returnFirstSegment
+          ?.cabin ??
+        "Economy",
+
+      price: 0,
+    });
+  }
+
+  return flights;
+}
+
+
+export function mapSelectedFlightToComparisonOption(
+  selected: SelectedFlightResponse,
+): FlightComparisonOption {
+  const firstSegment =
+    selected.outbound.segments[0];
+
+  return {
+    id:
+      selected.provider_offer_id,
+
+    airline:
+      selected.airline,
+
+    airlineCode:
+      selected.airline_code ??
+      undefined,
+
+    flightNumber:
+      firstSegment
+        ?.flight_number ??
+      selected.airline_code ??
+      "",
+
+    from:
+      selected.outbound.origin,
+
+    to:
+      selected.outbound.destination,
+
+    departureTime:
+      formatTime(
+        selected.outbound
+          .departure_at,
+      ),
+
+    arrivalTime:
+      formatTime(
+        selected.outbound
+          .arrival_at,
+      ),
+
+    duration:
+      formatDuration(
+        selected.outbound.duration,
+      ),
+
+    stops:
+      selected.outbound.stops,
+
+    stopDescription:
+      selected.outbound
+        .stop_description,
+
+    cabin:
+      firstSegment?.cabin ??
+      "Economy",
+
+    baggage:
+      selected.baggage ??
+      undefined,
+
+    price:
+      Number(
+        selected.original_price,
+      ),
+
+    currency:
+      selected.original_currency,
+
+    convertedPrice:
+      Number(
+        selected.converted_price,
+      ),
+
+    convertedCurrency:
+      selected.converted_currency,
+
+    exchangeRate:
+      Number(
+        selected.exchange_rate,
+      ),
+
+    outboundSegments:
+      selected.outbound.segments.map(
+        mapSegment,
+      ),
+
+    returnFlight:
+      selected.return_flight
+        ? mapSlice(
+            selected.return_flight,
+          )
+        : undefined,
+
+    current: true,
+    persistedSnapshot: true,
   };
 }
 

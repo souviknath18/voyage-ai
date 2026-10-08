@@ -55,6 +55,15 @@ export default function FlightComparison({
   >();
 
   const [
+    flightOptions,
+    setFlightOptions,
+  ] = useState<
+    FlightComparisonOption[]
+  >(
+    trip.flightOptions,
+  );
+
+  const [
     currentFlightId,
     setCurrentFlightId,
   ] = useState<string | undefined>(
@@ -72,16 +81,15 @@ export default function FlightComparison({
    * Current selected flight.
    */
   const currentFlight =
-    trip.flightOptions.find(
+    flightOptions.find(
       (flight) =>
         flight.id ===
         currentFlightId,
     ) ??
-    trip.flightOptions.find(
+    flightOptions.find(
       (flight) =>
         flight.current,
-    ) ??
-    trip.flightOptions[0];
+    );
 
   /*
    * Build airline filter options
@@ -91,14 +99,14 @@ export default function FlightComparison({
     useMemo(() => {
       return Array.from(
         new Set(
-          trip.flightOptions.map(
+          flightOptions.map(
             (flight) =>
               flight.airline,
           ),
         ),
       );
     }, [
-      trip.flightOptions,
+      flightOptions,
     ]);
 
   /*
@@ -107,7 +115,7 @@ export default function FlightComparison({
   const visibleFlights =
     useMemo(() => {
       let result =
-        trip.flightOptions;
+        flightOptions;
 
       /*
        * Stops filter.
@@ -152,7 +160,7 @@ export default function FlightComparison({
 
       return result;
     }, [
-      trip.flightOptions,
+      flightOptions,
       nonStop,
       oneStop,
       selectedAirlines,
@@ -264,8 +272,33 @@ export default function FlightComparison({
             selectedFlight.id,
           );
 
+        const newFlightId =
+          result.provider_offer_id;
+
         setCurrentFlightId(
-          result.provider_offer_id,
+          newFlightId,
+        );
+
+        setFlightOptions(
+          (previousOptions) =>
+            previousOptions
+              .filter(
+                (flight) =>
+                  !(
+                    flight.persistedSnapshot &&
+                    flight.id !==
+                      newFlightId
+                  ),
+              )
+              .map(
+                (flight) => ({
+                  ...flight,
+
+                  current:
+                    flight.id ===
+                    newFlightId,
+                }),
+              ),
         );
 
         setSelectedFlight(

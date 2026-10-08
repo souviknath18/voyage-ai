@@ -38,8 +38,14 @@ from app.modules.trips.repository import (
 from app.modules.places.repository import (
   replace_trip_places,
 )
+from app.modules.flights.repository import (
+  save_selected_flight,
+)
 from app.ai.planning.nodes.optimize_itinerary import (
   optimize_itinerary,
+)
+from app.ai.planning.nodes.recommend_flight import (
+  recommend_flight,
 )
 
 
@@ -78,6 +84,7 @@ async def execute_planning_graph(
       ),
 
       "research_results": {},
+      "recommended_flight": None,
       "draft_itinerary": None,
       "validation_errors": [],
       "replan_count": 0,
@@ -135,6 +142,13 @@ async def execute_planning_graph(
         node=research_trip,
         inject_context=True,
       ),
+
+      recommend_flight_node=tracked_step(
+        db=db,
+        agent_run=agent_run,
+        step_name="recommend_flight",
+        node=recommend_flight,
+      ),
     )
 
     result = await planning_graph.ainvoke(
@@ -184,6 +198,90 @@ async def execute_planning_graph(
       trip_id=agent_run.trip_id,
       places=places,
     )
+
+    recommended_flight = result.get(
+      "recommended_flight"
+    )
+
+    if recommended_flight:
+      await save_selected_flight(
+        db=db,
+        trip_id=agent_run.trip_id,
+
+        provider=recommended_flight[
+          "provider"
+        ],
+
+        provider_offer_id=(
+          recommended_flight[
+            "provider_offer_id"
+          ]
+        ),
+
+        airline=recommended_flight[
+          "airline"
+        ],
+
+        airline_code=(
+          recommended_flight.get(
+            "airline_code"
+          )
+        ),
+
+        original_price=(
+          recommended_flight[
+            "original_price"
+          ]
+        ),
+
+        original_currency=(
+          recommended_flight[
+            "original_currency"
+          ]
+        ),
+
+        converted_price=(
+          recommended_flight[
+            "converted_price"
+          ]
+        ),
+
+        converted_currency=(
+          recommended_flight[
+            "converted_currency"
+          ]
+        ),
+
+        exchange_rate=(
+          recommended_flight[
+            "exchange_rate"
+          ]
+        ),
+
+        outbound=recommended_flight[
+          "outbound"
+        ],
+
+        return_flight=(
+          recommended_flight.get(
+            "return_flight"
+          )
+        ),
+
+        baggage=(
+          recommended_flight.get(
+            "baggage"
+          )
+        ),
+
+        expires_at=(
+          recommended_flight.get(
+            "expires_at"
+          )
+        ),
+
+        commit=False,
+      )
 
     result = await db.execute(
       select(Trip).where(

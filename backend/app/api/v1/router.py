@@ -29,6 +29,9 @@ from app.modules.trip_assistant.router import (
 from app.modules.flights.router import (
   router as flights_router,
 )
+from app.modules.hotels.router import (
+  router as hotels_router,
+)
 from app.api.v1.images import router as images_router
 
 router = APIRouter()
@@ -113,4 +116,10 @@ router.include_router(
   flights_router,
   prefix="/trips",
   tags=["Flights"],
+)
+
+router.include_router(
+  hotels_router,
+  prefix="/trips",
+  tags=["Hotels"],
 )

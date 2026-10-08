@@ -38,6 +38,7 @@ async def save_selected_flight(
   return_flight: dict | None,
   baggage: str | None,
   expires_at: str | None,
+  commit: bool = True,
 ) -> SelectedFlight:
   selected = await get_selected_flight(
     db=db,
@@ -69,7 +70,10 @@ async def save_selected_flight(
   selected.baggage = baggage
   selected.expires_at = expires_at
 
-  await db.commit()
-  await db.refresh(selected)
+  if commit:
+    await db.commit()
+    await db.refresh(selected)
+  else:
+    await db.flush()
 
   return selected

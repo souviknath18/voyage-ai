@@ -28,6 +28,8 @@ interface HotelComparisonCardProps {
     HotelComparisonOption;
 
   currency: string;
+  hotelBudget?: number;
+  hasSelectedHotel?: boolean;
 
   onSelectAction: (
     hotel:
@@ -40,6 +42,8 @@ export default function HotelComparisonCard({
   currentHotel,
   currency,
   onSelectAction,
+  hotelBudget = 0,
+  hasSelectedHotel = false,
 }: HotelComparisonCardProps) {
   const total =
     hotel.pricePerNight *
@@ -49,9 +53,9 @@ export default function HotelComparisonCard({
     currentHotel.pricePerNight *
     currentHotel.nights;
 
-  const difference =
-    total -
-    currentTotal;
+  const difference = hasSelectedHotel
+    ? total - currentTotal
+    : total - hotelBudget;
 
   return (
     <Card
@@ -136,30 +140,22 @@ export default function HotelComparisonCard({
             {!hotel.current && (
               <div className="text-right">
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-[#7f8798]">
-                  Budget Impact
+                  {hasSelectedHotel ? "Budget Impact" : "Vs. Hotel Budget"}
                 </p>
 
-                <p
-                  className={`mt-1 text-xs font-semibold ${
-                    difference <
-                    0
-                      ? "text-emerald-400"
-                      : difference >
-                          0
-                        ? "text-[#fcd34d]"
-                        : "text-[#948e9c]"
-                  }`}
-                >
-                  {difference <
-                  0
-                    ? `Save ${currency} ${Math.abs(
-                        difference,
-                      ).toLocaleString()}`
-                    : difference >
-                        0
-                      ? `+${currency} ${difference.toLocaleString()}`
-                      : "No change"}
-                </p>
+                {!hasSelectedHotel && hotelBudget <= 0
+                  ? "Budget unavailable"
+                  : difference < 0
+                    ? hasSelectedHotel
+                      ? `Save ${currency} ${Math.abs(difference).toLocaleString()}`
+                      : `${currency} ${Math.abs(difference).toLocaleString()} under budget`
+                    : difference > 0
+                      ? hasSelectedHotel
+                        ? `+${currency} ${difference.toLocaleString()}`
+                        : `${currency} ${difference.toLocaleString()} over budget`
+                      : hasSelectedHotel
+                        ? "No change"
+                        : "On budget"}
               </div>
             )}
           </div>

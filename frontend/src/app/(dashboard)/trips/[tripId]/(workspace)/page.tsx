@@ -20,13 +20,19 @@ import TripWarningCard from "@/components/trip-workspace/TripWarningCard";
 import TripWeatherCard from "@/components/trip-workspace/TripWeatherCard";
 
 import {
+  getSelectedTripFlight,
   getTrip,
   getTripItinerary,
   getTripWeather,
+  type SelectedFlightResponse,
   type Trip,
   type TripItinerary,
   type TripWeather,
 } from "@/lib/trips";
+
+import {
+  mapSelectedFlightToTripFlights,
+} from "@/lib/flight-mappers";
 
 import {
   mockTrip,
@@ -75,6 +81,13 @@ export default function TripOverviewPage() {
     null,
   );
 
+  const [
+    selectedFlight,
+    setSelectedFlight,
+  ] = useState<SelectedFlightResponse | null>(
+    null,
+  );
+
   useEffect(() => {
     if (!params.tripId) {
       return;
@@ -91,9 +104,15 @@ export default function TripOverviewPage() {
         const [
           tripData,
           itineraryData,
+          selectedFlightData,
         ] = await Promise.all([
           getTrip(params.tripId),
+
           getTripItinerary(
+            params.tripId,
+          ),
+
+          getSelectedTripFlight(
             params.tripId,
           ),
         ]);
@@ -105,6 +124,9 @@ export default function TripOverviewPage() {
         setTrip(tripData);
         setItinerary(
           itineraryData,
+        );
+        setSelectedFlight(
+          selectedFlightData,
         );
 
         // The Overview can now render.
@@ -186,6 +208,13 @@ export default function TripOverviewPage() {
       `/trips/${trip.trip_id}/optimize`,
     );
   };
+
+  const overviewFlights =
+    selectedFlight
+      ? mapSelectedFlightToTripFlights(
+          selectedFlight,
+        )
+      : [];
 
 
   if (loading) {
@@ -326,7 +355,7 @@ export default function TripOverviewPage() {
         <div className="lg:col-span-5">
           <TripFlightCard
             flights={
-              mockTrip.flights
+              overviewFlights
             }
             onCompareAction={() =>
               router.push(
