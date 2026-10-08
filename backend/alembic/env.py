@@ -20,6 +20,7 @@ from app.modules.itineraries.models import (
 )
 from app.modules.places.models import TripPlace
 from app.modules.flights.models import SelectedFlight
+from app.modules.hotels.models import SelectedHotel
 
 
 config = context.config

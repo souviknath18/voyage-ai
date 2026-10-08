@@ -1,6 +1,11 @@
 "use client";
 
 import {
+  selectTripHotel,
+  deleteSelectedTripHotel,
+} from "@/lib/trips";
+
+import {
   useState,
 } from "react";
 
@@ -33,18 +38,18 @@ export default function HotelComparison({
     HotelComparisonOption | undefined
   >();
 
-  const currentHotel =
-    trip.hotelOptions.find(
-      (hotel) =>
-        hotel.current,
-    ) ??
-    trip.hotelOptions[0];
+  const [removingHotel, setRemovingHotel] = useState(false);
 
-  const alternatives =
-    trip.hotelOptions.filter(
-      (hotel) =>
-        !hotel.current,
-    );
+  const savedHotel = trip.hotelOptions.find(
+    (hotel) => hotel.current,
+  );
+
+  const currentHotel =
+    savedHotel ?? trip.hotelOptions[0];
+
+  const alternatives = trip.hotelOptions.filter(
+    (hotel) => hotel.id !== savedHotel?.id,
+  );
 
   const handleSelectHotel = (
     hotel:
@@ -55,38 +60,49 @@ export default function HotelComparison({
     );
   };
 
-  const handleConfirm =
-    () => {
-      if (
-        !selectedHotel
-      ) {
-        return;
-      }
+  const handleConfirm = async () => {
+    if (!selectedHotel) {
+      return;
+    }
 
-      console.log(
-        "Selected hotel:",
-        selectedHotel,
-      );
+    try {
+      await selectTripHotel(trip.id, selectedHotel.id);
 
-      /*
-       * Later:
-       *
-       * PATCH /api/trips/:tripId/hotel
-       *
-       * Backend should:
-       *
-       * 1. Update selected hotel
-       * 2. Update accommodation cost
-       * 3. Recalculate total trip cost
-       * 4. Recalculate remaining budget
-       * 5. Check distance to itinerary
-       * 6. Potentially re-optimize transport
-       */
+      setSelectedHotel(undefined);
 
-      setSelectedHotel(
-        undefined,
-      );
-    };
+      // Refresh the existing page after successful selection.
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to select hotel:", error);
+      alert("Unable to save your hotel selection. Please try again.");
+    }
+  };
+
+  const handleRemoveHotel = async () => {
+    if (!savedHotel || removingHotel) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Remove ${savedHotel.name} from your trip?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setRemovingHotel(true);
+
+      await deleteSelectedTripHotel(trip.id);
+
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to remove hotel:", error);
+      alert("Unable to remove hotel. Please try again.");
+      setRemovingHotel(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -110,10 +126,7 @@ export default function HotelComparison({
         currency={
           trip.currency
         }
-        hotelBudget={
-          currentHotel.pricePerNight *
-          currentHotel.nights
-        }
+        hotelBudget={trip.hotelBudget ?? 0}
         onBackAction={
           onBackAction
         }
@@ -125,17 +138,32 @@ export default function HotelComparison({
         <aside className="space-y-4 xl:col-span-3">
           <div className="xl:sticky xl:top-20">
             <div className="space-y-4">
-              <CurrentHotelSummary
-                hotel={
-                  currentHotel
-                }
-                currency={
-                  trip.currency
-                }
-              />
+              {savedHotel ? (
+                <CurrentHotelSummary
+                  hotel={savedHotel}
+                  currency={trip.currency}
+                  onRemoveAction={handleRemoveHotel}
+                  removing={removingHotel}
+                />
+              ) : (
+                <div className="rounded-xl border border-[#302b3b] bg-[#121421] p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#fb7185]">
+                    Current Accommodation
+                  </p>
+
+                  <p className="mt-4 text-sm font-medium text-[#e6e0e8]">
+                    No hotel selected yet
+                  </p>
+
+                  <p className="mt-2 text-xs leading-relaxed text-[#948e9c]">
+                    Compare the recommended hotels and select
+                    one to add to your trip.
+                  </p>
+                </div>
+              )}
 
               <HotelAIInsight
-                text="VoyageAI recommends comparing hotels based on location as well as price. Staying near Shinjuku or Shibuya can reduce daily transit time, while moving farther east may lower accommodation cost."
+                text={`VoyageAI recommends comparing hotels in ${trip.destination} based on location, price, room amenities, and overall trip budget. Consider choosing accommodation near the attractions you plan to visit to reduce daily travel time and transportation costs.`}
               />
             </div>
           </div>
@@ -157,21 +185,13 @@ export default function HotelComparison({
             {alternatives.map(
               (hotel) => (
                 <HotelComparisonCard
-                  key={
-                    hotel.id
-                  }
-                  hotel={
-                    hotel
-                  }
-                  currentHotel={
-                    currentHotel
-                  }
-                  currency={
-                    trip.currency
-                  }
-                  onSelectAction={
-                    handleSelectHotel
-                  }
+                  key={hotel.id}
+                  hotel={hotel}
+                  currentHotel={currentHotel}
+                  currency={trip.currency}
+                  hotelBudget={trip.hotelBudget}
+                  hasSelectedHotel={Boolean(savedHotel)}
+                  onSelectAction={handleSelectHotel}
                 />
               ),
             )}
@@ -183,29 +203,14 @@ export default function HotelComparison({
       {selectedHotel && (
         <HotelBudgetImpact
           open
-          currentHotel={
-            currentHotel
-          }
-          selectedHotel={
-            selectedHotel
-          }
-          currency={
-            trip.currency
-          }
-          totalBudget={
-            trip.totalBudget
-          }
-          estimatedCost={
-            trip.estimatedCost
-          }
-          onCloseAction={() =>
-            setSelectedHotel(
-              undefined,
-            )
-          }
-          onConfirmAction={
-            handleConfirm
-          }
+          currentHotel={currentHotel}
+          selectedHotel={selectedHotel}
+          currency={trip.currency}
+          totalBudget={trip.totalBudget}
+          estimatedCost={trip.estimatedCost}
+          hasSelectedHotel={Boolean(savedHotel)}
+          onCloseAction={() => setSelectedHotel(undefined)}
+          onConfirmAction={handleConfirm}
         />
       )}
     </div>

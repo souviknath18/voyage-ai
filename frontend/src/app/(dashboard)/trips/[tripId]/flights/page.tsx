@@ -24,10 +24,12 @@ import {
 } from "@/lib/trips";
 
 import {
+  mapSelectedFlightToComparisonOption,
   shortlistFlights,
 } from "@/lib/flight-mappers";
 
 import type {
+  FlightComparisonOption,
   TripWorkspaceData,
 } from "@/types/trip-workspace";
 
@@ -98,11 +100,14 @@ export default function FlightComparisonPage() {
           ),
         ]);
 
-        const flightOptions =
+        const freshFlightOptions =
           shortlistFlights(
             response.offers,
             6,
-          ).map(
+          );
+
+        let flightOptions: FlightComparisonOption[] =
+          freshFlightOptions.map(
             (flight) => ({
               ...flight,
 
@@ -112,6 +117,27 @@ export default function FlightComparisonPage() {
                   selectedFlight.provider_offer_id,
             }),
           );
+
+        if (selectedFlight) {
+          const selectedOfferExists =
+            flightOptions.some(
+              (flight) =>
+                flight.id ===
+                selectedFlight.provider_offer_id,
+            );
+
+          if (!selectedOfferExists) {
+            const persistedSelectedFlight =
+              mapSelectedFlightToComparisonOption(
+                selectedFlight,
+              );
+
+            flightOptions = [
+              persistedSelectedFlight,
+              ...flightOptions,
+            ];
+          }
+        }
 
         setTrip({
           ...mockTrip,

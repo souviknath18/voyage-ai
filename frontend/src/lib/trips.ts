@@ -390,6 +390,73 @@ export interface SelectedFlightResponse {
   updated_at: string;
 }
 
+
+export interface HotelRoom {
+  id: string;
+  name: string;
+  description: string | null;
+  bed_type: string | null;
+  board_type: string | null;
+  refundable: boolean | null;
+  cancellation_policy: string | null;
+}
+
+export interface HotelOffer {
+  id: string;
+  hotel_id: string;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  rating: number | null;
+  star_rating: number | null;
+  image_url: string | null;
+  amenities: string[];
+  room: HotelRoom;
+  check_in: string;
+  check_out: string;
+  nights: number;
+  total_price: string;
+  currency: string;
+  price_per_night: string;
+  converted_price: string;
+  converted_price_per_night: string;
+  converted_currency: string;
+  exchange_rate: string;
+  rank: number;
+  ranking_score: number;
+  within_hotel_budget: boolean | null;
+}
+
+export interface TripHotelsResponse {
+  trip_id: string;
+  destination: string;
+  travelers: number;
+  check_in: string;
+  check_out: string;
+  currency: string;
+  hotel_budget: string | null;
+  recommended_hotel_id: string | null;
+  offers: HotelOffer[];
+}
+
+export interface SelectedHotelResponse {
+  id: string;
+  trip_id: string;
+  provider: string;
+  provider_offer_id: string;
+  hotel_id: string;
+  hotel_name: string;
+  original_price: string;
+  original_currency: string;
+  converted_price: string;
+  converted_currency: string;
+  exchange_rate: string;
+  hotel_snapshot: HotelOffer;
+  selected_at: string;
+  updated_at: string;
+}
+
 export async function createTrip(
   data: CreateTripRequest,
 ): Promise<Trip> {
@@ -738,5 +805,48 @@ export async function selectTripFlight(
         offer_id: offerId,
       }),
     },
+  );
+}
+
+
+export async function getTripHotels(
+  tripId: string,
+): Promise<TripHotelsResponse> {
+  return apiRequest<TripHotelsResponse>(
+    `/trips/${tripId}/hotels`,
+    { method: "GET" },
+  );
+}
+
+export async function getSelectedTripHotel(
+  tripId: string,
+): Promise<SelectedHotelResponse | null> {
+  return apiRequest<SelectedHotelResponse | null>(
+    `/trips/${tripId}/hotels/selected`,
+    { method: "GET" },
+  );
+}
+
+export async function selectTripHotel(
+  tripId: string,
+  offerId: string,
+): Promise<SelectedHotelResponse> {
+  return apiRequest<SelectedHotelResponse>(
+    `/trips/${tripId}/hotels/selected`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        offer_id: offerId,
+      }),
+    },
+  );
+}
+
+export async function deleteSelectedTripHotel(
+  tripId: string,
+): Promise<{ deleted: boolean }> {
+  return apiRequest<{ deleted: boolean }>(
+    `/trips/${tripId}/hotels/selected`,
+    { method: "DELETE" },
   );
 }

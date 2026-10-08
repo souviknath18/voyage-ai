@@ -26,6 +26,9 @@ class Settings(BaseSettings):
 
     currency_api_base_url: str = "https://api.frankfurter.dev"
 
+    liteapi_api_key: str | None = None
+    liteapi_base_url: str = "https://api.liteapi.travel"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

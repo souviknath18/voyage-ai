@@ -3,6 +3,7 @@ import {
   Hotel,
   MapPin,
   Star,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -15,13 +16,16 @@ import type {
 
 interface CurrentHotelSummaryProps {
   hotel: HotelComparisonOption;
-
   currency: string;
+  onRemoveAction?: () => void;
+  removing?: boolean;
 }
 
 export default function CurrentHotelSummary({
   hotel,
   currency,
+  onRemoveAction,
+  removing = false,
 }: CurrentHotelSummaryProps) {
   const total =
     hotel.pricePerNight *
@@ -101,6 +105,18 @@ export default function CurrentHotelSummary({
           {total.toLocaleString()}
         </p>
       </div>
+
+      {onRemoveAction && (
+        <button
+          type="button"
+          onClick={onRemoveAction}
+          disabled={removing}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-[#fb7185]/30 bg-[#fb7185]/10 px-3 py-2.5 text-xs font-medium text-[#fb7185] transition-colors hover:bg-[#fb7185]/20 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Trash2 size={14} />
+          {removing ? "Removing..." : "Remove Selection"}
+        </button>
+      )}
     </div>
   );
 }

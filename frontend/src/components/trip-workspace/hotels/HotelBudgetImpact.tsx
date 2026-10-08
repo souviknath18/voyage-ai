@@ -28,6 +28,8 @@ interface HotelBudgetImpactProps {
 
   estimatedCost: number;
 
+  hasSelectedHotel: boolean;
+
   onCloseAction: () => void;
 
   onConfirmAction: () => void;
@@ -40,6 +42,7 @@ export default function HotelBudgetImpact({
   currency,
   totalBudget,
   estimatedCost,
+  hasSelectedHotel,
   onCloseAction,
   onConfirmAction,
 }: HotelBudgetImpactProps) {
@@ -55,9 +58,9 @@ export default function HotelBudgetImpact({
     selectedHotel.pricePerNight *
     selectedHotel.nights;
 
-  const difference =
-    selectedHotelTotal -
-    currentHotelTotal;
+  const difference = hasSelectedHotel
+    ? selectedHotelTotal - currentHotelTotal
+    : selectedHotelTotal;
 
   const newEstimatedCost =
     estimatedCost +
@@ -110,25 +113,37 @@ export default function HotelBudgetImpact({
         </div>
 
         <p className="mt-5 text-sm leading-6 text-[#cbc4d2]">
-          Selecting{" "}
-          <span className="font-semibold text-[#e6e0e8]">
-            {
-              selectedHotel.name
-            }
-          </span>{" "}
-          instead of{" "}
-          <span className="font-semibold text-[#e6e0e8]">
-            {
-              currentHotel.name
-            }
-          </span>{" "}
-          will update your trip budget.
+          {hasSelectedHotel ? (
+            <>
+              Replacing{" "}
+              <span className="font-semibold text-[#e6e0e8]">
+                {currentHotel.name}
+              </span>{" "}
+              with{" "}
+              <span className="font-semibold text-[#e6e0e8]">
+                {selectedHotel.name}
+              </span>{" "}
+              will change your estimated accommodation cost.
+            </>
+          ) : (
+            <>
+              Selecting{" "}
+              <span className="font-semibold text-[#e6e0e8]">
+                {selectedHotel.name}
+              </span>{" "}
+              will add this hotel to your trip.
+            </>
+          )}
         </p>
 
         <div className="mt-5 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <BudgetRow
-            label="Current Hotel"
-            value={`${currency} ${currentHotelTotal.toLocaleString()}`}
+            label={hasSelectedHotel ? "Current Hotel" : "Current Selection"}
+            value={
+              hasSelectedHotel
+                ? `${currency} ${currentHotelTotal.toLocaleString()}`
+                : "No hotel selected"
+            }
           />
 
           <BudgetRow
@@ -164,10 +179,10 @@ export default function HotelBudgetImpact({
             }`}
           >
             {difference < 0
-              ? `You save ${currency} ${Math.abs(
-                  difference,
-                ).toLocaleString()}.`
-              : `This adds ${currency} ${difference.toLocaleString()} to the trip.`}
+              ? `You save ${currency} ${Math.abs(difference).toLocaleString()}.`
+              : hasSelectedHotel
+                ? `This increases accommodation cost by ${currency} ${difference.toLocaleString()}.`
+                : `Hotel selection: ${currency} ${selectedHotelTotal.toLocaleString()}.`}
           </p>
         )}
 

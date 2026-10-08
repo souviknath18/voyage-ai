@@ -20,9 +20,11 @@ from app.ai.planning.state import PlanningState
 from app.ai.planning.nodes.research_trip import (
   research_trip,
 )
-
 from app.ai.planning.nodes.optimize_itinerary import (
   optimize_itinerary,
+)
+from app.ai.planning.nodes.recommend_flight import (
+  recommend_flight,
 )
 
 
@@ -34,6 +36,7 @@ async def load_context(
 ) -> dict[str, Any]:
   return {
     "research_results": {},
+    "recommended_flight": None,
     "draft_itinerary": None,
     "validation_errors": [],
     "replan_count": 0,
@@ -79,6 +82,7 @@ def build_planning_graph(
   *,
   load_context_node=load_context,
   research_trip_node=research_trip,
+  recommend_flight_node=recommend_flight,
   generate_itinerary_node=generate_itinerary,
   optimize_itinerary_node=optimize_itinerary,
   validate_itinerary_node=validate_itinerary,
@@ -122,6 +126,11 @@ def build_planning_graph(
     research_trip_node,
   )
 
+  builder.add_node(
+    "recommend_flight",
+    recommend_flight_node,
+  )
+
   builder.add_edge(
     START,
     "load_context",
@@ -136,9 +145,14 @@ def build_planning_graph(
     "research_trip",
     route_after_research,
     {
-      "planning": "generate_itinerary",
+      "planning": "recommend_flight",
       "optimization": "optimize_itinerary",
     },
+  )
+
+  builder.add_edge(
+    "recommend_flight",
+    "generate_itinerary",
   )
 
   builder.add_edge(

@@ -42,11 +42,25 @@ export default function TripFlightCard({
             onCompareAction
           }
         >
-          Compare
+          {flights.length > 0
+            ? "Compare"
+            : "Search flights"}
         </button>
       </div>
 
       <div className="space-y-3">
+        {flights.length === 0 && (
+          <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
+            <p className="text-sm font-medium text-[#e6e0e8]">
+              No flight selected
+            </p>
+
+            <p className="mt-1 text-xs text-[#948e9c]">
+              Compare available flights to add one to this trip.
+            </p>
+          </div>
+        )}
+
         {flights.map((flight) => (
           <div
             key={flight.id}

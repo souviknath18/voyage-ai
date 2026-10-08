@@ -87,6 +87,8 @@ export interface TripWorkspaceHeaderData {
 export interface TripWorkspaceData {
   id: string;
 
+  hotelBudget?: number;
+
   title: string;
 
   origin: string;
@@ -564,6 +566,8 @@ export interface FlightComparisonOption {
     | "fastest";
 
   current?: boolean;
+
+  persistedSnapshot?: boolean;
 
   outboundSegments?: FlightSegmentOption[];
   returnFlight?: FlightSliceOption;
