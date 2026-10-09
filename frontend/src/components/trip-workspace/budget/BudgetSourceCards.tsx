@@ -7,7 +7,15 @@ import {
   Card,
 } from "@/components/ui";
 
-export default function BudgetSourceCards() {
+interface BudgetSourceCardsProps {
+  hasSelectedHotel?: boolean;
+  hasSelectedFlight?: boolean;
+}
+
+export default function BudgetSourceCards({
+  hasSelectedHotel = false,
+  hasSelectedFlight = false,
+}: BudgetSourceCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
       {/* Provider pricing */}
@@ -26,7 +34,13 @@ export default function BudgetSourceCards() {
             </h3>
 
             <p className="mt-1 text-xs text-[#948e9c]">
-              Live flight and hotel pricing will be shown here when provider integrations are available.
+              {hasSelectedHotel && hasSelectedFlight
+                ? "Your selected hotel and flight prices are included in the trip budget."
+                : hasSelectedHotel
+                  ? "Your selected hotel price is included in the trip budget. Select a flight to include its cost."
+                  : hasSelectedFlight
+                    ? "Your selected flight price is included in the trip budget. Select a hotel to include its cost."
+                    : "Live hotel and flight offers are available through LiteAPI and Duffel. Select an option to include its price in your budget."}
             </p>
           </div>
         </div>

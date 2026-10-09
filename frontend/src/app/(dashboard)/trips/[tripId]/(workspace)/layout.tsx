@@ -20,8 +20,10 @@ import {
 import {
   getTrip,
   getTripItinerary,
+  getTripBudget,
   type Trip,
   type TripItinerary,
+  type TripBudget,
 } from "@/lib/trips";
 
 import {
@@ -63,6 +65,8 @@ export default function TripWorkspaceLayout({
     null,
   );
 
+  const [budget, setBudget] = useState<TripBudget | null>(null);
+
   const [
     destinationImage,
     setDestinationImage,
@@ -85,9 +89,11 @@ export default function TripWorkspaceLayout({
         const [
           tripData,
           itineraryData,
+          budgetData,
         ] = await Promise.all([
           getTrip(tripId),
           getTripItinerary(tripId),
+          getTripBudget(tripId),
         ]);
 
         if (cancelled) {
@@ -96,6 +102,7 @@ export default function TripWorkspaceLayout({
 
         setTrip(tripData);
         setItinerary(itineraryData);
+        setBudget(budgetData);
 
         // Essential workspace data is ready.
         setLoading(false);
@@ -189,6 +196,7 @@ export default function TripWorkspaceLayout({
       trip,
       itinerary,
       destinationImage,
+      budget,
     );
 
   return (

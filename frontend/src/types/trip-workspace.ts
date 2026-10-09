@@ -454,6 +454,8 @@ export interface HotelComparisonOption {
 
   pricePerNight: number;
 
+  totalPrice?: number;
+
   nights: number;
 
   amenities: string[];

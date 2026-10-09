@@ -7,6 +7,8 @@ BUDGET_CATEGORIES: Final[tuple[str, ...]] = (
   "transport",
   "activity",
   "shopping",
+  "accommodation",
+  "flight",
   "other",
 )
 

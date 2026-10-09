@@ -213,6 +213,8 @@ export type BudgetCategory =
   | "transport"
   | "activity"
   | "shopping"
+  | "accommodation"
+  | "flight"
   | "other";
 
 export interface TripBudgetCategory {

@@ -41,6 +41,7 @@ export function mapHotelOfferToOption(
       Math.min(5, Math.round((offer.star_rating ?? 0))),
     ),
     pricePerNight: Number(offer.converted_price_per_night),
+    totalPrice: Number(offer.converted_price),
     nights: offer.nights,
     amenities: offer.amenities ?? [],
     highlights,
@@ -55,9 +56,15 @@ export function mapHotelOfferToOption(
 export function mapSelectedHotelToOption(
   selected: SelectedHotelResponse,
 ): HotelComparisonOption {
-  return mapHotelOfferToOption(
+  const option = mapHotelOfferToOption(
     selected.hotel_snapshot,
     null,
     selected.provider_offer_id,
   );
+
+  return {
+    ...option,
+    current: true,
+    totalPrice: Number(selected.converted_price),
+  };
 }

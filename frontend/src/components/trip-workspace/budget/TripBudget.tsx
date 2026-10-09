@@ -14,25 +14,6 @@ import ExpenseBreakdown from "./ExpenseBreakdown";
 
 interface TripBudgetProps {
   currency: string;
-
-  totalBudget: number;
-
-  estimatedCost: number;
-
-  remainingBudget: number;
-
-  potentialSavings: number;
-
-  categories: TripBudgetCategory[];
-
-  insight: string;
-
-  recommendations:
-    BudgetRecommendation[];
-}
-
-interface TripBudgetProps {
-  currency: string;
   totalBudget: number;
   estimatedCost: number;
   remainingBudget: number;
@@ -40,7 +21,6 @@ interface TripBudgetProps {
   categories: TripBudgetCategory[];
   insight: string;
   recommendations: BudgetRecommendation[];
-
   onOptimizeAction: () => void;
 }
 
@@ -55,6 +35,18 @@ export default function TripBudget({
   recommendations,
   onOptimizeAction,
 }: TripBudgetProps) {
+
+  const hasSelectedHotel = categories.some(
+    (category) =>
+      category.type === "hotel" &&
+      category.amount > 0,
+  );
+
+  const hasSelectedFlight = categories.some(
+    (category) =>
+      category.type === "flight" &&
+      category.amount > 0,
+  );
 
   const handleApplyRecommendation =
     (
@@ -114,7 +106,10 @@ export default function TripBudget({
         </div>
 
         <div className="space-y-3 lg:col-span-4">
-          <BudgetSourceCards />
+          <BudgetSourceCards
+            hasSelectedHotel={hasSelectedHotel}
+            hasSelectedFlight={hasSelectedFlight}
+          />
 
           <BudgetInsightCard
             insight={

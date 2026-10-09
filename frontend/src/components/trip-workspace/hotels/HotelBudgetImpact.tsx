@@ -51,12 +51,12 @@ export default function HotelBudgetImpact({
   }
 
   const currentHotelTotal =
-    currentHotel.pricePerNight *
-    currentHotel.nights;
+    currentHotel.totalPrice ??
+    currentHotel.pricePerNight * currentHotel.nights;
 
   const selectedHotelTotal =
-    selectedHotel.pricePerNight *
-    selectedHotel.nights;
+    selectedHotel.totalPrice ??
+    selectedHotel.pricePerNight * selectedHotel.nights;
 
   const difference = hasSelectedHotel
     ? selectedHotelTotal - currentHotelTotal

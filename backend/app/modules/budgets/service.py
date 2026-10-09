@@ -5,6 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.itineraries.repository import get_itinerary_by_trip_id
 from app.modules.trips.repository import get_trip_by_id
+from app.modules.flights.repository import get_selected_flight
+from app.modules.hotels.repository import get_selected_hotel
 
 from app.modules.budgets.analyzer import (
   build_budget_insight,
@@ -59,6 +61,17 @@ async def get_trip_budget(
 
   estimated_cost = Decimal("0.00")
 
+  # Load the user's saved flight and hotel selections.
+  selected_flight = await get_selected_flight(
+    db=db,
+    trip_id=trip.id,
+  )
+
+  selected_hotel = await get_selected_hotel(
+    db=db,
+    trip_id=trip.id,
+  )
+
   for day in itinerary.days:
     for activity in day.activities:
 
@@ -77,8 +90,37 @@ async def get_trip_budget(
       category_totals[category] += cost
       estimated_cost += cost
 
-  # Keep the calculated value authoritative instead of trusting
-  # a separately stored total.
+    # Add saved flight expenses.
+  if selected_flight is not None:
+    if selected_flight.converted_currency != trip.currency:
+      raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="Selected flight currency does not match trip currency",
+      )
+
+    flight_cost = normalize_money(
+      selected_flight.converted_price
+    )
+
+    category_totals["flight"] += flight_cost
+    estimated_cost += flight_cost
+
+  # Add saved hotel expenses.
+  if selected_hotel is not None:
+    if selected_hotel.converted_currency != trip.currency:
+      raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="Selected hotel currency does not match trip currency",
+      )
+
+    hotel_cost = normalize_money(
+      selected_hotel.converted_price
+    )
+
+    category_totals["accommodation"] += hotel_cost
+    estimated_cost += hotel_cost
+
+  # Normalize the complete trip estimate.
   estimated_cost = normalize_money(
     estimated_cost
   )

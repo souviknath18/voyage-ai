@@ -9,6 +9,8 @@ BudgetCategory = Literal[
   "transport",
   "activity",
   "shopping",
+  "accommodation",
+  "flight",
   "other",
 ]
 
