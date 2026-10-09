@@ -13,6 +13,7 @@ import {
   getTrip,
   getTripHotels,
   getSelectedTripHotel,
+  getTripBudget,
 } from "@/lib/trips";
 
 import {
@@ -42,11 +43,12 @@ export default function HotelComparisonPage() {
         setError(null);
         setTrip(null);
 
-        const [tripData, hotelsData, selectedHotel] =
+        const [tripData, hotelsData, selectedHotel, budgetData] =
           await Promise.all([
             getTrip(tripId),
             getTripHotels(tripId),
             getSelectedTripHotel(tripId),
+            getTripBudget(tripId),
           ]);
 
         if (cancelled) return;
@@ -54,16 +56,30 @@ export default function HotelComparisonPage() {
         const selectedOfferId =
           selectedHotel?.provider_offer_id ?? null;
 
-        const options = hotelsData.offers.map((offer) =>
-          mapHotelOfferToOption(
+        const options = hotelsData.offers.map((offer) => {
+          const option = mapHotelOfferToOption(
             offer,
             hotelsData.recommended_hotel_id,
             selectedOfferId,
-          ),
-        );
+          );
 
-        // A saved offer might no longer appear in
-        // the latest provider search results.
+          // Always use the persisted price for the saved hotel.
+          if (
+            selectedHotel &&
+            offer.id === selectedOfferId
+          ) {
+            return {
+              ...option,
+              current: true,
+              totalPrice: Number(selectedHotel.converted_price),
+            };
+          }
+
+          return option;
+        });
+
+        // A saved hotel may no longer appear in the
+        // latest provider search results.
         if (
           selectedHotel &&
           !options.some((option) => option.current)
@@ -104,13 +120,13 @@ export default function HotelComparisonPage() {
           travelers: tripData.travelers,
           currency: tripData.currency,
 
-          totalBudget: Number(tripData.budget ?? 0),
-          estimatedCost: Number(
-            tripData.estimated_total_cost ?? 0,
+          totalBudget: Number(budgetData.total_budget ?? 0),
+
+          estimatedCost: Number(budgetData.estimated_cost),
+
+          remainingBudget: Number(
+            budgetData.remaining_budget ?? 0,
           ),
-          remainingBudget:
-            Number(tripData.budget ?? 0) -
-            Number(tripData.estimated_total_cost ?? 0),
 
           hotelOptions: options,
         };

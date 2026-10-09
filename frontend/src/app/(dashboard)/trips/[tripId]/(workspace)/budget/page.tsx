@@ -128,6 +128,8 @@ export default function TripBudgetPage() {
     transport: "Transport",
     activity: "Activities",
     shopping: "Shopping",
+    accommodation: "Accommodation",
+    flight: "Flights",
     other: "Other",
   };
 
@@ -136,6 +138,8 @@ export default function TripBudgetPage() {
     transport: "transport",
     activity: "activities",
     shopping: "shopping",
+    accommodation: "hotel",
+    flight: "flight",
     other: "buffer",
   } as const;
 
@@ -158,7 +162,11 @@ export default function TripBudgetPage() {
           category.estimated_cost,
         ),
 
-        source: "estimated",
+        source:
+          category.category === "accommodation" ||
+          category.category === "flight"
+            ? "live"
+            : "estimated",
       }),
     );
 

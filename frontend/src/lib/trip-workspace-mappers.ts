@@ -1,6 +1,7 @@
 import type {
   Trip,
   TripItinerary,
+  TripBudget,
 } from "@/lib/trips";
 
 import type {
@@ -12,6 +13,7 @@ export function mapTripToWorkspaceHeader(
   trip: Trip,
   itinerary: TripItinerary | null,
   image?: string,
+  budget?: TripBudget | null,
 ): TripWorkspaceHeaderData {
   const startDate =
     new Date(trip.start_date);
@@ -30,18 +32,20 @@ export function mapTripToWorkspaceHeader(
       ) / millisecondsPerDay,
     ) + 1;
 
-  const totalBudget =
-    Number(trip.budget ?? 0);
+  const totalBudget = Number(
+    budget?.total_budget ?? trip.budget ?? 0,
+  );
 
-  const estimatedCost =
-    itinerary
-      ? Number(
-          itinerary.estimated_total_cost,
-        )
-      : 0;
+  const estimatedCost = Number(
+    budget?.estimated_cost ??
+      itinerary?.estimated_total_cost ??
+      0,
+  );
 
-  const remainingBudget =
-    totalBudget - estimatedCost;
+  const remainingBudget = Number(
+    budget?.remaining_budget ??
+      totalBudget - estimatedCost,
+  );
 
   return {
     id: trip.trip_id,
