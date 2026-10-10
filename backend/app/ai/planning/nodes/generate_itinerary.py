@@ -8,6 +8,7 @@ from langchain_openai import ChatOpenAI
 
 from app.ai.planning.schemas import (
   GeneratedItinerary,
+  GeneratedItineraryDay,
 )
 from app.ai.planning.state import PlanningState
 from app.core.config import settings
@@ -19,8 +20,8 @@ llm = ChatOpenAI(
   temperature=0.3,
 )
 
-structured_llm = llm.with_structured_output(
-  GeneratedItinerary
+structured_day_llm = llm.with_structured_output(
+  GeneratedItineraryDay
 )
 
 
@@ -77,6 +78,12 @@ async def generate_itinerary(
     "places",
     [],
   )
+
+  verified_place_ids = {
+    place["provider_place_id"]
+    for place in places
+    if place.get("provider_place_id")
+  }
 
   places_context = (
     "No verified places are available."
@@ -249,6 +256,31 @@ PLACES RULES
   restaurant, cafe, attraction, landmark, temple, park,
   viewpoint, beach, or other POI.
 
+ACTIVITY DURATION RULES
+- Every itinerary activity should include duration_minutes.
+- duration_minutes represents the estimated time spent
+  completing the activity, in minutes.
+- Use realistic estimates based on the activity type
+  and the traveler's requested pace.
+- Typical planning estimates:
+  Breakfast: 30-60 minutes.
+  Lunch: 45-90 minutes.
+  Dinner: 60-120 minutes.
+  Museum or attraction visit: 60-180 minutes.
+  Park or landmark visit: 30-120 minutes.
+  Walking or sightseeing: 60-180 minutes.
+  Shopping: 45-120 minutes.
+  Local transport: estimate based on available context.
+- These are guidelines, not fixed durations.
+- Do not claim estimated durations are verified.
+- Use null when duration cannot reasonably be estimated.
+- Keep durations between 1 and 1440 minutes.
+- Schedule activities with enough time to complete
+  each activity before the next one begins.
+- Avoid overlapping activity time ranges.
+- Allow reasonable gaps for travel, rest, and transitions.
+- Do not invent verified travel times or distances.
+
 COST CATEGORY RULES
 - Every activity must have exactly one cost_category.
 - cost_category must be one of:
@@ -297,12 +329,96 @@ IMPORTANT DATE RULES
 - Do not skip any date.
 """
 
-  itinerary = await structured_llm.ainvoke(
-    prompt
+  generated_days = []
+
+  for index, required_date in enumerate(
+    required_dates,
+    start=1,
+  ):
+    day_prompt = (
+      prompt
+      + "\n\nSINGLE DAY GENERATION\n"
+      + f"Generate ONLY Day {index} for {required_date}.\n"
+      + "Return exactly one itinerary day in the "
+      + "required structured output.\n"
+      + f"day_number must be {index}.\n"
+      + f"date must be {required_date}.\n"
+      + "Include appropriate activities for this day.\n"
+      + "Follow all verified-place, activity duration, "
+      + "cost, weather, and travel preference rules.\n"
+      + "Do not generate other days.\n"
+    )
+
+    result = await structured_day_llm.ainvoke(
+      day_prompt
+    )
+
+    generated_day = result.day.model_dump()
+
+    for activity in generated_day["activities"]:
+      place_id = activity.get("place_id")
+      activity_type = activity.get("activity_type")
+
+      if activity_type == "verified_place":
+        if place_id not in verified_place_ids:
+          activity["activity_type"] = "generic"
+          activity["place_id"] = None
+          activity["title"] = "Explore the local area"
+          activity["location"] = None
+          activity["description"] = (
+            "Spend time exploring the destination "
+            "without a specific planned attraction."
+          )
+
+      elif activity_type == "generic":
+        activity["place_id"] = None
+
+    # The date and number are deterministic trip data.
+    generated_day["day_number"] = index
+    generated_day["date"] = required_date
+
+    generated_days.append(generated_day)
+
+    print(
+      f"[ITINERARY] Generated Day {index}/"
+      f"{len(required_dates)}: {required_date}, "
+      f"activities={len(generated_day['activities'])}"
+    )
+
+  draft_itinerary = {
+    "destination": trip["destination"],
+    "summary": (
+      f"{len(required_dates)}-day itinerary for "
+      f"{trip['destination_name']}."
+    ),
+    "currency": trip["currency"],
+    "days": generated_days,
+    "estimated_total_cost": sum(
+      activity["estimated_cost"]
+      for day in generated_days
+      for activity in day["activities"]
+    ),
+  }
+
+  print(
+    "[ITINERARY DEBUG] Required days:",
+    len(required_dates),
   )
 
-  draft_itinerary = (
-    itinerary.model_dump()
+  print(
+    "[ITINERARY DEBUG] Generated days:",
+    len(draft_itinerary.get("days", [])),
+  )
+
+  print(
+    "[ITINERARY DEBUG] Generated dates:",
+    [
+      {
+        "day_number": day.get("day_number"),
+        "date": day.get("date"),
+      }
+      for day in draft_itinerary.get("days", [])
+    ],
   )
 
   draft_itinerary["destination"] = (

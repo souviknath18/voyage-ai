@@ -5,6 +5,9 @@ from app.ai.planning.state import PlanningState
 from app.ai.planning.itinerary_dates import (
   get_required_trip_dates,
 )
+from app.ai.planning.itinerary_conflicts import (
+  detect_itinerary_conflicts,
+)
 
 
 def _build_verified_place_description(
@@ -437,13 +440,17 @@ def validate_itinerary(
       "the trip budget."
     )
 
+  warnings = detect_itinerary_conflicts(itinerary_days)
+
   if errors:
     return {
       "validation_errors": errors,
+      "validation_warnings": warnings,
       "final_itinerary": None,
     }
 
   return {
     "validation_errors": [],
+    "validation_warnings": warnings,
     "final_itinerary": itinerary,
   }

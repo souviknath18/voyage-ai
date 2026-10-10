@@ -77,3 +77,21 @@ async def save_selected_flight(
     await db.flush()
 
   return selected
+
+
+async def delete_selected_flight(
+  db: AsyncSession,
+  trip_id: uuid.UUID,
+) -> bool:
+  selected = await get_selected_flight(
+    db=db,
+    trip_id=trip_id,
+  )
+
+  if selected is None:
+    return False
+
+  await db.delete(selected)
+  await db.commit()
+
+  return True

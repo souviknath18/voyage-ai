@@ -192,6 +192,7 @@ export interface TripItinerary {
   currency: string;
   estimated_total_cost: string;
   days: ItineraryDay[];
+  validation_warnings?: string[];
   created_at: string;
   updated_at: string;
   version: number;
@@ -457,6 +458,12 @@ export interface SelectedHotelResponse {
   hotel_snapshot: HotelOffer;
   selected_at: string;
   updated_at: string;
+}
+
+export interface RecommendedHotelResponse {
+  agent_run_id: string;
+  recommended_hotel: HotelOffer;
+  recommended_at: string | null;
 }
 
 export async function createTrip(
@@ -829,6 +836,17 @@ export async function getSelectedTripHotel(
   );
 }
 
+export async function getRecommendedTripHotel(
+  tripId: string,
+): Promise<RecommendedHotelResponse | null> {
+  return apiRequest<RecommendedHotelResponse | null>(
+    `/trips/${tripId}/hotels/recommended`,
+    {
+      method: "GET",
+    },
+  );
+}
+
 export async function selectTripHotel(
   tripId: string,
   offerId: string,
@@ -850,5 +868,16 @@ export async function deleteSelectedTripHotel(
   return apiRequest<{ deleted: boolean }>(
     `/trips/${tripId}/hotels/selected`,
     { method: "DELETE" },
+  );
+}
+
+export async function deleteSelectedTripFlight(
+  tripId: string,
+): Promise<{ deleted: boolean }> {
+  return apiRequest<{ deleted: boolean }>(
+    `/trips/${tripId}/flights/selected`,
+    {
+      method: "DELETE",
+    },
   );
 }

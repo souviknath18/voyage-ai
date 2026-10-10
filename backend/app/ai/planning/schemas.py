@@ -13,6 +13,15 @@ CostCategory = Literal[
 
 class ItineraryActivity(BaseModel):
   time: str
+  duration_minutes: int | None = Field(
+    default=None,
+    ge=1,
+    le=1440,
+    description=(
+      "Estimated activity duration in minutes. "
+      "Use null when the duration is unknown."
+    ),
+  )
   title: str
   description: str
   location: str | None = None
@@ -35,6 +44,10 @@ class ItineraryDay(BaseModel):
   date: str
   title: str
   activities: list[ItineraryActivity]
+
+
+class GeneratedItineraryDay(BaseModel):
+  day: ItineraryDay
 
 
 class GeneratedItinerary(BaseModel):

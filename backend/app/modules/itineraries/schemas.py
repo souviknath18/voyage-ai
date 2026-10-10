@@ -11,6 +11,8 @@ class ItineraryItemResponse(BaseModel):
 
   time: str
 
+  duration_minutes: int | None = None
+
   title: str
 
   description: str
@@ -68,6 +70,7 @@ class ItineraryResponse(BaseModel):
   estimated_total_cost: Decimal
 
   days: list[ItineraryDayResponse]
+  validation_warnings: list[str] = []
 
   created_at: datetime
   updated_at: datetime

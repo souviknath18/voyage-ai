@@ -35,6 +35,7 @@ import TripAssistantHeader from "./TripAssistantHeader";
 
 interface TripAssistantProps {
   trip: TripWorkspaceData;
+  initialRequest?: string;
 
   onBackAction: () => void;
 }
@@ -186,6 +187,7 @@ function mapProposalToUi(
 
 export default function TripAssistant({
   trip,
+  initialRequest,
   onBackAction,
 }: TripAssistantProps) {
   const router = useRouter();
@@ -311,6 +313,28 @@ export default function TripAssistant({
       setSending(false);
     }
   };
+
+  const autoSubmittedRequestRef = useRef<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (!initialRequest) {
+      return;
+    }
+
+    const requestKey = `${trip.id}:${initialRequest}`;
+
+    if (autoSubmittedRequestRef.current === requestKey) {
+      return;
+    }
+
+    autoSubmittedRequestRef.current = requestKey;
+
+    void handleSubmit(initialRequest);
+    // Intentionally submit once per trip/request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRequest, trip.id]);
 
   const handleApplyProposal = async () => {
     if (!proposal || applying) {

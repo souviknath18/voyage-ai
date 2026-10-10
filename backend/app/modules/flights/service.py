@@ -2,7 +2,7 @@ import uuid
 from decimal import Decimal, ROUND_HALF_UP
 import httpx
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 
 from fastapi import (
   HTTPException,
@@ -25,6 +25,7 @@ from app.integrations.currency.frankfurter import (
 from app.modules.flights.repository import (
   get_selected_flight,
   save_selected_flight,
+  delete_selected_flight,
 )
 from app.modules.flights.ranking import (
   FlightCandidate,
@@ -291,6 +292,32 @@ async def select_trip_flight(
       offer_id=offer_id,
     )
 
+    if offer.expires_at:
+      try:
+        expires_at = datetime.fromisoformat(
+          offer.expires_at.replace("Z", "+00:00")
+        )
+      except ValueError as exc:
+        raise HTTPException(
+          status_code=status.HTTP_502_BAD_GATEWAY,
+          detail="Flight provider returned an invalid offer expiration.",
+        ) from exc
+
+      if expires_at.tzinfo is None:
+        raise HTTPException(
+          status_code=status.HTTP_502_BAD_GATEWAY,
+          detail="Flight provider returned an expiration without timezone.",
+        )
+
+      if expires_at <= datetime.now(timezone.utc):
+        raise HTTPException(
+          status_code=status.HTTP_409_CONFLICT,
+          detail=(
+            "This flight offer has expired. "
+            "Please search for updated flights."
+          ),
+        )
+
     # 3. Resolve the trip airports again so we can
     # verify that this offer belongs to this trip.
     origin_name = (
@@ -483,6 +510,23 @@ async def get_trip_selected_flight(
   )
 
   return await get_selected_flight(
+    db=db,
+    trip_id=trip.id,
+  )
+
+
+async def clear_trip_selected_flight(
+  db: AsyncSession,
+  public_trip_id: str,
+  user_id: uuid.UUID,
+) -> bool:
+  trip = await get_user_trip(
+    db=db,
+    trip_id=public_trip_id,
+    user_id=user_id,
+  )
+
+  return await delete_selected_flight(
     db=db,
     trip_id=trip.id,
   )

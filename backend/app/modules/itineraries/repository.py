@@ -81,17 +81,15 @@ async def save_itinerary(
     ):
       itinerary_item = ItineraryItem(
         itinerary_day_id=itinerary_day.id,
-
         sort_order=sort_order,
-
         time=activity["time"],
+        duration_minutes=activity.get("duration_minutes"),
         title=activity["title"],
         description=activity["description"],
         location=activity.get("location"),
         activity_type=activity["activity_type"],
         cost_category=activity["cost_category"],
         place_id=activity.get("place_id"),
-
         estimated_cost=Decimal(
           str(
             activity.get(
@@ -197,6 +195,7 @@ def serialize_itinerary(
         "activities": [
           {
             "time": activity.time,
+            "duration_minutes": activity.duration_minutes,
             "title": activity.title,
             "description": activity.description,
             "location": activity.location,

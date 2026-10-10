@@ -19,6 +19,7 @@ from app.modules.flights.service import (
   get_trip_flights,
   get_trip_selected_flight,
   select_trip_flight,
+  clear_trip_selected_flight,
 )
 from app.modules.users.models import User
 
@@ -86,3 +87,20 @@ async def get_selected_flight(
     public_trip_id=trip_id,
     user_id=current_user.id,
   )
+
+
+@router.delete(
+  "/{trip_id}/flights/selected",
+)
+async def delete_selected_flight_endpoint(
+  trip_id: str,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  deleted = await clear_trip_selected_flight(
+    db=db,
+    public_trip_id=trip_id,
+    user_id=current_user.id,
+  )
+
+  return {"deleted": deleted}

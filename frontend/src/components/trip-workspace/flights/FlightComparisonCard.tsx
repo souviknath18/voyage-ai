@@ -20,18 +20,22 @@ import type {
 
 interface FlightComparisonCardProps {
   flight: FlightComparisonOption;
-
   currency: string;
+  removing?: boolean;
 
   onSelectAction: (
     flight: FlightComparisonOption,
   ) => void;
+
+  onRemoveAction: () => void;
 }
 
 export default function FlightComparisonCard({
   flight,
   currency,
   onSelectAction,
+  onRemoveAction,
+  removing = false,
 }: FlightComparisonCardProps) {
   return (
     <Card
@@ -211,6 +215,18 @@ export default function FlightComparisonCard({
               ? "Selected"
               : "Select Flight"}
           </Button>
+
+          {flight.current && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2 w-full border-red-400/30 text-red-300 hover:bg-red-400/10"
+              disabled={removing}
+              onClick={onRemoveAction}
+            >
+              {removing ? "Removing..." : "Remove Flight"}
+            </Button>
+          )}
         </div>
       </div>
     </Card>

@@ -16,8 +16,7 @@ import type {
 interface FlightBudgetImpactProps {
   open: boolean;
 
-  currentFlight:
-    FlightComparisonOption;
+  currentFlight?: FlightComparisonOption;
 
   selectedFlight:
     FlightComparisonOption;
@@ -47,9 +46,14 @@ export default function FlightBudgetImpact({
     return null;
   }
 
-  const difference =
-    selectedFlight.price -
-    currentFlight.price;
+  const newFlightPrice =
+    selectedFlight.convertedPrice ?? selectedFlight.price;
+
+  const currentFlightPrice = currentFlight
+    ? (currentFlight.convertedPrice ?? currentFlight.price)
+    : 0;
+
+  const difference = newFlightPrice - currentFlightPrice;
 
   const newEstimatedCost =
     estimatedCost +
@@ -58,6 +62,12 @@ export default function FlightBudgetImpact({
   const remaining =
     totalBudget -
     newEstimatedCost;
+
+  const formatMoney = (amount: number) =>
+    `${currency} ${amount.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -100,33 +110,30 @@ export default function FlightBudgetImpact({
         <p className="mt-5 text-sm leading-6 text-[#cbc4d2]">
           Selecting{" "}
           <span className="font-semibold text-[#e6e0e8]">
-            {
-              selectedFlight.airline
-            }
+            {selectedFlight.airline}
           </span>{" "}
-          instead of{" "}
-          <span className="font-semibold text-[#e6e0e8]">
-            {
-              currentFlight.airline
-            }
-          </span>{" "}
+          {currentFlight ? (
+            <>
+              instead of{" "}
+              <span className="font-semibold text-[#e6e0e8]">
+                {currentFlight.airline}
+              </span>{" "}
+            </>
+          ) : null}
           will update your trip budget.
         </p>
 
         <div className="mt-5 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <BudgetRow
-            label="Total Trip Budget"
-            value={`${currency} ${totalBudget.toLocaleString()}`}
-          />
+          <BudgetRow label="Total Trip Budget" value={formatMoney(totalBudget)} />
 
           <BudgetRow
             label="Current Flight"
-            value={`${currency} ${currentFlight.price.toLocaleString()}`}
+            value={currentFlight ? formatMoney(currentFlightPrice) : "Not selected"}
           />
 
           <BudgetRow
             label="New Flight"
-            value={`${currency} ${selectedFlight.price.toLocaleString()}`}
+            value={formatMoney(newFlightPrice)}
             accent="amber"
           />
 
@@ -134,17 +141,13 @@ export default function FlightBudgetImpact({
 
           <BudgetRow
             label="New Estimated Trip"
-            value={`${currency} ${newEstimatedCost.toLocaleString()}`}
+            value={formatMoney(newEstimatedCost)}
           />
 
           <BudgetRow
             label="Remaining Budget"
-            value={`${currency} ${remaining.toLocaleString()}`}
-            accent={
-              remaining >= 0
-                ? "coral"
-                : "danger"
-            }
+            value={formatMoney(remaining)}
+            accent={remaining >= 0 ? "coral" : "danger"}
           />
         </div>
 
