@@ -63,6 +63,11 @@ class AgentRun(Base):
     nullable=True,
   )
 
+  recommended_hotel: Mapped[dict | None] = mapped_column(
+    JSONB,
+    nullable=True,
+  )
+
   error_message: Mapped[str | None] = mapped_column(
     Text,
     nullable=True,

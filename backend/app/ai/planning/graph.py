@@ -26,6 +26,9 @@ from app.ai.planning.nodes.optimize_itinerary import (
 from app.ai.planning.nodes.recommend_flight import (
   recommend_flight,
 )
+from app.ai.planning.nodes.recommend_hotel import (
+  recommend_hotel,
+)
 
 
 MAX_REPLANS = 2
@@ -37,8 +40,10 @@ async def load_context(
   return {
     "research_results": {},
     "recommended_flight": None,
+    "recommended_hotel": None,
     "draft_itinerary": None,
     "validation_errors": [],
+    "validation_warnings": [],
     "replan_count": 0,
     "final_itinerary": None,
     "error": None,
@@ -83,6 +88,7 @@ def build_planning_graph(
   load_context_node=load_context,
   research_trip_node=research_trip,
   recommend_flight_node=recommend_flight,
+  recommend_hotel_node=recommend_hotel,
   generate_itinerary_node=generate_itinerary,
   optimize_itinerary_node=optimize_itinerary,
   validate_itinerary_node=validate_itinerary,
@@ -131,6 +137,11 @@ def build_planning_graph(
     recommend_flight_node,
   )
 
+  builder.add_node(
+    "recommend_hotel",
+    recommend_hotel_node,
+  )
+
   builder.add_edge(
     START,
     "load_context",
@@ -152,6 +163,11 @@ def build_planning_graph(
 
   builder.add_edge(
     "recommend_flight",
+    "recommend_hotel",
+  )
+
+  builder.add_edge(
+    "recommend_hotel",
     "generate_itinerary",
   )
 

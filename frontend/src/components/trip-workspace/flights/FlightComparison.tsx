@@ -5,6 +5,8 @@ import {
   useState,
 } from "react";
 
+import { toast } from "sonner";
+
 import type {
   FlightComparisonOption,
   TripWorkspaceData,
@@ -12,13 +14,24 @@ import type {
 
 import {
   selectTripFlight,
+  deleteSelectedTripFlight,
+  getTripFlights,
+  getSelectedTripFlight,
 } from "@/lib/trips";
+
+import {
+  shortlistFlights,
+  mapSelectedFlightToComparisonOption,
+} from "@/lib/flight-mappers";
+
+import { RefreshCw } from "lucide-react";
 
 import FlightAIRefine from "./FlightAIRefine";
 import FlightBudgetImpact from "./FlightBudgetImpact";
 import FlightComparisonCard from "./FlightComparisonCard";
 import FlightComparisonHeader from "./FlightComparisonHeader";
 import FlightFilters from "./FlightFilters";
+import { ApiError } from "@/lib/api";
 
 interface FlightComparisonProps {
   trip: TripWorkspaceData;
@@ -77,24 +90,15 @@ export default function FlightComparison({
     setSelecting,
   ] = useState(false);
 
-  /*
-   * Current selected flight.
-   */
-  const currentFlight =
-    flightOptions.find(
-      (flight) =>
-        flight.id ===
-        currentFlightId,
-    ) ??
-    flightOptions.find(
-      (flight) =>
-        flight.current,
-    );
+  const [removing, setRemoving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  /*
-   * Build airline filter options
-   * automatically from flight data.
-   */
+  const currentFlight = currentFlightId
+    ? flightOptions.find(
+        (flight) => flight.id === currentFlightId,
+      )
+    : undefined;
+
   const airlines =
     useMemo(() => {
       return Array.from(
@@ -254,65 +258,172 @@ export default function FlightComparison({
     );
   };
 
-  const handleConfirm =
-    async () => {
-      if (
-        !selectedFlight ||
-        selecting
-      ) {
-        return;
-      }
+  const handleRefreshFlights = async () => {
+    if (refreshing || selecting || removing) {
+      return;
+    }
 
-      try {
-        setSelecting(true);
+    try {
+      setRefreshing(true);
 
-        const result =
-          await selectTripFlight(
-            tripId,
-            selectedFlight.id,
-          );
+      const [response, savedFlight] = await Promise.all([
+        getTripFlights(tripId),
+        getSelectedTripFlight(tripId),
+      ]);
 
-        const newFlightId =
-          result.provider_offer_id;
+      const freshOptions = shortlistFlights(response.offers, 6);
 
-        setCurrentFlightId(
-          newFlightId,
+      let updatedOptions: FlightComparisonOption[] =
+        freshOptions.map((flight) => ({
+          ...flight,
+          current:
+            savedFlight !== null &&
+            flight.id === savedFlight.provider_offer_id,
+        }));
+
+      if (savedFlight) {
+        const alreadyIncluded = updatedOptions.some(
+          (flight) => flight.id === savedFlight.provider_offer_id,
         );
 
-        setFlightOptions(
-          (previousOptions) =>
-            previousOptions
-              .filter(
-                (flight) =>
-                  !(
-                    flight.persistedSnapshot &&
-                    flight.id !==
-                      newFlightId
-                  ),
-              )
-              .map(
-                (flight) => ({
-                  ...flight,
+        if (!alreadyIncluded) {
+          updatedOptions = [
+            mapSelectedFlightToComparisonOption(savedFlight),
+            ...updatedOptions,
+          ];
+        }
+      }
 
-                  current:
-                    flight.id ===
-                    newFlightId,
-                }),
+      setFlightOptions(updatedOptions);
+      setCurrentFlightId(savedFlight?.provider_offer_id);
+      setSelectedFlight(undefined);
+
+      toast.success("Flights refreshed", {
+        description: "Updated flight offers are now available.",
+      });
+    } catch (error) {
+      console.error("Failed to refresh flights:", error);
+
+      toast.error("Unable to refresh flights", {
+        description:
+          "Please check your connection and try again.",
+      });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleRemoveFlight = async () => {
+    if (!currentFlightId || removing) {
+      return;
+    }
+
+    try {
+      setRemoving(true);
+
+      const result = await deleteSelectedTripFlight(tripId);
+
+      if (result.deleted) {
+        setCurrentFlightId(undefined);
+
+        setFlightOptions((previousOptions) =>
+          previousOptions
+            .filter((flight) => !flight.persistedSnapshot)
+            .map((flight) => ({
+              ...flight,
+              current: false,
+            })),
+        );
+
+        setSelectedFlight(undefined);
+
+        // ADD: Success toast
+        toast.success("Flight removed", {
+          description:
+            "The selected flight has been removed from your trip.",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to remove selected flight:", error);
+
+      // ADD: Error toast
+      toast.error("Unable to remove flight", {
+        description: "Please try again.",
+      });
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!selectedFlight || selecting) {
+      return;
+    }
+
+    try {
+      setSelecting(true);
+
+      const result = await selectTripFlight(
+        tripId,
+        selectedFlight.id,
+      );
+
+      const newFlightId = result.provider_offer_id;
+
+      setCurrentFlightId(newFlightId);
+
+      setFlightOptions((previousOptions) =>
+        previousOptions
+          .filter(
+            (flight) =>
+              !(
+                flight.persistedSnapshot &&
+                flight.id !== newFlightId
               ),
-        );
+          )
+          .map((flight) => ({
+            ...flight,
+            current: flight.id === newFlightId,
+          })),
+      );
 
-        setSelectedFlight(
-          undefined,
-        );
-      } catch (error) {
-        console.error(
-          "Failed to select flight:",
-          error,
-        );
-      } finally {
-        setSelecting(false);
+      setSelectedFlight(undefined);
+
+      // ADD: Success toast
+      toast.success("Flight selected successfully", {
+        description:
+          "Your selected flight has been saved to your trip.",
+      });
+    } catch (error) {
+      console.error("Failed to select flight:", error);
+
+      if (error instanceof ApiError && error.status === 409) {
+        toast.error("Flight offer expired", {
+          description:
+            "This flight offer has expired. Please search for updated flights.",
+        });
+      } else if (
+        error instanceof ApiError &&
+        error.status === 404
+      ) {
+        toast.error("Flight unavailable", {
+          description:
+            "This flight is no longer available. Please search again.",
+        });
+      } else if (error instanceof ApiError) {
+        toast.error("Unable to select flight", {
+          description: error.message,
+        });
+      } else {
+        toast.error("Connection error", {
+          description:
+            "Unable to complete your request. Please try again.",
+        });
       }
-    };
+    } finally {
+      setSelecting(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -404,10 +515,32 @@ export default function FlightComparison({
         <div className="space-y-4 xl:col-span-9">
           {/* AI Refinement */}
           <FlightAIRefine
-            onSubmitAction={
-              handleAIRefine
-            }
+            onSubmitAction={handleAIRefine}
           />
+
+          {/* Refresh Flights */}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-[#e6e0e8]">
+                Available Flights
+              </h2>
+              <p className="mt-1 text-xs text-[#948e9c]">
+                Compare the latest flight offers
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRefreshFlights}
+              disabled={refreshing || selecting || removing}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-[#d1bcff] transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              {refreshing ? "Refreshing..." : "Refresh Flights"}
+            </button>
+          </div>
 
           {/* Results */}
           {visibleFlights.length >
@@ -415,21 +548,15 @@ export default function FlightComparison({
             visibleFlights.map(
               (flight) => (
                 <FlightComparisonCard
-                  key={
-                    flight.id
-                  }
+                  key={flight.id}
                   flight={{
                     ...flight,
-                    current:
-                      flight.id ===
-                      currentFlightId,
+                    current: flight.id === currentFlightId,
                   }}
-                  currency={
-                    trip.currency
-                  }
-                  onSelectAction={
-                    handleSelectFlight
-                  }
+                  currency={trip.currency}
+                  onSelectAction={handleSelectFlight}
+                  onRemoveAction={handleRemoveFlight}
+                  removing={removing}
                 />
               ),
             )
@@ -464,34 +591,33 @@ export default function FlightComparison({
       {/* ========================== */}
 
       {selectedFlight &&
-        currentFlight && (
-          <FlightBudgetImpact
-            open
-            currentFlight={
-              currentFlight
-            }
-            selectedFlight={
-              selectedFlight
-            }
-            currency={
-              trip.currency
-            }
-            totalBudget={
-              trip.totalBudget
-            }
-            estimatedCost={
-              trip.estimatedCost
-            }
-            onCloseAction={() =>
-              setSelectedFlight(
-                undefined,
-              )
-            }
-            onConfirmAction={
-              handleConfirm
-            }
-          />
-        )}
+        <FlightBudgetImpact
+          open
+          currentFlight={
+            currentFlight
+          }
+          selectedFlight={
+            selectedFlight
+          }
+          currency={
+            trip.currency
+          }
+          totalBudget={
+            trip.totalBudget
+          }
+          estimatedCost={
+            trip.estimatedCost
+          }
+          onCloseAction={() =>
+            setSelectedFlight(
+              undefined,
+            )
+          }
+          onConfirmAction={
+            handleConfirm
+          }
+        />
+      }
     </div>
   );
 }

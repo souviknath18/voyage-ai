@@ -24,10 +24,16 @@ import {
   getTrip,
   getTripItinerary,
   getTripWeather,
+  getSelectedTripHotel,
+  getTripBudget,
+  getRecommendedTripHotel,
   type SelectedFlightResponse,
   type Trip,
   type TripItinerary,
   type TripWeather,
+  type SelectedHotelResponse,
+  type TripBudget,
+  type RecommendedHotelResponse,
 } from "@/lib/trips";
 
 import {
@@ -35,10 +41,11 @@ import {
 } from "@/lib/flight-mappers";
 
 import {
-  mockTrip,
-} from "@/data/mock-trip";
+  mapSelectedHotelToOption,
+} from "@/lib/hotel-mappers";
 
 import type {
+  TripHotel,
   TripWeather as TripWeatherCardData,
 } from "@/types/trip-workspace";
 
@@ -88,6 +95,14 @@ export default function TripOverviewPage() {
     null,
   );
 
+  const [selectedHotel, setSelectedHotel] =
+    useState<SelectedHotelResponse | null>(null);
+
+  const [recommendedHotel, setRecommendedHotel] =
+    useState<RecommendedHotelResponse | null>(null);
+
+  const [budget, setBudget] = useState<TripBudget | null>(null);
+
   useEffect(() => {
     if (!params.tripId) {
       return;
@@ -105,16 +120,19 @@ export default function TripOverviewPage() {
           tripData,
           itineraryData,
           selectedFlightData,
+          selectedHotelData,
+          recommendedHotelData,
+          budgetData,
         ] = await Promise.all([
           getTrip(params.tripId),
-
-          getTripItinerary(
-            params.tripId,
-          ),
-
-          getSelectedTripFlight(
-            params.tripId,
-          ),
+          getTripItinerary(params.tripId),
+          getSelectedTripFlight(params.tripId),
+          getSelectedTripHotel(params.tripId),
+          getRecommendedTripHotel(params.tripId).catch((error) => {
+            console.warn("Hotel recommendation unavailable:", error);
+            return null;
+          }),
+          getTripBudget(params.tripId),
         ]);
 
         if (cancelled) {
@@ -128,6 +146,9 @@ export default function TripOverviewPage() {
         setSelectedFlight(
           selectedFlightData,
         );
+        setSelectedHotel(selectedHotelData);
+        setRecommendedHotel(recommendedHotelData);
+        setBudget(budgetData);
 
         // The Overview can now render.
         setLoading(false);
@@ -184,12 +205,35 @@ export default function TripOverviewPage() {
   }, [params.tripId]);
 
 
-  const handleResolveConflict =
-    () => {
-      console.log(
-        "Resolve conflict",
-      );
-    };
+  const handleResolveConflict = () => {
+    if (!trip) {
+      return;
+    }
+
+    const conflict =
+      itinerary?.validation_warnings?.[0];
+
+    if (!conflict) {
+      return;
+    }
+
+    const message = [
+      "Change my itinerary schedule to resolve this scheduling conflict:",
+      conflict,
+      "Move the conflicting activities to different, practical times.",
+      "Keep the same places and preserve unaffected activities.",
+      "Generate a structured schedule change proposal for my approval.",
+      "Do not apply any changes until I explicitly approve the proposal.",
+    ].join("\n\n");
+
+    const query = new URLSearchParams({
+      request: message,
+    });
+
+    router.push(
+      `/trips/${trip.trip_id}/assistant?${query.toString()}`
+    );
+  };
 
 
   const handleOptimizationPreset = (
@@ -215,6 +259,40 @@ export default function TripOverviewPage() {
           selectedFlight,
         )
       : [];
+
+  const overviewHotel: TripHotel | null = (() => {
+    if (selectedHotel) {
+      const hotel = mapSelectedHotelToOption(selectedHotel);
+
+      return {
+        id: selectedHotel.hotel_id,
+        name: hotel.name,
+        room: hotel.room,
+        address: hotel.address ?? hotel.location,
+        image: hotel.image,
+        rating: hotel.rating,
+        pricePerNight: hotel.pricePerNight,
+        nights: hotel.nights,
+      };
+    }
+
+    if (recommendedHotel) {
+      const offer = recommendedHotel.recommended_hotel;
+
+      return {
+        id: offer.hotel_id,
+        name: offer.name,
+        room: offer.room.name,
+        address: offer.address ?? "",
+        image: offer.image_url ?? "",
+        rating: offer.rating ?? 0,
+        pricePerNight: Number(offer.converted_price_per_night),
+        nights: offer.nights,
+      };
+    }
+
+    return null;
+  })();
 
 
   if (loading) {
@@ -250,39 +328,51 @@ export default function TripOverviewPage() {
     );
   }
 
-  const estimatedCost =
-    itinerary?.days.reduce(
-      (tripTotal, day) =>
-        tripTotal +
-        day.activities.reduce(
-          (dayTotal, activity) =>
-            dayTotal +
-            Number(
-              activity.estimated_cost,
-            ),
-          0,
-        ),
-      0,
-    ) ?? 0;
+  const estimatedCost = budget
+    ? Number(budget.estimated_cost)
+    : 0;
 
-  const budgetBreakdown =
-    itinerary?.days.map(
-      (day) => ({
-        label: `Day ${day.day_number}`,
-        amount:
-          day.activities.reduce(
-            (
-              total,
-              activity,
-            ) =>
-              total +
-              Number(
-                activity.estimated_cost,
-              ),
-            0,
-          ),
-      }),
-    ) ?? [];
+  const totalBudget = budget?.total_budget
+    ? Number(budget.total_budget)
+    : Number(trip.budget ?? 0);
+
+  const categoryLabels: Record<string, string> = {
+    food: "Food",
+    transport: "Transport",
+    activity: "Activities",
+    shopping: "Shopping",
+    accommodation: "Accommodation",
+    flight: "Flights",
+    other: "Other",
+  };
+
+  const budgetBreakdown = budget?.categories
+    .filter((category) => Number(category.estimated_cost) > 0)
+    .map((category) => ({
+      label: categoryLabels[category.category] ?? category.category,
+      amount: Number(category.estimated_cost),
+    })) ?? [];
+
+  // Build highlights from verified itinerary places.
+  const tripHighlights = Array.from(
+    new Set(
+      (itinerary?.days ?? [])
+        .flatMap((day) => day.activities)
+        .filter(
+          (activity) =>
+            activity.activity_type === "verified_place" &&
+            activity.place_id !== null,
+        )
+        .map((activity) => {
+          const location = activity.location?.trim();
+
+          return location
+            ? location.split(",")[0].trim()
+            : activity.title.trim();
+        })
+        .filter((name) => name.length > 0),
+    ),
+  ).slice(0, 6);
 
   const today =
     new Date().toISOString().split("T")[0];
@@ -328,23 +418,27 @@ export default function TripOverviewPage() {
           />
         </div>
 
-        {mockTrip.warning && (
-          <div className="lg:col-span-4">
-            <TripWarningCard
-              title={
-                mockTrip.warning.title
-              }
-              description={
-                mockTrip.warning
-                  .description
-              }
-              onResolveAction={
-                handleResolveConflict
-              }
-            />
-          </div>
-        )}
-
+        <div className="lg:col-span-4">
+          <TripWarningCard
+            hasConflict={
+              (itinerary?.validation_warnings?.length ?? 0) > 0
+            }
+            title={
+              (itinerary?.validation_warnings?.length ?? 0) > 0
+                ? "Possible itinerary conflict"
+                : "No scheduling conflicts detected"
+            }
+            description={
+              itinerary?.validation_warnings?.[0] ??
+              "No activities are scheduled at the same start time."
+            }
+            onResolveAction={
+              (itinerary?.validation_warnings?.length ?? 0) > 0
+                ? handleResolveConflict
+                : undefined
+            }
+          />
+        </div>
       </div>
 
 
@@ -367,21 +461,38 @@ export default function TripOverviewPage() {
 
 
         <div className="lg:col-span-5">
-          <TripHotelCard
-            hotel={
-              mockTrip.hotel
-            }
-            onViewDetailsAction={() =>
-              router.push(
-                `/trips/${trip.trip_id}/hotels/${mockTrip.hotel.id}`,
-              )
-            }
-            onCompareAction={() =>
-              router.push(
-                `/trips/${trip.trip_id}/hotels`,
-              )
-            }
-          />
+          {overviewHotel ? (
+            <TripHotelCard
+              hotel={overviewHotel}
+              isRecommended={!selectedHotel && !!recommendedHotel}
+              onViewDetailsAction={() =>
+                router.push(`/trips/${trip.trip_id}/hotels`)
+              }
+              onCompareAction={() =>
+                router.push(`/trips/${trip.trip_id}/hotels`)
+              }
+            />
+          ) : (
+            <div className="flex h-full flex-col justify-center rounded-xl border border-white/10 bg-white/[0.03] p-5">
+              <h2 className="text-base font-semibold text-[#e6e0e8]">
+                Accommodation
+              </h2>
+
+              <p className="mt-2 text-sm text-[#948e9c]">
+                No hotel selected for this trip yet.
+              </p>
+
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(`/trips/${trip.trip_id}/hotels`)
+                }
+                className="mt-4 self-start text-sm font-medium text-[#d1bcff] hover:text-[#fb7185]"
+              >
+                Browse Hotels →
+              </button>
+            </div>
+          )}
         </div>
 
 
@@ -399,25 +510,13 @@ export default function TripOverviewPage() {
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
 
         <TripBudgetOverview
-          currency={trip.currency}
-          totalBudget={
-            trip.budget
-              ? Number(trip.budget)
-              : 0
-          }
-          estimatedCost={
-            estimatedCost
-          }
-          items={
-            budgetBreakdown
-          }
+          currency={budget?.currency ?? trip.currency}
+          totalBudget={totalBudget}
+          estimatedCost={estimatedCost}
+          items={budgetBreakdown}
         />
 
-        <TripHighlights
-          highlights={
-            mockTrip.highlights
-          }
-        />
+        <TripHighlights highlights={tripHighlights} />
 
       </div>
 

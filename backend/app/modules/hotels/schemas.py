@@ -60,3 +60,9 @@ class SelectedHotelResponse(BaseModel):
   hotel_snapshot: dict
   selected_at: datetime
   updated_at: datetime
+
+
+class RecommendedHotelResponse(BaseModel):
+  agent_run_id: UUID
+  recommended_hotel: RankedHotelOffer
+  recommended_at: datetime | None = None

@@ -24,10 +24,14 @@ class PlanningState(TypedDict):
   # Real flight recommended during planning
   recommended_flight: dict[str, Any] | None
 
+  recommended_hotel: dict[str, Any] | None
+
   # Initial itinerary produced by the LLM
   draft_itinerary: dict[str, Any] | None
 
   validation_errors: list[str]
+
+  validation_warnings: list[str]
 
   replan_count: int
 

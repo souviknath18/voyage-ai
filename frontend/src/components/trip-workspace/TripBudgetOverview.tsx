@@ -26,14 +26,21 @@ export default function TripBudgetOverview({
   items,
 }: TripBudgetOverviewProps) {
   const percentage =
-    Math.min(
-      Math.round(
-        (estimatedCost /
-          totalBudget) *
-          100,
-      ),
-      100,
-    );
+    totalBudget > 0
+      ? Math.round((estimatedCost / totalBudget) * 100)
+      : 0;
+
+  const progressWidth = Math.min(percentage, 100);
+
+  const isOverBudget =
+    totalBudget > 0 && estimatedCost > totalBudget;
+
+  const budgetStatus =
+    totalBudget <= 0
+      ? "No Budget Set"
+      : isOverBudget
+        ? "Over Budget"
+        : "Within Budget";
 
   return (
     <Card className="p-4 sm:p-5">
@@ -49,10 +56,17 @@ export default function TripBudgetOverview({
           </h2>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+        <div
+          className={`flex items-center gap-1.5 text-xs ${
+            isOverBudget
+              ? "text-rose-400"
+              : totalBudget <= 0
+                ? "text-[#948e9c]"
+                : "text-emerald-400"
+          }`}
+        >
           <CircleCheck size={14} />
-
-          Within Budget
+          {budgetStatus}
         </div>
       </div>
 
@@ -60,7 +74,7 @@ export default function TripBudgetOverview({
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#fb7185] to-[#fcd34d]"
           style={{
-            width: `${percentage}%`,
+            width: `${progressWidth}%`,
           }}
         />
       </div>

@@ -199,6 +199,11 @@ class ItineraryItem(Base):
     nullable=False,
   )
 
+  duration_minutes: Mapped[int | None] = mapped_column(
+    Integer,
+    nullable=True,
+  )
+
   title: Mapped[str] = mapped_column(
     String(255),
     nullable=False,

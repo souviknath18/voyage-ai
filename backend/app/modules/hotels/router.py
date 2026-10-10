@@ -10,6 +10,7 @@ from app.modules.hotels.schemas import (
   TripHotelsResponse,
   SelectHotelRequest,
   SelectedHotelResponse,
+  RecommendedHotelResponse,
 )
 from app.modules.hotels.service import (
   get_trip_hotels,
@@ -19,6 +20,9 @@ from app.modules.hotels.selection_service import (
   select_trip_hotel,
   get_trip_selected_hotel,
   clear_trip_selected_hotel,
+)
+from app.modules.hotels.recommendation_service import (
+  get_trip_recommended_hotel,
 )
 
 
@@ -91,3 +95,19 @@ async def delete_selected_hotel_endpoint(
   )
 
   return {"deleted": deleted}
+
+
+@router.get(
+  "/{trip_id}/hotels/recommended",
+  response_model=RecommendedHotelResponse | None,
+)
+async def get_recommended_hotel_endpoint(
+  trip_id: str,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  return await get_trip_recommended_hotel(
+    db=db,
+    trip_id=trip_id,
+    user_id=current_user.id,
+  )

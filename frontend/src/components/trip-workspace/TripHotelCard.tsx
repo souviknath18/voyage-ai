@@ -16,6 +16,7 @@ import type {
 
 interface TripHotelCardProps {
   hotel: TripHotel;
+  isRecommended?: boolean;
 
   onViewDetailsAction?: () => void;
   onCompareAction?: () => void;
@@ -23,6 +24,7 @@ interface TripHotelCardProps {
 
 export default function TripHotelCard({
   hotel,
+  isRecommended = false,
   onViewDetailsAction,
   onCompareAction,
 }: TripHotelCardProps) {
@@ -37,6 +39,12 @@ export default function TripHotelCard({
         <h2 className="text-base font-semibold text-[#e6e0e8]">
           Accommodation
         </h2>
+
+        {isRecommended && (
+          <span className="ml-auto rounded-full border border-[#d1bcff]/20 bg-[#d1bcff]/10 px-2.5 py-1 text-[10px] font-medium text-[#d1bcff]">
+            Recommended
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-[180px_1fr]">

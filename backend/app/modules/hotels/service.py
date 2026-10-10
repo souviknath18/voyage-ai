@@ -1,5 +1,6 @@
 
 import httpx
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import HTTPException, status
@@ -25,33 +26,17 @@ from app.modules.hotels.ranking import (
 )
 
 
-async def get_trip_hotels(
-  db: AsyncSession,
-  public_trip_id: str,
-  user_id,
+async def search_and_rank_hotels(
+  *,
+  latitude: float,
+  longitude: float,
+  check_in: date,
+  check_out: date,
+  travelers: int,
+  currency: str,
+  budget: Decimal | None,
 ):
-  trip = await get_user_trip(
-    db=db,
-    trip_id=public_trip_id,
-    user_id=user_id,
-  )
-
-  if trip is None:
-    raise HTTPException(
-      status_code=status.HTTP_404_NOT_FOUND,
-      detail="Trip not found",
-    )
-
-  if (
-    trip.destination_latitude is None
-    or trip.destination_longitude is None
-  ):
-    raise HTTPException(
-      status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-      detail="Trip destination coordinates are missing",
-    )
-
-  if trip.end_date <= trip.start_date:
+  if check_out <= check_in:
     raise HTTPException(
       status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
       detail="Invalid hotel stay dates",
@@ -69,11 +54,11 @@ async def get_trip_hotels(
   )
 
   search = HotelSearchRequest(
-    latitude=float(trip.destination_latitude),
-    longitude=float(trip.destination_longitude),
-    check_in=trip.start_date,
-    check_out=trip.end_date,
-    adults=trip.travelers,
+    latitude=latitude,
+    longitude=longitude,
+    check_in=check_in,
+    check_out=check_out,
+    adults=travelers,
     rooms=1,
     currency="USD",
     guest_nationality="IN",
@@ -82,7 +67,7 @@ async def get_trip_hotels(
   try:
     offers = await provider.search_hotels(search)
 
-    target_currency = trip.currency.upper()
+    target_currency = currency.upper()
     currency_provider = FrankfurterCurrencyProvider()
 
     exchange_rates: dict[
@@ -150,15 +135,15 @@ async def get_trip_hotels(
       ConvertedHotelOffer.model_validate(offer)
       for offer in converted_offers
     ],
-    trip_budget=trip.budget,
+    trip_budget=budget,
   )
 
   hotel_budget = (
-    (trip.budget * HOTEL_BUDGET_SHARE).quantize(
+    (budget * HOTEL_BUDGET_SHARE).quantize(
       Decimal("0.01"),
       rounding=ROUND_HALF_UP,
     )
-    if trip.budget is not None
+    if budget is not None
     else None
   )
 
@@ -169,13 +154,54 @@ async def get_trip_hotels(
   )
 
   return {
+    "currency": target_currency,
+    "hotel_budget": hotel_budget,
+    "recommended_hotel_id": recommended_hotel_id,
+    "offers": ranked_offers,
+  }
+
+
+async def get_trip_hotels(
+  db: AsyncSession,
+  public_trip_id: str,
+  user_id,
+):
+  trip = await get_user_trip(
+    db=db,
+    trip_id=public_trip_id,
+    user_id=user_id,
+  )
+
+  if trip is None:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Trip not found",
+    )
+
+  if (
+    trip.destination_latitude is None
+    or trip.destination_longitude is None
+  ):
+    raise HTTPException(
+      status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+      detail="Trip destination coordinates are missing",
+    )
+
+  result = await search_and_rank_hotels(
+    latitude=float(trip.destination_latitude),
+    longitude=float(trip.destination_longitude),
+    check_in=trip.start_date,
+    check_out=trip.end_date,
+    travelers=trip.travelers,
+    currency=trip.currency,
+    budget=trip.budget,
+  )
+
+  return {
     "trip_id": trip.trip_id,
     "destination": trip.destination,
     "travelers": trip.travelers,
     "check_in": trip.start_date,
     "check_out": trip.end_date,
-    "currency": target_currency,
-    "hotel_budget": hotel_budget,
-    "recommended_hotel_id": recommended_hotel_id,
-    "offers": ranked_offers,
+    **result,
   }

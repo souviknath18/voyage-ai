@@ -1,5 +1,8 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from fastapi.encoders import jsonable_encoder
+
+import traceback
 
 from app.modules.trips.models import Trip
 from app.ai.planning.graph import (
@@ -47,6 +50,9 @@ from app.ai.planning.nodes.optimize_itinerary import (
 from app.ai.planning.nodes.recommend_flight import (
   recommend_flight,
 )
+from app.ai.planning.nodes.recommend_hotel import (
+  recommend_hotel,
+)
 
 
 async def execute_planning_graph(
@@ -59,6 +65,7 @@ async def execute_planning_graph(
       agent_run=agent_run,
       current_step="load_context",
     )
+    await db.commit()
 
     input_snapshot = (
       agent_run.input_snapshot or {}
@@ -149,11 +156,19 @@ async def execute_planning_graph(
         step_name="recommend_flight",
         node=recommend_flight,
       ),
+
+      recommend_hotel_node=tracked_step(
+        db=db,
+        agent_run=agent_run,
+        step_name="recommend_hotel",
+        node=recommend_hotel,
+      ),
     )
 
     result = await planning_graph.ainvoke(
       initial_state
     )
+    await db.commit()
 
     if result.get("error"):
       return await mark_agent_run_failed(
@@ -175,6 +190,17 @@ async def execute_planning_graph(
           "a valid itinerary."
         ),
       )
+
+    recommended_hotel = result.get(
+      "recommended_hotel"
+    )
+
+    if recommended_hotel is not None:
+      agent_run.recommended_hotel = jsonable_encoder(
+        recommended_hotel
+      )
+
+    await db.flush()
 
     await save_itinerary(
       db=db,
@@ -310,6 +336,9 @@ async def execute_planning_graph(
     return agent_run
 
   except Exception as exc:
+    print("\n[PLANNING ERROR] Full traceback:")
+    traceback.print_exc()
+
     await db.rollback()
 
     await mark_agent_run_failed(

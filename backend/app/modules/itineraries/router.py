@@ -20,8 +20,33 @@ from app.modules.itineraries.service import (
 )
 from app.modules.users.models import User
 
+from app.ai.planning.itinerary_conflicts import (
+  detect_itinerary_conflicts,
+)
+from app.modules.itineraries.repository import (
+  serialize_itinerary,
+)
+
 
 router = APIRouter()
+
+
+def build_itinerary_response(
+  itinerary,
+) -> ItineraryResponse:
+  itinerary_data = serialize_itinerary(itinerary)
+
+  warnings = detect_itinerary_conflicts(
+    itinerary_data["days"]
+  )
+
+  response = ItineraryResponse.model_validate(
+    itinerary
+  )
+
+  return response.model_copy(
+    update={"validation_warnings": warnings}
+  )
 
 
 @router.get(
@@ -31,15 +56,15 @@ router = APIRouter()
 async def get_itinerary(
   trip_id: str,
   db: AsyncSession = Depends(get_db),
-  current_user: User = Depends(
-    get_current_user
-  ),
+  current_user: User = Depends(get_current_user),
 ):
-  return await get_trip_itinerary(
+  itinerary = await get_trip_itinerary(
     db=db,
     public_trip_id=trip_id,
     user_id=current_user.id,
   )
+
+  return build_itinerary_response(itinerary)
 
 
 @router.get(
@@ -74,12 +99,14 @@ async def get_itinerary_version(
     get_current_user
   ),
 ):
-  return await get_trip_itinerary_version(
+  itinerary = await get_trip_itinerary_version(
     db=db,
     public_trip_id=trip_id,
     user_id=current_user.id,
     version=version,
   )
+
+  return build_itinerary_response(itinerary)
 
 
 @router.post(
@@ -94,9 +121,11 @@ async def restore_itinerary_version(
     get_current_user
   ),
 ):
-  return await restore_trip_itinerary_version(
+  itinerary = await restore_trip_itinerary_version(
     db=db,
     public_trip_id=trip_id,
     user_id=current_user.id,
     version=version,
   )
+
+  return build_itinerary_response(itinerary)

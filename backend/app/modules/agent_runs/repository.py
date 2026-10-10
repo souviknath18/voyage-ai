@@ -63,11 +63,15 @@ async def update_agent_run_step(
   db: AsyncSession,
   agent_run: AgentRun,
   current_step: str,
+  commit: bool = True,
 ) -> AgentRun:
   agent_run.current_step = current_step
 
-  await db.commit()
-  await db.refresh(agent_run)
+  if commit:
+    await db.commit()
+    await db.refresh(agent_run)
+  else:
+    await db.flush()
 
   return agent_run
 

@@ -3,6 +3,17 @@ const API_URL =
   "http://127.0.0.1:8000/api/v1";
 
 
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+
 function getAccessToken(): string | null {
   if (typeof window === "undefined") {
     return null;
@@ -175,9 +186,11 @@ export async function apiRequest<T>(
       .json()
       .catch(() => null);
 
-    throw new Error(
-      error?.detail ??
-        "Something went wrong",
+    throw new ApiError(
+      response.status,
+      typeof error?.detail === "string"
+        ? error.detail
+        : "Something went wrong",
     );
   }
 
