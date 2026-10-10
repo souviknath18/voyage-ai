@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-react": "^0.20.0",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.31.0",
     "maplibre-gl": "^6.10.0",

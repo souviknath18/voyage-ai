@@ -18,8 +18,8 @@ export default function MapDaySelector({
   onChangeAction,
 }: MapDaySelectorProps) {
   return (
-    <div className="voyage-day-scrollbar overflow-x-auto">
-      <div className="flex min-w-max items-center gap-1 rounded-full border border-white/10 bg-[#070B18]/70 p-1 mb-1 backdrop-blur-xl">
+    <div className="w-full sm:w-auto">
+      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-white/10 bg-[#070B18]/70 p-1 backdrop-blur-xl sm:rounded-full">
         <DayButton
           label="All"
           active={

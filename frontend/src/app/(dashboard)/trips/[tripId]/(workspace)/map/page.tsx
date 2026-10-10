@@ -11,6 +11,7 @@ import {
 } from "next/navigation";
 
 import TripMap from "@/components/trip-workspace/map/TripMap";
+import TripMapSkeleton from "@/components/trip-workspace/map/TripMapSkeleton";
 
 import {
   mapTripToMapDays,
@@ -192,11 +193,7 @@ export default function TripMapPage() {
 
 
   if (loading) {
-    return (
-      <div className="py-10 text-sm text-[#948e9c]">
-        Loading trip map...
-      </div>
-    );
+    return <TripMapSkeleton />;
   }
 
 

@@ -212,3 +212,43 @@ def serialize_itinerary(
       for day in itinerary.days
     ],
   }
+
+
+async def get_itinerary_budget_items(
+  db: AsyncSession,
+  trip_id: uuid.UUID,
+) -> list[tuple[str | None, Decimal | None]] | None:
+
+  latest_itinerary = (
+    select(Itinerary.id)
+    .where(Itinerary.trip_id == trip_id)
+    .order_by(Itinerary.version.desc())
+    .limit(1)
+    .subquery()
+  )
+
+  result = await db.execute(
+    select(
+      ItineraryItem.cost_category,
+      ItineraryItem.estimated_cost,
+    )
+    .select_from(latest_itinerary)
+    .outerjoin(
+      ItineraryDay,
+      ItineraryDay.itinerary_id == latest_itinerary.c.id,
+    )
+    .outerjoin(
+      ItineraryItem,
+      ItineraryItem.itinerary_day_id == ItineraryDay.id,
+    )
+  )
+
+  rows = result.all()
+
+  if not rows:
+    return None
+
+  return [
+    (category, cost)
+    for category, cost in rows
+  ]

@@ -21,15 +21,19 @@ import HotelComparisonCard from "./HotelComparisonCard";
 import HotelComparisonHeader from "./HotelComparisonHeader";
 
 interface HotelComparisonProps {
-  trip:
-    TripWorkspaceData;
-
+  trip: TripWorkspaceData;
   onBackAction: () => void;
+  budgetReady: boolean;
+  budgetLoading: boolean;
+  onSelectionChanged: () => Promise<void>;
 }
 
 export default function HotelComparison({
   trip,
   onBackAction,
+  budgetReady,
+  budgetLoading,
+  onSelectionChanged,
 }: HotelComparisonProps) {
   const [
     selectedHotel,
@@ -39,6 +43,7 @@ export default function HotelComparison({
   >();
 
   const [removingHotel, setRemovingHotel] = useState(false);
+  const [savingHotel, setSavingHotel] = useState(false);
 
   const savedHotel = trip.hotelOptions.find(
     (hotel) => hotel.current,
@@ -61,20 +66,27 @@ export default function HotelComparison({
   };
 
   const handleConfirm = async () => {
-    if (!selectedHotel) {
+    if (!selectedHotel || savingHotel || !budgetReady) {
       return;
     }
 
     try {
+      setSavingHotel(true);
+
       await selectTripHotel(trip.id, selectedHotel.id);
 
-      setSelectedHotel(undefined);
+      await onSelectionChanged();
 
-      // Refresh the existing page after successful selection.
-      window.location.reload();
+      setSelectedHotel(undefined);
     } catch (error) {
-      console.error("Failed to select hotel:", error);
-      alert("Unable to save your hotel selection. Please try again.");
+      console.error("Failed to save or refresh hotel:", error);
+
+      alert(
+        "Unable to complete the hotel update. " +
+        "The selection may have been saved; please check before retrying.",
+      );
+    } finally {
+      setSavingHotel(false);
     }
   };
 
@@ -87,19 +99,22 @@ export default function HotelComparison({
       `Remove ${savedHotel.name} from your trip?`,
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       setRemovingHotel(true);
 
       await deleteSelectedTripHotel(trip.id);
 
-      window.location.reload();
+      await onSelectionChanged();
     } catch (error) {
-      console.error("Failed to remove hotel:", error);
-      alert("Unable to remove hotel. Please try again.");
+      console.error("Failed to remove or refresh hotel:", error);
+
+      alert(
+        "Unable to complete the hotel update. " +
+        "The hotel may already have been removed.",
+      );
+    } finally {
       setRemovingHotel(false);
     }
   };
@@ -209,6 +224,9 @@ export default function HotelComparison({
           totalBudget={trip.totalBudget}
           estimatedCost={trip.estimatedCost}
           hasSelectedHotel={Boolean(savedHotel)}
+          budgetReady={budgetReady}
+          budgetLoading={budgetLoading}
+          savingHotel={savingHotel}
           onCloseAction={() => setSelectedHotel(undefined)}
           onConfirmAction={handleConfirm}
         />

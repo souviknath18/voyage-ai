@@ -55,8 +55,8 @@ export default function PlacesFilters({
   onChangeAction,
 }: PlacesFiltersProps) {
   return (
-    <div className="overflow-x-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-track]:bg-transparent">
-      <div className="flex min-w-max gap-2 pb-2">
+    <div className="w-full">
+      <div className="flex flex-wrap items-center gap-2">
         {filters.map((filter) => {
           const active =
             activeFilter ===

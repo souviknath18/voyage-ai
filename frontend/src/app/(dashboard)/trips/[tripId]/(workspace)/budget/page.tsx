@@ -10,6 +10,7 @@ import {
 } from "next/navigation";
 
 import TripBudget from "@/components/trip-workspace/budget/TripBudget";
+import TripBudgetSkeleton from "@/components/trip-workspace/budget/TripBudgetSkeleton";
 
 import {
   getTripBudget,
@@ -100,11 +101,7 @@ export default function TripBudgetPage() {
   }, [tripId]);
 
   if (loading) {
-    return (
-      <div className="py-10 text-sm text-[#948e9c]">
-        Loading budget...
-      </div>
-    );
+    return <TripBudgetSkeleton />;
   }
 
   if (error) {

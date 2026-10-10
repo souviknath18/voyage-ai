@@ -1,12 +1,25 @@
+import logging
+from time import perf_counter
 from decimal import Decimal
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.itineraries.repository import get_itinerary_by_trip_id
+from app.modules.itineraries.repository import (
+  get_itinerary_budget_items,
+)
 from app.modules.trips.repository import get_trip_by_id
 from app.modules.flights.repository import get_selected_flight
 from app.modules.hotels.repository import get_selected_hotel
+
+logger = logging.getLogger(__name__)
+
+def log_query_time(label: str, started: float) -> None:
+  logger.warning(
+    "[Budget] %s: %.0fms",
+    label,
+    (perf_counter() - started) * 1000,
+  )
 
 from app.modules.budgets.analyzer import (
   build_budget_insight,
@@ -29,12 +42,18 @@ async def get_trip_budget(
   user_id,
 ) -> dict:
 
-  # Make sure the trip exists and belongs to this user
+  total_started = perf_counter()
+
+  # 1. Trip lookup
+  started = perf_counter()
+
   trip = await get_trip_by_id(
     db=db,
     trip_id=public_trip_id,
     user_id=user_id,
   )
+
+  log_query_time("Trip lookup", started)
 
   if trip is None:
     raise HTTPException(
@@ -42,13 +61,17 @@ async def get_trip_budget(
       detail="Trip not found",
     )
 
-  # Get the generated itinerary
-  itinerary = await get_itinerary_by_trip_id(
+  # 2. Itinerary lookup
+  started = perf_counter()
+
+  budget_items = await get_itinerary_budget_items(
     db=db,
     trip_id=trip.id,
   )
 
-  if itinerary is None:
+  log_query_time("Itinerary budget lookup", started)
+
+  if budget_items is None:
     raise HTTPException(
       status_code=status.HTTP_404_NOT_FOUND,
       detail="Itinerary not found",
@@ -61,34 +84,42 @@ async def get_trip_budget(
 
   estimated_cost = Decimal("0.00")
 
-  # Load the user's saved flight and hotel selections.
+  # 3. Selected flight lookup
+  started = perf_counter()
+
   selected_flight = await get_selected_flight(
     db=db,
     trip_id=trip.id,
   )
+
+  log_query_time("Selected flight lookup", started)
+
+  # 4. Selected hotel lookup
+  started = perf_counter()
 
   selected_hotel = await get_selected_hotel(
     db=db,
     trip_id=trip.id,
   )
 
-  for day in itinerary.days:
-    for activity in day.activities:
+  log_query_time("Selected hotel lookup", started)
 
-      cost = normalize_money(
-        activity.estimated_cost
-      )
+  for cost_category, estimated_activity_cost in budget_items:
+    if estimated_activity_cost is None:
+      continue
 
-      category = (
-        activity.cost_category
-        or DEFAULT_BUDGET_CATEGORY
-      )
+    cost = normalize_money(estimated_activity_cost)
 
-      if category not in BUDGET_CATEGORIES:
-        category = DEFAULT_BUDGET_CATEGORY
+    category = (
+      cost_category
+      or DEFAULT_BUDGET_CATEGORY
+    )
 
-      category_totals[category] += cost
-      estimated_cost += cost
+    if category not in BUDGET_CATEGORIES:
+      category = DEFAULT_BUDGET_CATEGORY
+
+    category_totals[category] += cost
+    estimated_cost += cost
 
     # Add saved flight expenses.
   if selected_flight is not None:
@@ -193,6 +224,8 @@ async def get_trip_budget(
     remaining_budget=remaining_budget,
     utilization_percentage=utilization_percentage,
   )
+
+  log_query_time("TOTAL budget calculation", total_started)
 
   return {
     "trip_id": trip.trip_id,

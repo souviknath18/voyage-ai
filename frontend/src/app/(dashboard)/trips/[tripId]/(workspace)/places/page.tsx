@@ -8,6 +8,7 @@ import {
 import { useParams } from "next/navigation";
 
 import TripPlaces from "@/components/trip-workspace/places/TripPlaces";
+import TripPlacesSkeleton from "@/components/trip-workspace/places/TripPlacesSkeleton";
 
 import {
   getTrip,
@@ -201,11 +202,7 @@ export default function PlacesPage() {
   }, [tripId]);
 
   if (loading) {
-    return (
-      <div className="p-6 text-sm text-[#948e9c]">
-        Loading places...
-      </div>
-    );
+    return <TripPlacesSkeleton />;
   }
 
   if (error) {

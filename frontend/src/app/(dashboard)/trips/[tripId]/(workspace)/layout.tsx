@@ -7,7 +7,7 @@ import {
 import { useParams } from "next/navigation";
 
 import AppLayout from "@/components/layout/AppLayout";
-import { PageLoader } from "@/components/ui";
+import TripWorkspaceSkeleton from "@/components/trip-workspace/TripWorkspaceSkeleton";
 
 import TripWorkspaceHeader from "@/components/trip-workspace/TripWorkspaceHeader";
 import TripWorkspaceTabs from "@/components/trip-workspace/TripWorkspaceTabs";
@@ -165,10 +165,7 @@ export default function TripWorkspaceLayout({
   if (loading) {
     return (
       <AppLayout>
-        <PageLoader
-          title="Loading your trip"
-          description="VoyageAI is retrieving your journey."
-        />
+        <TripWorkspaceSkeleton />
       </AppLayout>
     );
   }

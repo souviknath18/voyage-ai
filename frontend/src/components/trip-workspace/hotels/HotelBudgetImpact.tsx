@@ -15,23 +15,16 @@ import type {
 
 interface HotelBudgetImpactProps {
   open: boolean;
-
-  currentHotel:
-    HotelComparisonOption;
-
-  selectedHotel:
-    HotelComparisonOption;
-
+  currentHotel: HotelComparisonOption;
+  selectedHotel: HotelComparisonOption;
   currency: string;
-
   totalBudget: number;
-
   estimatedCost: number;
-
   hasSelectedHotel: boolean;
-
+  budgetReady: boolean;
+  budgetLoading: boolean;
+  savingHotel: boolean;
   onCloseAction: () => void;
-
   onConfirmAction: () => void;
 }
 
@@ -43,6 +36,9 @@ export default function HotelBudgetImpact({
   totalBudget,
   estimatedCost,
   hasSelectedHotel,
+  budgetReady,
+  budgetLoading,
+  savingHotel,
   onCloseAction,
   onConfirmAction,
 }: HotelBudgetImpactProps) {
@@ -156,16 +152,30 @@ export default function HotelBudgetImpact({
 
           <BudgetRow
             label="New Trip Estimate"
-            value={`${currency} ${newEstimatedCost.toLocaleString()}`}
+            value={
+              budgetReady
+                ? `${currency} ${newEstimatedCost.toLocaleString()}`
+                : budgetLoading
+                  ? "Calculating..."
+                  : "Unavailable"
+            }
           />
 
           <BudgetRow
             label="Remaining Budget"
-            value={`${currency} ${remaining.toLocaleString()}`}
+            value={
+              budgetReady
+                ? `${currency} ${remaining.toLocaleString()}`
+                : budgetLoading
+                  ? "Calculating..."
+                  : "Unavailable"
+            }
             accent={
-              remaining >= 0
-                ? "coral"
-                : "danger"
+              budgetReady
+                ? remaining >= 0
+                  ? "coral"
+                  : "danger"
+                : undefined
             }
           />
         </div>
@@ -197,11 +207,14 @@ export default function HotelBudgetImpact({
           </Button>
 
           <Button
-            onClick={
-              onConfirmAction
-            }
+            onClick={onConfirmAction}
+            disabled={!budgetReady || savingHotel}
           >
-            Confirm Hotel
+            {savingHotel
+              ? "Saving..."
+              : budgetLoading
+                ? "Calculating..."
+                : "Confirm Hotel"}
           </Button>
         </div>
       </div>
