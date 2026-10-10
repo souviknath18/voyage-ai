@@ -18,6 +18,7 @@ import TripHotelCard from "@/components/trip-workspace/TripHotelCard";
 import TripOptimizationActions from "@/components/trip-workspace/TripOptimizationActions";
 import TripWarningCard from "@/components/trip-workspace/TripWarningCard";
 import TripWeatherCard from "@/components/trip-workspace/TripWeatherCard";
+import TripOverviewSkeleton from "@/components/trip-workspace/TripOverviewSkeleton";
 
 import {
   getSelectedTripFlight,
@@ -296,13 +297,7 @@ export default function TripOverviewPage() {
 
 
   if (loading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <p className="text-sm text-muted-foreground">
-          Loading trip...
-        </p>
-      </div>
-    );
+    return <TripOverviewSkeleton />;
   }
 
 

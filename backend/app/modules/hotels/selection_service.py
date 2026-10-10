@@ -1,7 +1,11 @@
+import logging
+from time import perf_counter
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.encoders import jsonable_encoder
+
+logger = logging.getLogger(__name__)
 
 from app.modules.hotels.repository import (
   get_selected_hotel,
@@ -36,6 +40,7 @@ async def select_trip_hotel(
     db,
     public_trip_id=trip_id,
     user_id=user_id,
+    use_cache=False,
   )
 
   offer = next(
@@ -76,10 +81,20 @@ async def get_trip_selected_hotel(
   trip_id: str,
   user_id,
 ):
+  total_started = perf_counter()
+
+  # 1. Validate trip ownership
+  started = perf_counter()
+
   trip = await get_user_trip(
     db,
     trip_id=trip_id,
     user_id=user_id,
+  )
+
+  logger.warning(
+    "[Selected Hotel] Trip lookup: %.0fms",
+    (perf_counter() - started) * 1000,
   )
 
   if trip is None:
@@ -88,7 +103,25 @@ async def get_trip_selected_hotel(
       detail="Trip not found",
     )
 
-  return await get_selected_hotel(db, trip.id)
+  # 2. Fetch selected hotel
+  started = perf_counter()
+
+  selected_hotel = await get_selected_hotel(
+    db,
+    trip.id,
+  )
+
+  logger.warning(
+    "[Selected Hotel] Selection lookup: %.0fms",
+    (perf_counter() - started) * 1000,
+  )
+
+  logger.warning(
+    "[Selected Hotel] TOTAL: %.0fms",
+    (perf_counter() - total_started) * 1000,
+  )
+
+  return selected_hotel
 
 
 async def clear_trip_selected_hotel(

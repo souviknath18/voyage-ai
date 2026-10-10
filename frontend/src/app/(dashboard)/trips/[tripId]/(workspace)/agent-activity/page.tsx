@@ -1,23 +1,3 @@
-// import TripAIActivity from "@/components/trip-workspace/activity/TripAIActivity";
-
-// import { mockTrip } from "@/data/mock-trip";
-
-// export default function TripAgentActivityPage() {
-//   const trip =
-//     mockTrip;
-
-//   return (
-//     <TripAIActivity
-//       run={
-//         trip.agentRun
-//       }
-//     />
-//   );
-// }
-
-
-
-
 "use client";
 
 import {
@@ -30,6 +10,7 @@ import {
 } from "next/navigation";
 
 import TripAIActivity from "@/components/trip-workspace/activity/TripAIActivity";
+import TripAIActivitySkeleton from "@/components/trip-workspace/activity/TripAIActivitySkeleton";
 
 import {
   getAgentRunActivity,
@@ -140,11 +121,7 @@ export default function TripAgentActivityPage() {
 
 
   if (loading) {
-    return (
-      <div className="py-10 text-center text-sm text-[#948e9c]">
-        Loading AI activity...
-      </div>
-    );
+    return <TripAIActivitySkeleton />;
   }
 
 

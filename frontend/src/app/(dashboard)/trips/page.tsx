@@ -7,7 +7,6 @@ import {
 } from "react";
 
 import AppLayout from "@/components/layout/AppLayout";
-import { PageLoader } from "@/components/ui";
 import MyTripsHeader from "@/components/trips/MyTripsHeader";
 import TripTabs from "@/components/trips/TripTabs";
 import TripsGrid from "@/components/trips/TripsGrid";
@@ -344,24 +343,6 @@ export default function MyTripsPage() {
     };
 
 
-  /**
-   * Loading state.
-   */
-  if (loading) {
-    return (
-      <AppLayout>
-        <PageLoader
-          title="Loading your trips"
-          description="VoyageAI is retrieving your journeys."
-        />
-      </AppLayout>
-    );
-  }
-
-
-  /**
-   * API error state.
-   */
   if (error) {
     return (
       <AppLayout>
@@ -387,7 +368,6 @@ export default function MyTripsPage() {
         <div className="space-y-6">
 
           {/* Header */}
-
           <MyTripsHeader
             search={search}
             onSearchChangeAction={
@@ -395,9 +375,7 @@ export default function MyTripsPage() {
             }
           />
 
-
           {/* Tabs */}
-
           <TripTabs
             activeTab={
               activeTab
@@ -410,16 +388,13 @@ export default function MyTripsPage() {
             }
           />
 
-
           {/* Trips */}
-
           <TripsGrid
             trips={filteredTrips}
             activeTab={activeTab}
+            loading={loading}
             savingTripId={savingTripId}
-            onSavedChangeAction={
-              handleSavedChange
-            }
+            onSavedChangeAction={handleSavedChange}
           />
 
         </div>

@@ -1,10 +1,21 @@
 
+import hashlib
+import json
+import logging
 import httpx
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.encoders import jsonable_encoder
+
+from time import perf_counter
+
+from app.core.cache import cache_get, cache_set
+from app.modules.hotels.schemas import TripHotelsResponse
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import settings
 from app.integrations.hotels.liteapi import (
@@ -65,7 +76,15 @@ async def search_and_rank_hotels(
   )
 
   try:
-    offers = await provider.search_hotels(search)
+    search_started = perf_counter()
+
+    try:
+      offers = await provider.search_hotels(search)
+    finally:
+      logger.info(
+        "[Hotels] LiteAPI search: %.0fms",
+        (perf_counter() - search_started) * 1000,
+      )
 
     target_currency = currency.upper()
     currency_provider = FrankfurterCurrencyProvider()
@@ -161,10 +180,38 @@ async def search_and_rank_hotels(
   }
 
 
+def build_hotel_cache_key(trip) -> str:
+  params = {
+    "provider": "liteapi",
+    "version": 1,
+    "trip_id": str(trip.id),
+    "latitude": str(trip.destination_latitude),
+    "longitude": str(trip.destination_longitude),
+    "check_in": trip.start_date.isoformat(),
+    "check_out": trip.end_date.isoformat(),
+    "travelers": trip.travelers,
+    "currency": trip.currency,
+    "budget": str(trip.budget),
+  }
+
+  serialized = json.dumps(
+    params,
+    sort_keys=True,
+  )
+
+  digest = hashlib.sha256(
+    serialized.encode("utf-8")
+  ).hexdigest()
+
+  return f"voyageai:hotels:search:v1:{digest}"
+
+
 async def get_trip_hotels(
   db: AsyncSession,
   public_trip_id: str,
   user_id,
+  *,
+  use_cache: bool = True,
 ):
   trip = await get_user_trip(
     db=db,
@@ -187,6 +234,24 @@ async def get_trip_hotels(
       detail="Trip destination coordinates are missing",
     )
 
+  cache_key = build_hotel_cache_key(trip)
+
+  # 1. Check Redis for normal display searches.
+  if use_cache:
+    cached_result = await cache_get(cache_key)
+
+    if cached_result is not None:
+      # Validate cached data against the API schema.
+      try:
+        return TripHotelsResponse.model_validate(
+          cached_result
+        ).model_dump(mode="json")
+      except ValueError:
+        logger.warning(
+          "[Hotels] Invalid cached response"
+        )
+
+  # 2. Cache miss: search LiteAPI.
   result = await search_and_rank_hotels(
     latitude=float(trip.destination_latitude),
     longitude=float(trip.destination_longitude),
@@ -197,7 +262,7 @@ async def get_trip_hotels(
     budget=trip.budget,
   )
 
-  return {
+  response = {
     "trip_id": trip.trip_id,
     "destination": trip.destination,
     "travelers": trip.travelers,
@@ -205,3 +270,16 @@ async def get_trip_hotels(
     "check_out": trip.end_date,
     **result,
   }
+
+  # 3. Serialize dates and Decimals safely.
+  serialized_response = jsonable_encoder(response)
+
+  # 4. Cache successful display results.
+  if use_cache:
+    await cache_set(
+      key=cache_key,
+      value=serialized_response,
+      ttl_seconds=settings.hotel_cache_ttl_seconds,
+    )
+
+  return serialized_response

@@ -12,9 +12,7 @@ import {
 import TripItinerary from "@/components/trip-workspace/itinerary/TripItinerary";
 import ItineraryVersionHistory from "@/components/trip-workspace/itinerary/ItineraryVersionHistory";
 
-import {
-  PageLoader,
-} from "@/components/ui";
+import TripItinerarySkeleton from "@/components/trip-workspace/itinerary/TripItinerarySkeleton";
 
 import {
   getTrip,
@@ -396,12 +394,7 @@ export default function TripItineraryPage() {
 
 
   if (loading) {
-    return (
-      <PageLoader
-        title="Loading your itinerary"
-        description="VoyageAI is retrieving your AI-planned journey."
-      />
-    );
+    return <TripItinerarySkeleton />;
   }
 
 

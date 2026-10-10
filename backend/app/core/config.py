@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     liteapi_api_key: str | None = None
     liteapi_base_url: str = "https://api.liteapi.travel"
 
+    redis_url: str = "redis://localhost:6379/0"
+    hotel_cache_ttl_seconds: int = 120
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
