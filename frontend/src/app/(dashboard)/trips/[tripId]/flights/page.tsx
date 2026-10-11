@@ -11,8 +11,9 @@ import {
 } from "next/navigation";
 
 import AppLayout from "@/components/layout/AppLayout";
-
 import FlightComparison from "@/components/trip-workspace/flights/FlightComparison";
+import { dedupeRequest } from "@/lib/request-dedup";
+import FlightPageSkeleton from "@/components/trip-workspace/flights/FlightPageSkeleton";
 
 import {
   mockTrip,
@@ -83,122 +84,50 @@ export default function FlightComparisonPage() {
   );
 
   useEffect(() => {
+    let cancelled = false;
+
     async function loadFlights() {
       try {
         setLoading(true);
         setError(null);
 
-        const [
-          response,
-          selectedFlight,
-        ] = await Promise.all([
-          getTripFlights(
-            tripId,
+        const [response, selectedFlight] = await Promise.all([
+          dedupeRequest(
+            `trip-flights:${tripId}`,
+            () => getTripFlights(tripId),
           ),
-          getSelectedTripFlight(
-            tripId,
+          dedupeRequest(
+            `trip-selected-flight:${tripId}`,
+            () => getSelectedTripFlight(tripId),
           ),
         ]);
 
-        const freshFlightOptions =
-          shortlistFlights(
-            response.offers,
-            6,
-          );
+        if (cancelled) return;
 
-        let flightOptions: FlightComparisonOption[] =
-          freshFlightOptions.map(
-            (flight) => ({
-              ...flight,
-
-              current:
-                selectedFlight !== null &&
-                flight.id ===
-                  selectedFlight.provider_offer_id,
-            }),
-          );
-
-        if (selectedFlight) {
-          const selectedOfferExists =
-            flightOptions.some(
-              (flight) =>
-                flight.id ===
-                selectedFlight.provider_offer_id,
-            );
-
-          if (!selectedOfferExists) {
-            const persistedSelectedFlight =
-              mapSelectedFlightToComparisonOption(
-                selectedFlight,
-              );
-
-            flightOptions = [
-              persistedSelectedFlight,
-              ...flightOptions,
-            ];
-          }
-        }
-
-        setTrip({
-          ...mockTrip,
-
-          id: response.trip_id,
-
-          origin:
-            response.origin,
-
-          destination:
-            response.destination,
-
-          originCode:
-            response.origin_code,
-
-          destinationCode:
-            response.destination_code,
-
-          travelers:
-            response.travelers,
-
-          startDate:
-            formatTripDate(
-              response.start_date,
-            ),
-
-          endDate:
-            formatTripDate(
-              response.end_date,
-            ),
-
-          currency:
-            response.currency,
-
-          flightOptions,
-        });
+        setTrip(buildFlightTrip(response, selectedFlight));
       } catch (error) {
-        console.error(
-          "Failed to load flights:",
-          error,
-        );
+        if (cancelled) return;
 
-        setError(
-          "Unable to load flight options.",
-        );
+        console.error("Failed to load flights:", error);
+        setError("Unable to load flight options.");
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     void loadFlights();
-  }, [
-    tripId,
-  ]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tripId]);
 
   if (loading) {
     return (
       <AppLayout>
-        <div className="mx-auto w-full max-w-[1280px] px-4 py-10 text-sm text-[#948e9c] md:px-6">
-          Loading flights...
-        </div>
+        <FlightPageSkeleton />
       </AppLayout>
     );
   }
@@ -227,13 +156,58 @@ export default function FlightComparisonPage() {
             trip={trip}
             tripId={tripId}
             onBackAction={() =>
-              router.push(
-                `/trips/${tripId}`,
-              )
+              router.push(`/trips/${tripId}`)
             }
           />
         </div>
       </div>
     </AppLayout>
   );
+}
+
+
+function buildFlightTrip(
+  response: Awaited<ReturnType<typeof getTripFlights>>,
+  selectedFlight: Awaited<ReturnType<typeof getSelectedTripFlight>>,
+): TripWorkspaceData {
+  const freshFlightOptions = shortlistFlights(
+    response.offers,
+    6,
+  );
+
+  let flightOptions: FlightComparisonOption[] =
+    freshFlightOptions.map((flight) => ({
+      ...flight,
+      current:
+        selectedFlight !== null &&
+        flight.id === selectedFlight.provider_offer_id,
+    }));
+
+  if (selectedFlight) {
+    const selectedOfferExists = flightOptions.some(
+      (flight) =>
+        flight.id === selectedFlight.provider_offer_id,
+    );
+
+    if (!selectedOfferExists) {
+      flightOptions = [
+        mapSelectedFlightToComparisonOption(selectedFlight),
+        ...flightOptions,
+      ];
+    }
+  }
+
+  return {
+    ...mockTrip,
+    id: response.trip_id,
+    origin: response.origin,
+    destination: response.destination,
+    originCode: response.origin_code,
+    destinationCode: response.destination_code,
+    travelers: response.travelers,
+    startDate: formatTripDate(response.start_date),
+    endDate: formatTripDate(response.end_date),
+    currency: response.currency,
+    flightOptions,
+  };
 }

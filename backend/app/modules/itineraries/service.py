@@ -1,26 +1,21 @@
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.agent_runs.models import AgentRun
 from app.modules.itineraries.models import Itinerary
 from app.modules.itineraries.repository import (
-  get_itinerary_by_trip_id,
-  get_itinerary_by_version,
-  get_itinerary_versions,
+    get_itinerary_by_trip_id,
+    get_itinerary_by_version,
+    get_itinerary_versions,
+    save_itinerary,
+    serialize_itinerary,
 )
+from app.modules.trips.models import Trip
 from app.modules.trips.service import get_user_trip
-from app.modules.agent_runs.repository import (
-  create_agent_run,
-  mark_agent_run_completed,
-)
-from app.modules.itineraries.repository import (
-  get_itinerary_by_trip_id,
-  get_itinerary_by_version,
-  get_itinerary_versions,
-  save_itinerary,
-  serialize_itinerary,
-)
 
 
 async def get_trip_itinerary(
@@ -67,6 +62,101 @@ async def list_trip_itinerary_versions(
   )
 
 
+async def restore_trip_itinerary_version(
+  db: AsyncSession,
+  public_trip_id: str,
+  user_id: uuid.UUID,
+  version: int,
+) -> Itinerary:
+  try:
+    trip = await get_user_trip(
+      db=db,
+      trip_id=public_trip_id,
+      user_id=user_id,
+    )
+
+    # Serialize all version-changing operations
+    # for the same trip.
+    result = await db.execute(
+      select(Trip)
+      .where(
+        Trip.id == trip.id,
+        Trip.user_id == user_id,
+      )
+      .with_for_update()
+    )
+    locked_trip = result.scalar_one()
+
+    # Read the source after obtaining the lock.
+    source_itinerary = await get_itinerary_by_version(
+      db=db,
+      trip_id=locked_trip.id,
+      version=version,
+    )
+
+    if source_itinerary is None:
+      raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Itinerary version not found",
+      )
+
+    latest_itinerary = await get_itinerary_by_trip_id(
+      db=db,
+      trip_id=locked_trip.id,
+    )
+
+    if (
+      latest_itinerary is not None
+      and latest_itinerary.version == version
+    ):
+      raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="This itinerary version is already current",
+      )
+
+    # Create the agent run without an early commit.
+    agent_run = AgentRun(
+      trip_id=locked_trip.id,
+      status="completed",
+      current_step="completed",
+      attempt=1,
+      input_snapshot={
+        "mode": "restore",
+        "restored_from_version": version,
+        "restored_from_itinerary_id": str(
+          source_itinerary.id
+        ),
+      },
+      completed_at=datetime.now(timezone.utc),
+    )
+
+    db.add(agent_run)
+    await db.flush()
+
+    itinerary_data = serialize_itinerary(
+      source_itinerary
+    )
+
+    restored_itinerary = await save_itinerary(
+      db=db,
+      trip_id=locked_trip.id,
+      agent_run_id=agent_run.id,
+      itinerary_data=itinerary_data,
+    )
+
+    await db.commit()
+
+    return await get_itinerary_by_version(
+      db=db,
+      trip_id=locked_trip.id,
+      version=restored_itinerary.version,
+    )
+
+  except Exception:
+    await db.rollback()
+    raise
+
+
 async def get_trip_itinerary_version(
   db: AsyncSession,
   public_trip_id: str,
@@ -92,84 +182,3 @@ async def get_trip_itinerary_version(
     )
 
   return itinerary
-
-
-async def restore_trip_itinerary_version(
-  db: AsyncSession,
-  public_trip_id: str,
-  user_id: uuid.UUID,
-  version: int,
-) -> Itinerary:
-  trip = await get_user_trip(
-    db=db,
-    trip_id=public_trip_id,
-    user_id=user_id,
-  )
-
-  source_itinerary = await get_itinerary_by_version(
-    db=db,
-    trip_id=trip.id,
-    version=version,
-  )
-
-  if source_itinerary is None:
-    raise HTTPException(
-      status_code=status.HTTP_404_NOT_FOUND,
-      detail="Itinerary version not found",
-    )
-
-  latest_itinerary = await get_itinerary_by_trip_id(
-    db=db,
-    trip_id=trip.id,
-  )
-
-  if (
-    latest_itinerary is not None
-    and latest_itinerary.version == version
-  ):
-    raise HTTPException(
-      status_code=status.HTTP_400_BAD_REQUEST,
-      detail="This itinerary version is already current",
-    )
-
-  agent_run = await create_agent_run(
-    db=db,
-    trip_id=trip.id,
-    input_snapshot={
-      "mode": "restore",
-      "restored_from_version": version,
-      "restored_from_itinerary_id": str(
-        source_itinerary.id
-      ),
-    },
-  )
-
-  itinerary_data = serialize_itinerary(
-    source_itinerary
-  )
-
-  try:
-    restored_itinerary = await save_itinerary(
-      db=db,
-      trip_id=trip.id,
-      agent_run_id=agent_run.id,
-      itinerary_data=itinerary_data,
-    )
-
-    await mark_agent_run_completed(
-      db=db,
-      agent_run=agent_run,
-      commit=False,
-    )
-
-    await db.commit()
-
-    return await get_itinerary_by_version(
-      db=db,
-      trip_id=trip.id,
-      version=restored_itinerary.version,
-    )
-
-  except Exception:
-    await db.rollback()
-    raise

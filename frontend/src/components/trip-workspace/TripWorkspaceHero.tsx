@@ -19,6 +19,8 @@ import type {
   TripWorkspaceHeaderData,
 } from "@/types/trip-workspace";
 
+import BackToTripsButton from "./BackToTripsButton";
+
 interface TripWorkspaceHeroProps {
   trip: TripWorkspaceHeaderData;
 
@@ -55,6 +57,12 @@ export default function TripWorkspaceHero({
 
       {/* Side Gradient */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070B18]/35 via-transparent to-transparent" />
+
+      <div className="absolute left-6 top-5 z-20 hidden lg:block">
+        <BackToTripsButton
+          className="text-white drop-shadow-md hover:text-[#fb7185]"
+        />
+      </div>
 
       {/* Content */}
       <div className="relative z-10 flex min-h-[300px] flex-col justify-end p-4 sm:p-5 lg:p-6">

@@ -67,11 +67,7 @@ export function mapTripPlaces(
 
   for (const day of itinerary.days) {
     for (const activity of day.activities) {
-      if (
-        activity.activity_type !==
-          "verified_place" ||
-        !activity.place_id
-      ) {
+      if (!activity.place_id) {
         continue;
       }
 
@@ -101,9 +97,8 @@ export function mapTripPlaces(
 
   return places.map((place) => {
     const itineraryUsage =
-      itineraryPlaceMap.get(
-        place.provider_place_id,
-      );
+      itineraryPlaceMap.get(place.id) ??
+      itineraryPlaceMap.get(place.provider_place_id);
 
     return {
       id: place.id,
@@ -140,7 +135,7 @@ export function mapTripPlaces(
           ? "planned"
           : "optional",
 
-      saved: false,
+      saved: place.is_saved,
 
       recommended:
         Boolean(itineraryUsage),

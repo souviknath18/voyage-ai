@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ItineraryItemResponse(BaseModel):
@@ -78,3 +78,17 @@ class ItineraryResponse(BaseModel):
   version: int
 
   model_config = {"from_attributes": True}
+
+
+class AddPlaceToItineraryRequest(BaseModel):
+  place_id: uuid.UUID
+  day_number: int = Field(ge=1)
+  time: str = Field(
+    default="10:00",
+    pattern=r"^([01]\d|2[0-3]):[0-5]\d$",
+  )
+  duration_minutes: int = Field(
+    default=60,
+    ge=15,
+    le=1440,
+  )

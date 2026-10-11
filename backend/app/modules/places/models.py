@@ -4,6 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from sqlalchemy import (
+  Boolean,
   DateTime,
   ForeignKey,
   Numeric,
@@ -11,14 +12,8 @@ from sqlalchemy import (
   UniqueConstraint,
   func,
 )
-from sqlalchemy.dialects.postgresql import (
-  ARRAY,
-  UUID,
-)
-from sqlalchemy.orm import (
-  Mapped,
-  mapped_column,
-)
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
@@ -31,10 +26,7 @@ class TripPlace(Base):
       "trip_id",
       "provider",
       "provider_place_id",
-      name=(
-        "uq_trip_places_"
-        "trip_provider_place"
-      ),
+      name="uq_trip_places_trip_provider_place",
     ),
   )
 
@@ -46,10 +38,7 @@ class TripPlace(Base):
 
   trip_id: Mapped[uuid.UUID] = mapped_column(
     UUID(as_uuid=True),
-    ForeignKey(
-      "trips.id",
-      ondelete="CASCADE",
-    ),
+    ForeignKey("trips.id", ondelete="CASCADE"),
     nullable=False,
     index=True,
   )
@@ -98,6 +87,14 @@ class TripPlace(Base):
   search_group: Mapped[str | None] = mapped_column(
     String(50),
     nullable=True,
+  )
+
+  # Persistent bookmark
+  is_saved: Mapped[bool] = mapped_column(
+    Boolean,
+    nullable=False,
+    default=False,
+    server_default="false",
   )
 
   created_at: Mapped[datetime] = mapped_column(

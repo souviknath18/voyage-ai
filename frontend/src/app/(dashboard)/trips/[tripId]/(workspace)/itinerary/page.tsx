@@ -1,5 +1,8 @@
 "use client";
 
+import { toast } from "sonner";
+import { removeItineraryActivity } from "@/lib/trips";
+
 import {
   useEffect,
   useState,
@@ -48,7 +51,6 @@ export default function TripItineraryPage() {
   const tripId =
     params.tripId;
 
-
   const [
     itinerary,
     setItinerary,
@@ -56,7 +58,6 @@ export default function TripItineraryPage() {
     useState<
       ItineraryDayData[]
     >([]);
-
 
   const [
     itineraryResponse,
@@ -66,30 +67,28 @@ export default function TripItineraryPage() {
       TripItineraryResponse | null
     >(null);
 
-
   const [
     versions,
     setVersions,
   ] = useState<ItineraryVersion[]>([]);
-
 
   const [
     currentVersion,
     setCurrentVersion,
   ] = useState<number | null>(null);
 
-
   const [
     restoringVersion,
     setRestoringVersion,
   ] = useState<number | null>(null);
-
 
   const [
     historyError,
     setHistoryError,
   ] = useState<string | null>(null);
 
+  const [removingActivityId, setRemovingActivityId] =
+    useState<string | null>(null);
 
   const [
     loading,
@@ -393,6 +392,56 @@ export default function TripItineraryPage() {
     };
 
 
+  const handleRemoveActivity = async (activityId: string) => {
+    if (removingActivityId !== null || restoringVersion !== null) {
+      return;
+    }
+
+    if (
+      itineraryResponse &&
+      currentVersion !== null &&
+      currentVersion !== itineraryResponse.version
+    ) {
+      toast.error("Restore the selected version before editing.");
+      return;
+    }
+
+    try {
+      setRemovingActivityId(activityId);
+
+      const updated = await removeItineraryActivity(
+        tripId,
+        activityId,
+      );
+
+      setItineraryResponse(updated);
+      setCurrentVersion(updated.version);
+      setItinerary(mapItineraryToWorkspace(updated, null));
+
+      try {
+        const updatedVersions =
+          await getTripItineraryVersions(tripId);
+
+        setVersions(updatedVersions);
+      } catch {
+        toast.warning(
+          "Activity removed, but version history could not refresh.",
+        );
+      }
+
+      toast.success("Activity removed from itinerary.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to remove activity.",
+      );
+    } finally {
+      setRemovingActivityId(null);
+    }
+  };
+
+
   if (loading) {
     return <TripItinerarySkeleton />;
   }
@@ -468,6 +517,7 @@ export default function TripItineraryPage() {
         onRestoreVersionAction={
           handleRestoreVersion
         }
+        onRemoveActivityAction={handleRemoveActivity}
       />
 
     </div>

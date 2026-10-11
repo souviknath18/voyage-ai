@@ -49,6 +49,8 @@ interface TripItineraryProps {
   onRestoreVersionAction: (
     version: number,
   ) => void;
+
+  onRemoveActivityAction: (activityId: string) => Promise<void>;
 }
 
 export default function TripItinerary({
@@ -61,6 +63,7 @@ export default function TripItinerary({
   restoringVersion,
   onViewVersionAction,
   onRestoreVersionAction,
+  onRemoveActivityAction,
 }: TripItineraryProps) {
   const router = useRouter();
   const [
@@ -115,13 +118,8 @@ export default function TripItinerary({
     );
   };
 
-  const handleRemove = (
-    activityId: string,
-  ) => {
-    console.log(
-      "Remove activity:",
-      activityId,
-    );
+  const handleRemove = async (activityId: string) => {
+    await onRemoveActivityAction(activityId);
   };
 
   const handleAdd = (

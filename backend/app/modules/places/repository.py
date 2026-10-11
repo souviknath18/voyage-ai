@@ -1,7 +1,10 @@
+import uuid
+
+from app.modules.trips.models import Trip
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.places.models import TripPlace
@@ -13,15 +16,34 @@ async def replace_trip_places(
   places: list[dict[str, Any]],
 ) -> list[TripPlace]:
   """
-  Replace the stored provider places for a trip
-  with the places used by the latest planning run.
+  Refresh provider places for a trip while preserving
+  bookmarked places and stable database IDs.
   """
 
-  await db.execute(
-    delete(TripPlace).where(
+  result = await db.execute(
+    select(TripPlace).where(
       TripPlace.trip_id == trip_id
     )
   )
+
+  existing = {
+    (item.provider, item.provider_place_id): item
+    for item in result.scalars().all()
+  }
+
+  incoming_keys = {
+    (
+      place.get("source", "geoapify"),
+      str(place["provider_place_id"]),
+    )
+    for place in places
+    if place.get("provider_place_id")
+  }
+
+  # Remove stale, unsaved places only.
+  for key, item in existing.items():
+    if key not in incoming_keys and not item.is_saved:
+      await db.delete(item)
 
   stored_places: list[TripPlace] = []
 
@@ -30,52 +52,55 @@ async def replace_trip_places(
       "provider_place_id"
     )
 
-    # We need a real provider identity for
-    # itinerary-to-place linking.
     if not provider_place_id:
       continue
 
-    trip_place = TripPlace(
-      trip_id=trip_id,
-      provider=place.get(
-        "source",
-        "geoapify",
-      ),
-      provider_place_id=(
-        provider_place_id
-      ),
-      name=place["name"],
-      categories=place.get(
-        "categories",
-        [],
-      ),
-      address=place.get(
-        "address"
-      ),
-      latitude=Decimal(
-        str(place["latitude"])
-      ),
-      longitude=Decimal(
-        str(place["longitude"])
-      ),
-      distance=(
-        Decimal(
-          str(place["distance"])
-        )
-        if place.get("distance")
-        is not None
-        else None
-      ),
-      search_group=place.get(
-        "search_group"
-      ),
+    provider = place.get("source", "geoapify")
+
+    key = (
+      provider,
+      str(provider_place_id),
     )
 
-    db.add(trip_place)
+    trip_place = existing.get(key)
 
-    stored_places.append(
-      trip_place
+    if trip_place is None:
+      trip_place = TripPlace(
+        trip_id=trip_id,
+        provider=provider,
+        provider_place_id=str(provider_place_id),
+      )
+      db.add(trip_place)
+
+    # Update metadata without resetting is_saved.
+    trip_place.name = place["name"]
+
+    trip_place.categories = place.get(
+      "categories",
+      [],
     )
+
+    trip_place.address = place.get("address")
+
+    trip_place.latitude = Decimal(
+      str(place["latitude"])
+    )
+
+    trip_place.longitude = Decimal(
+      str(place["longitude"])
+    )
+
+    trip_place.distance = (
+      Decimal(str(place["distance"]))
+      if place.get("distance") is not None
+      else None
+    )
+
+    trip_place.search_group = place.get(
+      "search_group"
+    )
+
+    stored_places.append(trip_place)
 
   await db.flush()
 
@@ -88,14 +113,54 @@ async def get_trip_places(
 ) -> list[TripPlace]:
   result = await db.execute(
     select(TripPlace)
-    .where(
-      TripPlace.trip_id == trip_id
-    )
-    .order_by(
-      TripPlace.distance.asc()
+    .where(TripPlace.trip_id == trip_id)
+    .order_by(TripPlace.distance.asc())
+  )
+
+  return list(result.scalars().all())
+
+
+async def get_trip_place(
+  db: AsyncSession,
+  trip_id,
+  place_id,
+) -> TripPlace | None:
+  result = await db.execute(
+    select(TripPlace).where(
+      TripPlace.trip_id == trip_id,
+      TripPlace.id == place_id,
     )
   )
 
-  return list(
-    result.scalars().all()
+  return result.scalar_one_or_none()
+
+
+async def get_saved_places_for_user(
+  db: AsyncSession,
+  user_id: uuid.UUID,
+) -> list[tuple[TripPlace, Trip]]:
+  """
+  Get all saved places belonging to the
+  authenticated user's trips.
+  """
+
+  result = await db.execute(
+    select(TripPlace, Trip)
+    .join(
+      Trip,
+      TripPlace.trip_id == Trip.id,
+    )
+    .where(
+      Trip.user_id == user_id,
+      TripPlace.is_saved.is_(True),
+    )
+    .order_by(
+      TripPlace.created_at.desc(),
+      TripPlace.id,
+    )
   )
+
+  return [
+    (place, trip)
+    for place, trip in result.all()
+  ]

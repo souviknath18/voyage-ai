@@ -13,5 +13,6 @@ export { default as DestinationImage } from "./DestinationImage";
 export { default as PreferenceBadge } from "./PreferenceBadge";
 export { default as ThumbnailImage } from "./ThumbnailImage";
 export { default as PageLoader } from "./PageLoader";
+export { default as ConfirmModal } from "./ConfirmModal";
 
 export type { DropdownOption } from "./Dropdown";

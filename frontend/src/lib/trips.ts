@@ -275,7 +275,15 @@ export interface TripPlace {
   longitude: string;
   distance: string | null;
   search_group: string | null;
+  is_saved: boolean;
   created_at: string;
+}
+
+export interface SavedTripPlace extends TripPlace {
+  trip_id: string;
+  destination: string;
+  destination_name: string | null;
+  destination_country: string | null;
 }
 
 export interface WeatherDay {
@@ -739,6 +747,31 @@ export async function getTripPlaces(
   );
 }
 
+export async function getSavedTripPlaces(): Promise<
+  SavedTripPlace[]
+> {
+  return apiRequest<SavedTripPlace[]>(
+    "/places/saved",
+    { method: "GET" },
+  );
+}
+
+export async function updateTripPlaceSavedStatus(
+  tripId: string,
+  placeId: string,
+  isSaved: boolean,
+): Promise<TripPlace> {
+  return apiRequest<TripPlace>(
+    `/trips/${encodeURIComponent(tripId)}/places/${encodeURIComponent(placeId)}/saved`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        is_saved: isSaved,
+      }),
+    },
+  );
+}
+
 export async function getTripWeather(
   tripId: string,
 ): Promise<TripWeather> {
@@ -876,6 +909,39 @@ export async function deleteSelectedTripFlight(
 ): Promise<{ deleted: boolean }> {
   return apiRequest<{ deleted: boolean }>(
     `/trips/${tripId}/flights/selected`,
+    {
+      method: "DELETE",
+    },
+  );
+}
+
+
+export interface AddPlaceToItineraryPayload {
+  place_id: string;
+  day_number: number;
+  time: string;
+  duration_minutes: number;
+}
+
+export async function addPlaceToItinerary(
+  tripId: string,
+  payload: AddPlaceToItineraryPayload,
+): Promise<TripItinerary> {
+  return apiRequest<TripItinerary>(
+    `/trips/${encodeURIComponent(tripId)}/itinerary/places`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function removeItineraryActivity(
+  tripId: string,
+  activityId: string,
+): Promise<TripItinerary> {
+  return apiRequest<TripItinerary>(
+    `/trips/${encodeURIComponent(tripId)}/itinerary/activities/${encodeURIComponent(activityId)}`,
     {
       method: "DELETE",
     },
