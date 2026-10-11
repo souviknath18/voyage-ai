@@ -1,10 +1,11 @@
 "use client";
+import { ArrowLeft } from "lucide-react";
 
 import {
   useEffect,
   useState,
 } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 import AppLayout from "@/components/layout/AppLayout";
 import TripWorkspaceSkeleton from "@/components/trip-workspace/TripWorkspaceSkeleton";
@@ -12,6 +13,7 @@ import TripWorkspaceSkeleton from "@/components/trip-workspace/TripWorkspaceSkel
 import TripWorkspaceHeader from "@/components/trip-workspace/TripWorkspaceHeader";
 import TripWorkspaceTabs from "@/components/trip-workspace/TripWorkspaceTabs";
 import TripAssistantLauncher from "@/components/trip-workspace/assistant/TripAssistantLauncher";
+import BackToTripsButton from "@/components/trip-workspace/BackToTripsButton";
 
 import {
   getDestinationImageFromApi,
@@ -37,6 +39,7 @@ interface TripWorkspaceLayoutProps {
 export default function TripWorkspaceLayout({
   children,
 }: TripWorkspaceLayoutProps) {
+  const router = useRouter();
   const params = useParams<{
     tripId: string;
   }>();
@@ -200,6 +203,9 @@ export default function TripWorkspaceLayout({
     <AppLayout>
       <div className="mx-auto w-full max-w-[1280px] px-4 pb-20 md:px-6">
         <div className="space-y-5 pt-2.5 sm:pt-3">
+          {/* Mobile and tablet back button */}
+          <BackToTripsButton className="lg:hidden" />
+
           <TripWorkspaceHeader
             trip={headerTrip}
           />

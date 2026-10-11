@@ -1,6 +1,9 @@
+import uuid
+
 from fastapi import (
   APIRouter,
   Depends,
+  status,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +14,7 @@ from app.modules.auth.dependencies import (
 from app.modules.itineraries.schemas import (
   ItineraryResponse,
   ItineraryVersionResponse,
+  AddPlaceToItineraryRequest,
 )
 from app.modules.itineraries.service import (
   get_trip_itinerary,
@@ -25,6 +29,10 @@ from app.ai.planning.itinerary_conflicts import (
 )
 from app.modules.itineraries.repository import (
   serialize_itinerary,
+)
+from app.modules.itineraries.edit_service import (
+  add_place_to_trip_itinerary,
+  remove_activity_from_trip_itinerary,
 )
 
 
@@ -126,6 +134,47 @@ async def restore_itinerary_version(
     public_trip_id=trip_id,
     user_id=current_user.id,
     version=version,
+  )
+
+  return build_itinerary_response(itinerary)
+
+
+@router.post(
+  "/{trip_id}/itinerary/places",
+  response_model=ItineraryResponse,
+  status_code=status.HTTP_201_CREATED,
+)
+async def add_place_to_itinerary(
+  trip_id: str,
+  payload: AddPlaceToItineraryRequest,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  itinerary = await add_place_to_trip_itinerary(
+    db=db,
+    public_trip_id=trip_id,
+    user_id=current_user.id,
+    payload=payload,
+  )
+
+  return build_itinerary_response(itinerary)
+
+
+@router.delete(
+  "/{trip_id}/itinerary/activities/{activity_id}",
+  response_model=ItineraryResponse,
+)
+async def remove_itinerary_activity(
+  trip_id: str,
+  activity_id: uuid.UUID,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  itinerary = await remove_activity_from_trip_itinerary(
+    db=db,
+    public_trip_id=trip_id,
+    user_id=current_user.id,
+    activity_id=activity_id,
   )
 
   return build_itinerary_response(itinerary)

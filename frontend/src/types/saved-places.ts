@@ -9,24 +9,16 @@ export type SavedPlaceCategory =
 
 export interface SavedPlace {
   id: string;
+  tripId: string;
 
   name: string;
-
   city: string;
   country: string;
-
   description: string;
-
   image?: string;
 
-  category: Exclude<
-    SavedPlaceCategory,
-    "all"
-  >;
-
+  category: Exclude<SavedPlaceCategory, "all">;
   categoryLabel: string;
-
   savedDate: string;
-
   rating?: number;
 }

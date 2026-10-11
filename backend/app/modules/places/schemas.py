@@ -22,8 +22,20 @@ class TripPlaceResponse(BaseModel):
   distance: Decimal | None
   search_group: str | None
 
+  is_saved: bool
   created_at: datetime
 
   model_config = {
     "from_attributes": True,
   }
+
+
+class SetPlaceSavedRequest(BaseModel):
+  is_saved: bool
+
+
+class SavedTripPlaceResponse(TripPlaceResponse):
+  trip_id: str
+  destination: str
+  destination_name: str | None = None
+  destination_country: str | None = None

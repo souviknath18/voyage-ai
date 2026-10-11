@@ -17,6 +17,9 @@ from app.modules.weather.router import (
 from app.modules.places.router import (
   router as places_router,
 )
+from app.modules.places.saved_router import (
+  router as saved_places_router,
+)
 from app.modules.map_previews.router import (
   router as map_previews_router,
 )
@@ -82,6 +85,12 @@ router.include_router(
   places_router,
   prefix="/trips",
   tags=["Places"],
+)
+
+router.include_router(
+  saved_places_router,
+  prefix="/places",
+  tags=["Saved Places"],
 )
 
 router.include_router(

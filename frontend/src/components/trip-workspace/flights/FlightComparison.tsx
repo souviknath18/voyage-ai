@@ -32,6 +32,7 @@ import FlightComparisonCard from "./FlightComparisonCard";
 import FlightComparisonHeader from "./FlightComparisonHeader";
 import FlightFilters from "./FlightFilters";
 import { ApiError } from "@/lib/api";
+import FlightResultsSkeleton from "./FlightResultsSkeleton";
 
 interface FlightComparisonProps {
   trip: TripWorkspaceData;
@@ -543,46 +544,46 @@ export default function FlightComparison({
           </div>
 
           {/* Results */}
-          {visibleFlights.length >
-          0 ? (
-            visibleFlights.map(
-              (flight) => (
-                <FlightComparisonCard
-                  key={flight.id}
-                  flight={{
-                    ...flight,
-                    current: flight.id === currentFlightId,
-                  }}
-                  currency={trip.currency}
-                  onSelectAction={handleSelectFlight}
-                  onRemoveAction={handleRemoveFlight}
-                  removing={removing}
-                />
-              ),
-            )
-          ) : (
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-14 text-center">
-              <h2 className="text-sm font-semibold text-[#e6e0e8]">
-                No matching flights
-              </h2>
+          <div aria-busy={refreshing}>
+            {refreshing ? (
+              <FlightResultsSkeleton />
+            ) : visibleFlights.length > 0 ? (
+              <div className="space-y-4">
+                {visibleFlights.map((flight) => (
+                  <FlightComparisonCard
+                    key={flight.id}
+                    flight={{
+                      ...flight,
+                      current: flight.id === currentFlightId,
+                    }}
+                    currency={trip.currency}
+                    onSelectAction={handleSelectFlight}
+                    onRemoveAction={handleRemoveFlight}
+                    removing={removing}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-5 py-14 text-center">
+                <h2 className="text-sm font-semibold text-[#e6e0e8]">
+                  No matching flights
+                </h2>
 
-              <p className="mt-2 text-xs text-[#948e9c]">
-                Try changing your filters
-                or ask VoyageAI to search
-                differently.
-              </p>
+                <p className="mt-2 text-xs text-[#948e9c]">
+                  Try changing your filters or ask VoyageAI
+                  to search differently.
+                </p>
 
-              <button
-                type="button"
-                onClick={
-                  handleResetFilters
-                }
-                className="mt-4 text-xs font-semibold text-[#d1bcff] transition hover:text-[#fb7185]"
-              >
-                Reset Filters
-              </button>
-            </div>
-          )}
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="mt-4 text-xs font-semibold text-[#d1bcff] transition hover:text-[#fb7185]"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

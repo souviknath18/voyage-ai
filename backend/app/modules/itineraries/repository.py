@@ -194,6 +194,7 @@ def serialize_itinerary(
         "title": day.title,
         "activities": [
           {
+            "id": str(activity.id),
             "time": activity.time,
             "duration_minutes": activity.duration_minutes,
             "title": activity.title,

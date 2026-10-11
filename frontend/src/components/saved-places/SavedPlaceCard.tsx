@@ -101,8 +101,9 @@ export default function SavedPlaceCard({
         {/* Footer */}
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/[0.06] pt-4">
           <span className="text-[9px] font-semibold uppercase tracking-wider text-[#7f8798]">
-            Saved{" "}
-            {place.savedDate}
+            {place.savedDate
+              ? `Saved ${place.savedDate}`
+              : "Saved place"}
           </span>
 
           <div className="flex items-center gap-1.5">
