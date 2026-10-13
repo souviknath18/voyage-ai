@@ -145,7 +145,7 @@ export default function FlightComparisonPage() {
         estimatedCost: Number(budget.estimated_cost),
       };
     });
-  };
+  }; 
 
   if (loading) {
     return (
