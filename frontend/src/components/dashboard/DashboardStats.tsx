@@ -1,36 +1,45 @@
+
 import {
   Bookmark,
   Globe2,
   Map,
 } from "lucide-react";
 
-const stats = [
-  {
-    label: "Trips",
-    value: "12",
-    icon: Map,
-    accent:
-      "text-[#d1bcff]",
-  },
+import type { DashboardStats as DashboardStatsData } from "@/lib/dashboard";
 
-  {
-    label: "Countries",
-    value: "24",
-    icon: Globe2,
-    accent:
-      "text-[#fcd34d]",
-  },
+interface DashboardStatsProps {
+  stats: DashboardStatsData;
+}
 
-  {
-    label: "Saved",
-    value: "86",
-    icon: Bookmark,
-    accent:
-      "text-[#fb7185]",
-  },
-];
+export default function DashboardStats({
+  stats: dashboardStats,
+}: DashboardStatsProps) {
+  const stats = [
+    {
+      label: "Trips",
+      value: dashboardStats.total_trips.toString(),
+      icon: Map,
+      accent:
+        "text-[#d1bcff]",
+    },
 
-export default function DashboardStats() {
+    {
+      label: "Countries",
+      value: dashboardStats.countries_planned.toString(),
+      icon: Globe2,
+      accent:
+        "text-[#fcd34d]",
+    },
+
+    {
+      label: "Saved",
+      value: dashboardStats.saved_places.toString(),
+      icon: Bookmark,
+      accent:
+        "text-[#fb7185]",
+    },
+  ];
+
   return (
     <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3 sm:mt-3 sm:px-5 sm:py-3.5">
       <div className="grid grid-cols-3 items-center">

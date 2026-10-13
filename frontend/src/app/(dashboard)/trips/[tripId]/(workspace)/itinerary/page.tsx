@@ -1,7 +1,7 @@
 "use client";
 
 import { toast } from "sonner";
-import { removeItineraryActivity } from "@/lib/trips";
+import { removeItineraryActivity, addPlaceToItinerary } from "@/lib/trips";
 
 import {
   useEffect,
@@ -89,6 +89,8 @@ export default function TripItineraryPage() {
 
   const [removingActivityId, setRemovingActivityId] =
     useState<string | null>(null);
+
+  const [addingActivity, setAddingActivity] = useState(false);
 
   const [
     loading,
@@ -442,6 +444,87 @@ export default function TripItineraryPage() {
   };
 
 
+  const handleAddActivity = async (
+    dayNumber: number,
+    placeId: string,
+    time: string,
+    durationMinutes: number,
+  ): Promise<boolean> => {
+    if (
+      addingActivity ||
+      removingActivityId !== null ||
+      restoringVersion !== null
+    ) {
+      return false;
+    }
+
+    if (
+      itineraryResponse &&
+      currentVersion !== null &&
+      itineraryResponse.version !== currentVersion
+    ) {
+      toast.error(
+        "Restore the selected version before editing.",
+      );
+      return false;
+    }
+
+    if (
+      !Number.isInteger(durationMinutes) ||
+      durationMinutes < 15 ||
+      durationMinutes > 1440
+    ) {
+      toast.error("Duration must be between 15 and 1440 minutes.");
+      return false;
+    }
+
+    try {
+      setAddingActivity(true);
+
+      const updated = await addPlaceToItinerary(
+        tripId,
+        {
+          place_id: placeId,
+          day_number: dayNumber,
+          time,
+          duration_minutes: durationMinutes,
+        },
+      );
+
+      setItineraryResponse(updated);
+      setCurrentVersion(updated.version);
+
+      setItinerary(
+        mapItineraryToWorkspace(updated, null),
+      );
+
+      try {
+        const updatedVersions =
+          await getTripItineraryVersions(tripId);
+
+        setVersions(updatedVersions);
+      } catch {
+        toast.warning(
+          "Activity added, but version history could not refresh.",
+        );
+      }
+
+      toast.success("Activity added to itinerary.");
+      return true;
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Unable to add activity.",
+      );
+
+      return false;
+    } finally {
+      setAddingActivity(false);
+    }
+  };
+
+
   if (loading) {
     return <TripItinerarySkeleton />;
   }
@@ -518,6 +601,8 @@ export default function TripItineraryPage() {
           handleRestoreVersion
         }
         onRemoveActivityAction={handleRemoveActivity}
+        onAddActivityAction={handleAddActivity}
+        addingActivity={addingActivity}
       />
 
     </div>

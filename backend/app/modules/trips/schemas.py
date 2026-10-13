@@ -1,8 +1,19 @@
+
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import (
+  BaseModel,
+  Field,
+  computed_field,
+  model_validator,
+)
+
+from app.modules.trips.lifecycle import (
+  TripLifecycle,
+  get_trip_lifecycle,
+)
 
 
 class TripCreate(BaseModel):
@@ -115,6 +126,17 @@ class TripResponse(BaseModel):
   destination_latitude: Decimal | None = None
   destination_longitude: Decimal | None = None
   destination_timezone: str | None = None
+
+  # Derived trip lifecycle.
+  # Does not modify the stored database status.
+  @computed_field
+  @property
+  def lifecycle(self) -> TripLifecycle:
+    return get_trip_lifecycle(
+      status=self.status,
+      start_date=self.start_date,
+      end_date=self.end_date,
+    )
 
 
 class TripListResponse(TripResponse):

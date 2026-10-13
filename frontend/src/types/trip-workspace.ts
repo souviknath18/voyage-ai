@@ -72,7 +72,10 @@ export interface TripWorkspaceHeaderData {
 
   status:
     | "ready"
+    | "in_progress"
     | "planning"
+    | "completed"
+    | "cancelled"
     | "warning";
 
   currency: string;
@@ -104,7 +107,7 @@ export interface TripWorkspaceData {
 
   travelers: number;
 
-  status: "ready" | "planning" | "warning";
+  status: TripWorkspaceHeaderData["status"];
 
   currency: string;
 
@@ -603,4 +606,26 @@ export interface FlightSliceOption {
   stopDescription?: string;
 
   segments: FlightSegmentOption[];
+}
+
+export interface FlightComparisonTripData {
+  id: string;
+
+  origin: string;
+  destination: string;
+
+  originCode?: string;
+  destinationCode?: string;
+
+  startDate: string;
+  endDate: string;
+
+  travelers: number;
+  currency: string;
+  
+  totalBudget: number | null;
+
+  estimatedCost: number;
+
+  flightOptions: FlightComparisonOption[];
 }

@@ -31,17 +31,20 @@ interface TripCardProps {
   ) => void;
 }
 
+
 function getStatusVariant(
   status: TripListItem["status"],
-) {
+): "success" | "warning" | "neutral" {
   switch (status) {
     case "upcoming":
+    case "in_progress":
       return "success";
 
     case "draft":
       return "warning";
 
     case "completed":
+    case "cancelled":
       return "neutral";
 
     default:
@@ -49,18 +52,25 @@ function getStatusVariant(
   }
 }
 
+
 function getStatusLabel(
   status: TripListItem["status"],
-) {
+): string {
   switch (status) {
     case "upcoming":
       return "Ready";
+
+    case "in_progress":
+      return "In Progress";
 
     case "draft":
       return "Planning";
 
     case "completed":
       return "Completed";
+
+    case "cancelled":
+      return "Cancelled";
 
     default:
       return status;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -29,7 +30,7 @@ export default function DashboardRecommendation() {
             />
 
             <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#fcd34d]">
-              Curated For You
+              Featured Destination
             </span>
           </div>
 
@@ -38,14 +39,17 @@ export default function DashboardRecommendation() {
           </h2>
 
           <p className="mt-2 max-w-sm text-xs leading-5 text-[#948e9c] sm:text-[13px]">
-            Based on your interest in coastal scenery, photography and food experiences, VoyageAI recommends a late-summer escape to the Amalfi Coast.
+            Discover the stunning coastline, colorful villages,
+            scenic viewpoints, and unforgettable Italian cuisine
+            of the Amalfi Coast. Find inspiration for your next
+            adventure with VoyageAI.
           </p>
 
           <button
             type="button"
             onClick={() =>
               router.push(
-                "/explore/amalfi",
+                "/explore",
               )
             }
             className="mt-5 flex w-fit items-center gap-1.5 text-xs font-semibold text-[#fb7185] transition hover:text-[#fcd34d]"

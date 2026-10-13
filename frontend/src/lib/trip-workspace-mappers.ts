@@ -64,11 +64,17 @@ export function mapTripToWorkspaceHeader(
     travelers: trip.travelers,
 
     status:
-      trip.status === "upcoming"
+      trip.lifecycle === "upcoming"
         ? "ready"
-        : trip.status === "draft"
-          ? "planning"
-          : "warning",
+        : trip.lifecycle === "in_progress"
+          ? "in_progress"
+          : trip.lifecycle === "draft"
+            ? "planning"
+            : trip.lifecycle === "completed"
+              ? "completed"
+              : trip.lifecycle === "cancelled"
+                ? "cancelled"
+                : "warning",
 
     currency: trip.currency,
 

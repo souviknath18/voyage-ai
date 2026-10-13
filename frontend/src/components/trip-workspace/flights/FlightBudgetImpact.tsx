@@ -23,7 +23,7 @@ interface FlightBudgetImpactProps {
 
   currency: string;
 
-  totalBudget: number;
+  totalBudget: number | null;
 
   estimatedCost: number;
 
@@ -60,8 +60,9 @@ export default function FlightBudgetImpact({
     difference;
 
   const remaining =
-    totalBudget -
-    newEstimatedCost;
+    totalBudget === null
+      ? null
+      : totalBudget - newEstimatedCost;
 
   const formatMoney = (amount: number) =>
     `${currency} ${amount.toLocaleString("en-IN", {
@@ -124,7 +125,14 @@ export default function FlightBudgetImpact({
         </p>
 
         <div className="mt-5 space-y-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-          <BudgetRow label="Total Trip Budget" value={formatMoney(totalBudget)} />
+          <BudgetRow
+            label="Total Trip Budget"
+            value={
+              totalBudget === null
+                ? "Not configured"
+                : formatMoney(totalBudget)
+            }
+          />
 
           <BudgetRow
             label="Current Flight"
@@ -143,11 +151,21 @@ export default function FlightBudgetImpact({
             label="New Estimated Trip"
             value={formatMoney(newEstimatedCost)}
           />
-
+          
           <BudgetRow
             label="Remaining Budget"
-            value={formatMoney(remaining)}
-            accent={remaining >= 0 ? "coral" : "danger"}
+            value={
+              remaining === null
+                ? "Not available"
+                : formatMoney(remaining)
+            }
+            accent={
+              remaining === null
+                ? undefined
+                : remaining >= 0
+                  ? "coral"
+                  : "danger"
+            }
           />
         </div>
 

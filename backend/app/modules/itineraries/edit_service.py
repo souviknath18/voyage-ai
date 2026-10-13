@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime, timezone
-from decimal import Decimal
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -20,6 +19,9 @@ from app.modules.itineraries.schemas import (
 from app.modules.places.repository import get_trip_place
 from app.modules.trips.models import Trip
 from app.modules.trips.service import get_user_trip
+from app.modules.itineraries.cost_utils import (
+  calculate_itinerary_activity_total,
+)
 
 
 def itinerary_time_sort_key(activity: dict) -> int:
@@ -110,6 +112,11 @@ async def _save_edited_itinerary(
     day["activities"].sort(
       key=itinerary_time_sort_key
     )
+
+  # Recalculate using all remaining activities.
+  itinerary_data["estimated_total_cost"] = float(
+    calculate_itinerary_activity_total(itinerary_data)
+  )
 
   new_itinerary = await save_itinerary(
     db=db,
@@ -220,7 +227,7 @@ async def add_place_to_trip_itinerary(
       cost_category = "food"
     else:
       activity_type = "sightseeing"
-      cost_category = "activities"
+      cost_category = "activity"
 
     target_day["activities"].append(
       {
@@ -277,17 +284,12 @@ async def remove_activity_from_trip_itinerary(
     data = serialize_itinerary(current)
 
     found = False
-    removed_cost = Decimal("0.00")
 
     for day in data["days"]:
       activities = day["activities"]
 
       for index, activity in enumerate(activities):
         if activity.get("id") == str(activity_id):
-          removed_cost = Decimal(
-            str(activity.get("estimated_cost", 0))
-          )
-
           activities.pop(index)
           found = True
           break
@@ -300,17 +302,6 @@ async def remove_activity_from_trip_itinerary(
         status_code=status.HTTP_404_NOT_FOUND,
         detail="Activity not found in current itinerary.",
       )
-
-    total = Decimal(
-      str(data["estimated_total_cost"])
-    )
-
-    data["estimated_total_cost"] = float(
-      max(
-        Decimal("0.00"),
-        total - removed_cost,
-      )
-    )
 
     return await _save_edited_itinerary(
       db=db,
