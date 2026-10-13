@@ -110,9 +110,22 @@ async def get_trip_budget(
 
     cost = normalize_money(estimated_activity_cost)
 
-    category = (
-      cost_category
-      or DEFAULT_BUDGET_CATEGORY
+    category = str(
+      cost_category or DEFAULT_BUDGET_CATEGORY
+    ).strip().lower()
+
+    category_aliases = {
+      "activities": "activity",
+      "sightseeing": "activity",
+      "attractions": "activity",
+      "hotel": "accommodation",
+      "hotels": "accommodation",
+      "flights": "flight",
+    }
+
+    category = category_aliases.get(
+      category,
+      category,
     )
 
     if category not in BUDGET_CATEGORIES:

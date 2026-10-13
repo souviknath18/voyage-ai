@@ -104,6 +104,7 @@ export default function TimePicker({
               updateTime(hour12, rawMinute, nextPeriod)
             }
             disabled={disabled}
+            menuAlign="right"
           />
         </div>
       </div>

@@ -1,8 +1,17 @@
+
 import {
   Sparkles,
 } from "lucide-react";
 
-export default function DashboardGreeting() {
+interface DashboardGreetingProps {
+  userName?: string | null;
+}
+
+export default function DashboardGreeting({
+  userName,
+}: DashboardGreetingProps) {
+  const firstName = userName?.trim().split(/\s+/)[0] || "Traveler";
+
   return (
     <div className="flex h-full flex-col justify-end py-3">
       <div className="flex items-center gap-2">
@@ -19,7 +28,7 @@ export default function DashboardGreeting() {
       <h1 className="mt-3 text-2xl font-semibold tracking-tight text-[#e6e0e8] sm:text-3xl lg:text-4xl">
         Welcome back,{" "}
         <span className="bg-gradient-to-r from-[#fb7185] to-[#fcd34d] bg-clip-text text-transparent">
-          Souvik
+          {firstName}
         </span>
       </h1>
 

@@ -23,8 +23,10 @@ export interface TripFormData {
 
 export type TripStatus =
   | "upcoming"
+  | "in_progress"
   | "draft"
-  | "completed";
+  | "completed"
+  | "cancelled";
 
 export type TripTab =
   | "upcoming"

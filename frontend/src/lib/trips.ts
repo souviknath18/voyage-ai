@@ -8,6 +8,13 @@ import type {
   TripChangeProposal,
 } from "@/types/trip-assistant";
 
+export type TripLifecycle =
+  | "draft"
+  | "upcoming"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
+
 export interface CreateTripRequest {
   origin: string;
   destination: string;
@@ -45,6 +52,7 @@ export interface Trip {
   budget: string | null;
   currency: string;
   status: string;
+  lifecycle: TripLifecycle;
   is_saved: boolean;
   created_at: string;
   updated_at: string;

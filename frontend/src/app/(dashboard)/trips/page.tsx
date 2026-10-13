@@ -106,8 +106,7 @@ function mapTripToListItem(
 
     image,
 
-    status:
-      trip.status as TripListItem["status"],
+    status: trip.lifecycle,
   };
 }
 
@@ -226,12 +225,11 @@ export default function MyTripsPage() {
   const counts =
     useMemo(() => {
       return {
-        upcoming:
-          trips.filter(
-            (trip) =>
-              trip.status ===
-              "upcoming",
-          ).length,
+        upcoming: trips.filter(
+          (trip) =>
+            trip.status === "upcoming" ||
+            trip.status === "in_progress",
+        ).length,
 
         draft:
           trips.filter(
@@ -272,7 +270,10 @@ export default function MyTripsPage() {
           const matchesTab =
             activeTab === "saved"
               ? trip.isSaved
-              : trip.status === activeTab;
+              : activeTab === "upcoming"
+                ? trip.status === "upcoming" ||
+                  trip.status === "in_progress"
+                : trip.status === activeTab;
 
           if (!matchesTab) {
             return false;

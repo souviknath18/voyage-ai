@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 import type {
   FlightComparisonOption,
-  TripWorkspaceData,
+  FlightComparisonTripData ,
 } from "@/types/trip-workspace";
 
 import {
@@ -35,16 +35,18 @@ import { ApiError } from "@/lib/api";
 import FlightResultsSkeleton from "./FlightResultsSkeleton";
 
 interface FlightComparisonProps {
-  trip: TripWorkspaceData;
+  trip: FlightComparisonTripData;
   tripId: string;
 
   onBackAction: () => void;
+  onBudgetRefreshAction?: () => Promise<void>;
 }
 
 export default function FlightComparison({
   trip,
   tripId,
   onBackAction,
+  onBudgetRefreshAction,
 }: FlightComparisonProps) {
   const [
     nonStop,
@@ -338,6 +340,17 @@ export default function FlightComparison({
 
         setSelectedFlight(undefined);
 
+        if (onBudgetRefreshAction) {
+          try {
+            await onBudgetRefreshAction();
+          } catch (refreshError) {
+            console.error(
+              "Failed to refresh budget after removing flight:",
+              refreshError,
+            );
+          }
+        }
+
         // ADD: Success toast
         toast.success("Flight removed", {
           description:
@@ -389,6 +402,17 @@ export default function FlightComparison({
       );
 
       setSelectedFlight(undefined);
+
+      if (onBudgetRefreshAction) {
+        try {
+          await onBudgetRefreshAction();
+        } catch (refreshError) {
+          console.error(
+            "Failed to refresh budget after selecting flight:",
+            refreshError,
+          );
+        }
+      }
 
       // ADD: Success toast
       toast.success("Flight selected successfully", {

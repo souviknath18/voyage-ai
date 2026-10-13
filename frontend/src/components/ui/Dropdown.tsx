@@ -29,6 +29,8 @@ interface DropdownProps {
 
   className?: string;
   disabled?: boolean;
+
+  menuAlign?: "left" | "right";
 }
 
 export default function Dropdown({
@@ -40,6 +42,7 @@ export default function Dropdown({
   error,
   className = "",
   disabled = false,
+  menuAlign = "left",
 }: DropdownProps) {
   const [open, setOpen] = useState(false);
 
@@ -150,7 +153,13 @@ export default function Dropdown({
       )}
 
       {open && !disabled && (
-        <div className="absolute left-0 top-[54px] z-50 w-full min-w-[140px] overflow-hidden rounded-lg border border-white/10 bg-[#0D1324] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.4)]">
+        <div
+          className={`absolute top-[54px] z-50 w-max min-w-[140px] max-w-[calc(100vw-32px)] overflow-hidden rounded-lg border border-white/10 bg-[#0D1324] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.4)] ${
+            menuAlign === "right"
+              ? "right-0"
+              : "left-0"
+          }`}
+        >
           <div className="max-h-60 overflow-y-auto">
             {options.map((option) => {
               const active =

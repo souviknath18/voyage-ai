@@ -10,6 +10,10 @@ import {
 } from "react";
 
 import {
+  useRouter,
+} from "next/navigation";
+
+import {
   Button,
 } from "@/components/ui";
 
@@ -26,9 +30,7 @@ import ItineraryAIPrompt from "./ItineraryAIPrompt";
 import ItineraryDay from "./ItineraryDay";
 import ItineraryMapPanel from "./ItineraryMapPanel";
 import ItineraryVersionHistory from "./ItineraryVersionHistory";
-import {
-  useRouter,
-} from "next/navigation";
+import AddActivityModal from "./AddActivityModal";
 
 interface TripItineraryProps {
   tripId: string;
@@ -51,6 +53,15 @@ interface TripItineraryProps {
   ) => void;
 
   onRemoveActivityAction: (activityId: string) => Promise<void>;
+
+  onAddActivityAction: (
+    dayNumber: number,
+    placeId: string,
+    time: string,
+    durationMinutes: number,
+  ) => Promise<boolean>;
+
+  addingActivity: boolean;
 }
 
 export default function TripItinerary({
@@ -61,9 +72,11 @@ export default function TripItinerary({
   currentVersion,
   versions,
   restoringVersion,
+  addingActivity,
   onViewVersionAction,
   onRestoreVersionAction,
   onRemoveActivityAction,
+  onAddActivityAction,
 }: TripItineraryProps) {
   const router = useRouter();
   const [
@@ -75,6 +88,9 @@ export default function TripItinerary({
     historyOpen,
     setHistoryOpen,
   ] = useState(false);
+
+  const [addingToDay, setAddingToDay] =
+    useState<number | null>(null);
 
   const selectedDay =
     itinerary[
@@ -122,13 +138,31 @@ export default function TripItinerary({
     await onRemoveActivityAction(activityId);
   };
 
-  const handleAdd = (
-    dayNumber: number,
+  const handleAdd = (dayNumber: number) => {
+    if (version !== currentVersion) {
+      return;
+    }
+
+    setAddingToDay(dayNumber);
+  };
+
+  const handleAddSubmit = async (
+    placeId: string,
+    time: string,
+    durationMinutes: number,
   ) => {
-    console.log(
-      "Add activity:",
-      dayNumber,
+    if (addingToDay === null) return;
+
+    const success = await onAddActivityAction(
+      addingToDay,
+      placeId,
+      time,
+      durationMinutes,
     );
+
+    if (success) {
+      setAddingToDay(null);
+    }
   };
 
   const handleAIPrompt = (
@@ -310,6 +344,15 @@ export default function TripItinerary({
           }
         />
       </aside>
+
+      <AddActivityModal
+        open={addingToDay !== null}
+        tripId={tripId}
+        dayNumber={addingToDay ?? 1}
+        submitting={addingActivity}
+        onCloseAction={() => setAddingToDay(null)}
+        onSubmitAction={handleAddSubmit}
+      />
     </div>
   );
 }

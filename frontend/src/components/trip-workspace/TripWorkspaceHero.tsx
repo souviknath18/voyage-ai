@@ -30,6 +30,53 @@ interface TripWorkspaceHeroProps {
   onExportAction: () => void;
 }
 
+
+function getTripStatus(
+  status: TripWorkspaceHeaderData["status"],
+): {
+  label: string;
+  variant: "success" | "warning" | "neutral";
+} {
+  switch (status) {
+    case "ready":
+      return {
+        label: "AI Plan Ready",
+        variant: "success",
+      };
+
+    case "in_progress":
+      return {
+        label: "In Progress",
+        variant: "success",
+      };
+
+    case "planning":
+      return {
+        label: "Planning",
+        variant: "warning",
+      };
+
+    case "completed":
+      return {
+        label: "Completed",
+        variant: "neutral",
+      };
+
+    case "cancelled":
+      return {
+        label: "Cancelled",
+        variant: "neutral",
+      };
+
+    case "warning":
+    default:
+      return {
+        label: "Needs Attention",
+        variant: "warning",
+      };
+  }
+}
+
 export default function TripWorkspaceHero({
   trip,
   onAskAIAction,
@@ -68,12 +115,8 @@ export default function TripWorkspaceHero({
       <div className="relative z-10 flex min-h-[300px] flex-col justify-end p-4 sm:p-5 lg:p-6">
         {/* Status + Meta */}
         <div className="flex flex-wrap items-center gap-2.5">
-          <Badge variant="success">
-            {trip.status === "ready"
-              ? "AI Plan Ready"
-              : trip.status === "planning"
-                ? "Planning"
-                : "Needs Attention"}
+          <Badge variant={getTripStatus(trip.status).variant}>
+            {getTripStatus(trip.status).label}
           </Badge>
 
           {/* Travelers */}

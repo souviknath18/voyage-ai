@@ -16,11 +16,8 @@ import { dedupeRequest } from "@/lib/request-dedup";
 import FlightPageSkeleton from "@/components/trip-workspace/flights/FlightPageSkeleton";
 
 import {
-  mockTrip,
-} from "@/data/mock-trip";
-
-import {
   getSelectedTripFlight,
+  getTripBudget,
   getTripFlights,
 } from "@/lib/trips";
 
@@ -31,7 +28,7 @@ import {
 
 import type {
   FlightComparisonOption,
-  TripWorkspaceData,
+  FlightComparisonTripData,
 } from "@/types/trip-workspace";
 
 function formatTripDate(
@@ -67,7 +64,7 @@ export default function FlightComparisonPage() {
   const [
     trip,
     setTrip,
-  ] = useState<TripWorkspaceData | null>(
+  ] = useState<FlightComparisonTripData | null>(
     null,
   );
 
@@ -91,20 +88,27 @@ export default function FlightComparisonPage() {
         setLoading(true);
         setError(null);
 
-        const [response, selectedFlight] = await Promise.all([
-          dedupeRequest(
-            `trip-flights:${tripId}`,
-            () => getTripFlights(tripId),
-          ),
-          dedupeRequest(
-            `trip-selected-flight:${tripId}`,
-            () => getSelectedTripFlight(tripId),
-          ),
-        ]);
+        const [response, selectedFlight, budget] =
+          await Promise.all([
+            dedupeRequest(
+              `trip-flights:${tripId}`,
+              () => getTripFlights(tripId),
+            ),
+            dedupeRequest(
+              `trip-selected-flight:${tripId}`,
+              () => getSelectedTripFlight(tripId),
+            ),
+            dedupeRequest(
+              `trip-budget:${tripId}`,
+              () => getTripBudget(tripId),
+            ),
+          ]);
 
         if (cancelled) return;
 
-        setTrip(buildFlightTrip(response, selectedFlight));
+        setTrip(
+          buildFlightTrip(response, selectedFlight, budget),
+        );
       } catch (error) {
         if (cancelled) return;
 
@@ -123,6 +127,25 @@ export default function FlightComparisonPage() {
       cancelled = true;
     };
   }, [tripId]);
+
+  const refreshBudget = async () => {
+    if (!tripId) return;
+
+    const budget = await getTripBudget(tripId);
+
+    setTrip((currentTrip) => {
+      if (!currentTrip) return null;
+
+      return {
+        ...currentTrip,
+        totalBudget:
+          budget.total_budget == null
+            ? null
+            : Number(budget.total_budget),
+        estimatedCost: Number(budget.estimated_cost),
+      };
+    });
+  };
 
   if (loading) {
     return (
@@ -158,6 +181,7 @@ export default function FlightComparisonPage() {
             onBackAction={() =>
               router.push(`/trips/${tripId}`)
             }
+            onBudgetRefreshAction={refreshBudget}
           />
         </div>
       </div>
@@ -169,7 +193,8 @@ export default function FlightComparisonPage() {
 function buildFlightTrip(
   response: Awaited<ReturnType<typeof getTripFlights>>,
   selectedFlight: Awaited<ReturnType<typeof getSelectedTripFlight>>,
-): TripWorkspaceData {
+  budget: Awaited<ReturnType<typeof getTripBudget>>,
+): FlightComparisonTripData {
   const freshFlightOptions = shortlistFlights(
     response.offers,
     6,
@@ -198,7 +223,6 @@ function buildFlightTrip(
   }
 
   return {
-    ...mockTrip,
     id: response.trip_id,
     origin: response.origin,
     destination: response.destination,
@@ -207,7 +231,13 @@ function buildFlightTrip(
     travelers: response.travelers,
     startDate: formatTripDate(response.start_date),
     endDate: formatTripDate(response.end_date),
-    currency: response.currency,
+    currency: budget.currency,
+    totalBudget:
+      budget.total_budget === null ||
+      budget.total_budget === undefined
+        ? null
+        : Number(budget.total_budget),
+    estimatedCost: Number(budget.estimated_cost),
     flightOptions,
   };
 }

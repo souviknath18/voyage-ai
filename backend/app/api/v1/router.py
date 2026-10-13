@@ -35,6 +35,7 @@ from app.modules.flights.router import (
 from app.modules.hotels.router import (
   router as hotels_router,
 )
+from app.modules.dashboard.router import router as dashboard_router
 from app.api.v1.images import router as images_router
 
 router = APIRouter()
@@ -132,3 +133,5 @@ router.include_router(
   prefix="/trips",
   tags=["Hotels"],
 )
+
+router.include_router(dashboard_router)
