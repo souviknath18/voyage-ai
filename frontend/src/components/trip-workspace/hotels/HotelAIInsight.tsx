@@ -21,7 +21,7 @@ export default function HotelAIInsight({
           />
 
           <h2 className="text-sm font-semibold text-[#e6e0e8]">
-            VoyageAI Insight
+            VoyageAI Recommendation
           </h2>
         </div>
 

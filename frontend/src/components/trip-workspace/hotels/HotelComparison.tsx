@@ -9,31 +9,51 @@ import {
   useState,
 } from "react";
 
+import { Sparkles } from "lucide-react";
+
 import type {
   HotelComparisonOption,
   TripWorkspaceData,
 } from "@/types/trip-workspace";
+
+import type {
+  RecommendedHotelResponse,
+} from "@/lib/trips";
 
 import CurrentHotelSummary from "./CurrentHotelSummary";
 import HotelAIInsight from "./HotelAIInsight";
 import HotelBudgetImpact from "./HotelBudgetImpact";
 import HotelComparisonCard from "./HotelComparisonCard";
 import HotelComparisonHeader from "./HotelComparisonHeader";
+import HotelAIRefine from "./HotelAIRefine";
+import HotelRefinementSkeleton from "./HotelRefinementSkeleton";
 
 interface HotelComparisonProps {
   trip: TripWorkspaceData;
+  recommendation: RecommendedHotelResponse | null;
   onBackAction: () => void;
   budgetReady: boolean;
   budgetLoading: boolean;
-  onSelectionChanged: () => Promise<void>;
+  onSelectionChangedAction: () => Promise<void>;
+  refining?: boolean;
+  onRefineAction: (prompt: string) => void;
+  matchingOfferIds?: string[] | null;
+  onResetRefinementAction?: () => void;
+  refinementMessage?: string | null;
 }
 
 export default function HotelComparison({
   trip,
+  recommendation,
   onBackAction,
   budgetReady,
   budgetLoading,
-  onSelectionChanged,
+  onSelectionChangedAction,
+  refining = false,
+  onRefineAction,
+  matchingOfferIds = null,
+  onResetRefinementAction,
+  refinementMessage = null,
 }: HotelComparisonProps) {
   const [
     selectedHotel,
@@ -52,9 +72,59 @@ export default function HotelComparison({
   const currentHotel =
     savedHotel ?? trip.hotelOptions[0];
 
+  
+  const recommendedOffer =
+    recommendation?.recommended_hotel;
+
+  const recommendedOption = recommendedOffer
+    ? trip.hotelOptions.find(
+        (hotel) => hotel.id === recommendedOffer.id,
+      )
+    : undefined;
+
+  const recommendedPrice = recommendedOffer
+    ? Number(recommendedOffer.converted_price)
+    : null;
+
+  const formattedRecommendedPrice =
+    recommendedOffer &&
+    recommendedPrice !== null &&
+    Number.isFinite(recommendedPrice)
+      ? new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: recommendedOffer.converted_currency,
+          maximumFractionDigits: 0,
+        }).format(recommendedPrice)
+      : null;
+
+  const recommendationText = recommendedOffer
+    ? `VoyageAI recommends ${recommendedOffer.name} in ${trip.destination}.${
+        formattedRecommendedPrice
+          ? ` Estimated total cost: ${formattedRecommendedPrice} for ${recommendedOffer.nights} nights.`
+          : ""
+      } ${
+        recommendedOption
+          ? "You can compare and select this hotel from the available offers."
+          : "This recommendation may be from an earlier search. Check current availability and pricing before selecting."
+      }`
+    : `Compare available hotels in ${trip.destination} based on price, location, amenities, and your trip budget.`;
+
+
+  const matchingOfferIdSet =
+    matchingOfferIds === null
+      ? null
+      : new Set(matchingOfferIds);
+
   const alternatives = trip.hotelOptions.filter(
-    (hotel) => hotel.id !== savedHotel?.id,
+    (hotel) =>
+      hotel.id !== savedHotel?.id &&
+      (
+        matchingOfferIdSet === null ||
+        matchingOfferIdSet.has(hotel.id)
+      ),
   );
+
+  const refinementActive = matchingOfferIdSet !== null;
 
   const handleSelectHotel = (
     hotel:
@@ -75,7 +145,7 @@ export default function HotelComparison({
 
       await selectTripHotel(trip.id, selectedHotel.id);
 
-      await onSelectionChanged();
+      await onSelectionChangedAction();
 
       setSelectedHotel(undefined);
     } catch (error) {
@@ -106,7 +176,7 @@ export default function HotelComparison({
 
       await deleteSelectedTripHotel(trip.id);
 
-      await onSelectionChanged();
+      await onSelectionChangedAction();
     } catch (error) {
       console.error("Failed to remove or refresh hotel:", error);
 
@@ -177,28 +247,72 @@ export default function HotelComparison({
                 </div>
               )}
 
-              <HotelAIInsight
-                text={`VoyageAI recommends comparing hotels in ${trip.destination} based on location, price, room amenities, and overall trip budget. Consider choosing accommodation near the attractions you plan to visit to reduce daily travel time and transportation costs.`}
-              />
+              <HotelAIInsight text={recommendationText} />
             </div>
           </div>
         </aside>
 
         {/* Alternatives */}
         <div className="xl:col-span-9">
-          <div>
-            <h2 className="text-lg font-semibold text-[#e6e0e8] sm:text-xl">
-              Curated Alternatives
-            </h2>
+          <div className="mb-5 space-y-3">
+            <HotelAIRefine
+              refining={refining}
+              onSubmitAction={onRefineAction}
+            />
 
-            <p className="mt-1 text-sm text-[#948e9c]">
-              Hotels selected for your budget, itinerary and travel preferences.
-            </p>
+            
+            {refinementMessage && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="rounded-xl border border-[#C4B5FD]/25 bg-[#C4B5FD]/[0.06] px-4 py-3 text-sm text-[#e6e0e8]"
+              >
+                <div className="flex items-start gap-2">
+                  <Sparkles
+                    size={16}
+                    className="mt-0.5 shrink-0 text-[#C4B5FD]"
+                  />
+
+                  <p className="leading-relaxed">
+                    {refinementMessage}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
-            {alternatives.map(
-              (hotel) => (
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-[#e6e0e8] sm:text-xl">
+                Curated Alternatives
+              </h2>
+
+              <p className="mt-1 text-sm text-[#948e9c]">
+                {refining
+                  ? "VoyageAI is finding hotels that match your preferences..."
+                  : refinementActive
+                    ? `${alternatives.length} matching hotel${alternatives.length === 1 ? "" : "s"} available.`
+                    : "Hotels selected for your budget, itinerary and travel preferences."}
+              </p>
+            </div>
+
+            {refinementActive && onResetRefinementAction && (
+              <button
+                type="button"
+                onClick={onResetRefinementAction}
+                className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium text-[#e6e0e8] transition hover:bg-white/[0.08]"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
+
+          
+          {refining ? (
+            <HotelRefinementSkeleton count={2} />
+          ) : alternatives.length > 0 ? (
+            <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
+              {alternatives.map((hotel) => (
                 <HotelComparisonCard
                   key={hotel.id}
                   hotel={hotel}
@@ -208,9 +322,33 @@ export default function HotelComparison({
                   hasSelectedHotel={Boolean(savedHotel)}
                   onSelectAction={handleSelectHotel}
                 />
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl border border-white/10 bg-[#121421] px-6 py-12 text-center">
+              <p className="text-base font-semibold text-[#e6e0e8]">
+                {refinementActive
+                  ? "No hotels match your preferences"
+                  : "No alternative hotels available"}
+              </p>
+
+              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-[#948e9c]">
+                {refinementActive
+                  ? "Try a higher budget, a lower rating requirement, or fewer amenities."
+                  : "There are currently no additional hotels to compare."}
+              </p>
+
+              {refinementActive && onResetRefinementAction && (
+                <button
+                  type="button"
+                  onClick={onResetRefinementAction}
+                  className="mt-5 rounded-full border border-[#fb7185]/30 bg-[#fb7185]/10 px-5 py-2 text-sm font-medium text-[#fb7185] transition hover:bg-[#fb7185]/20"
+                >
+                  Show all hotels
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

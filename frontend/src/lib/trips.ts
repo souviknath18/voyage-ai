@@ -382,6 +382,37 @@ export interface TripFlightsResponse {
   offers: FlightOffer[];
 }
 
+export interface FlightRefinementPreferences {
+  sort_by:
+    | "cheapest"
+    | "fastest"
+    | "fewest_stops"
+    | "best";
+
+  max_stops: number | null;
+  max_price: number | null;
+
+  preferred_airlines: string[];
+  excluded_airlines: string[];
+
+  departure_period:
+    | "morning"
+    | "afternoon"
+    | "evening"
+    | "night"
+    | null;
+
+  avoid_overnight_layovers: boolean;
+}
+
+export interface TripFlightsRefinementResponse
+  extends TripFlightsResponse {
+  preferences: FlightRefinementPreferences;
+  explanation: string;
+  total_offers: number;
+  matching_offers: number;
+}
+
 export interface SelectedFlightResponse {
   id: string;
   trip_id: string;
@@ -457,6 +488,32 @@ export interface TripHotelsResponse {
   hotel_budget: string | null;
   recommended_hotel_id: string | null;
   offers: HotelOffer[];
+}
+
+export interface HotelRefinementPreferences {
+  sort_by:
+    | "cheapest"
+    | "highest_rated"
+    | "best";
+
+  max_total_price: number | null;
+  max_price_per_night: number | null;
+
+  min_rating: number | null;
+  min_star_rating: number | null;
+
+  refundable_only: boolean;
+  breakfast_included: boolean;
+
+  required_amenities: string[];
+}
+
+export interface TripHotelsRefinementResponse
+  extends TripHotelsResponse {
+  preferences: HotelRefinementPreferences;
+  explanation: string;
+  total_offers: number;
+  matching_offers: number;
 }
 
 export interface SelectedHotelResponse {
@@ -831,6 +888,22 @@ export async function getTripFlights(
 }
 
 
+export async function refineTripFlights(
+  tripId: string,
+  message: string,
+): Promise<TripFlightsRefinementResponse> {
+  return apiRequest<TripFlightsRefinementResponse>(
+    `/trips/${encodeURIComponent(tripId)}/flights/refine`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+      }),
+    },
+  );
+}
+
+
 export async function getSelectedTripFlight(
   tripId: string,
 ): Promise<SelectedFlightResponse | null> {
@@ -858,13 +931,27 @@ export async function selectTripFlight(
   );
 }
 
-
 export async function getTripHotels(
   tripId: string,
 ): Promise<TripHotelsResponse> {
   return apiRequest<TripHotelsResponse>(
     `/trips/${tripId}/hotels`,
     { method: "GET" },
+  );
+}
+
+export async function refineTripHotels(
+  tripId: string,
+  message: string,
+): Promise<TripHotelsRefinementResponse> {
+  return apiRequest<TripHotelsRefinementResponse>(
+    `/trips/${encodeURIComponent(tripId)}/hotels/refine`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+      }),
+    },
   );
 }
 

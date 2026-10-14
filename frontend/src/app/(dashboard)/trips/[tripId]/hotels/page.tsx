@@ -17,6 +17,8 @@ import {
   getTripHotels,
   getSelectedTripHotel,
   getTripBudget,
+  getRecommendedTripHotel,
+  refineTripHotels,
 } from "@/lib/trips";
 
 import {
@@ -42,11 +44,25 @@ export default function HotelComparisonPage() {
       null,
     );
 
+  const [recommendedHotel, setRecommendedHotel] =
+    useState<
+      Awaited<ReturnType<typeof getRecommendedTripHotel>>
+    >(null);
+
   const budgetVersion = useRef(0);
 
   const [loading, setLoading] = useState(true);
   const [budgetLoading, setBudgetLoading] = useState(true);
   const [budgetReady, setBudgetReady] = useState(false);
+  const [refining, setRefining] = useState(false);
+
+  const [refinementMessage, setRefinementMessage] =
+    useState<string | null>(null);
+
+  const [matchingOfferIds, setMatchingOfferIds] =
+    useState<string[] | null>(null);
+
+  const refinementVersion = useRef(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,6 +78,39 @@ export default function HotelComparisonPage() {
         setTrip(null);
         setBudgetData(null);
         setHotelOffers(null);
+        setRecommendedHotel(null);
+        ++refinementVersion.current;
+        setRefining(false);
+        setRefinementMessage(null);
+        setMatchingOfferIds(null);
+
+        void measureRequest(
+          "Hotel recommendation",
+          dedupeRequest(
+            `hotel-recommendation:${tripId}`,
+            () => getRecommendedTripHotel(tripId),
+          ),
+        ).then(
+          (result) => {
+            if (cancelled) {
+              return;
+            }
+
+            setRecommendedHotel(result);
+          },
+          (recommendationError) => {
+            if (cancelled) {
+              return;
+            }
+
+            console.error(
+              "Failed to load hotel recommendation:",
+              recommendationError,
+            );
+
+            setRecommendedHotel(null);
+          },
+        );
 
         // Budget loads independently from the hotel results.
         void measureRequest(
@@ -221,6 +270,7 @@ export default function HotelComparisonPage() {
     return () => {
       cancelled = true;
       ++budgetVersion.current;
+      ++refinementVersion.current;
     };
   }, [tripId]);
 
@@ -283,6 +333,11 @@ export default function HotelComparisonPage() {
         );
       }
 
+      ++refinementVersion.current;
+      setRefining(false);
+      setRefinementMessage(null);
+      setMatchingOfferIds(null);
+
       setTrip((current) =>
         current
           ? {
@@ -314,6 +369,158 @@ export default function HotelComparisonPage() {
       }
     }
   };
+  
+  const handleRefineHotels = async (
+    prompt: string,
+  ): Promise<void> => {
+    if (!hotelOffers || !trip || refining) {
+      return;
+    }
+
+    const currentVersion = ++refinementVersion.current;
+
+    setRefining(true);
+    setRefinementMessage(null);
+
+    try {
+      const result = await refineTripHotels(
+        tripId,
+        prompt,
+      );
+
+      if (currentVersion !== refinementVersion.current) {
+        return;
+      }
+
+      const savedHotel = trip.hotelOptions.find(
+        (option) => option.current,
+      );
+
+      const selectedOfferId = savedHotel?.id ?? null;
+
+      const refinedOptions = result.offers.map((offer) => {
+        const option = mapHotelOfferToOption(
+          offer,
+          result.recommended_hotel_id,
+          selectedOfferId,
+        );
+
+        if (savedHotel && offer.id === selectedOfferId) {
+          return {
+            ...option,
+            current: true,
+            totalPrice: savedHotel.totalPrice,
+          };
+        }
+
+        return option;
+      });
+
+      // Preserve the currently selected hotel even
+      // when it does not match the new filters.
+      if (
+        savedHotel &&
+        !refinedOptions.some((option) => option.current)
+      ) {
+        refinedOptions.unshift(savedHotel);
+      }
+
+      setMatchingOfferIds(
+        result.offers.map((offer) => offer.id),
+      );
+
+      setTrip((current) =>
+        current
+          ? {
+              ...current,
+              hotelOptions: refinedOptions,
+            }
+          : current,
+      );
+
+      setRefinementMessage(result.explanation);
+    } catch (error) {
+      if (currentVersion !== refinementVersion.current) {
+        return;
+      }
+
+      console.error("Failed to refine hotels:", error);
+
+      setRefinementMessage(
+        "Unable to refine hotels right now. " +
+        "Your existing results are unchanged.",
+      );
+    } finally {
+      if (currentVersion === refinementVersion.current) {
+        setRefining(false);
+      }
+    }
+  };
+  
+  const handleResetHotelRefinement = (): void => {
+    // Ignore responses from previous AI refinement requests.
+    ++refinementVersion.current;
+
+    setRefining(false);
+    setRefinementMessage(null);
+    setMatchingOfferIds(null);
+
+    if (!hotelOffers) {
+      return;
+    }
+
+    setTrip((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const savedHotel = current.hotelOptions.find(
+        (option) => option.current,
+      );
+
+      const selectedOfferId = savedHotel?.id ?? null;
+
+      const originalOptions = hotelOffers.offers.map(
+        (offer) => {
+          const option = mapHotelOfferToOption(
+            offer,
+            hotelOffers.recommended_hotel_id,
+            selectedOfferId,
+          );
+
+          if (
+            savedHotel &&
+            offer.id === selectedOfferId
+          ) {
+            return {
+              ...option,
+              current: true,
+              totalPrice: savedHotel.totalPrice,
+            };
+          }
+
+          return option;
+        },
+      );
+
+      // Preserve a selected hotel even when the
+      // original search no longer contains its offer.
+      if (
+        savedHotel &&
+        !originalOptions.some(
+          (option) => option.current,
+        )
+      ) {
+        originalOptions.unshift(savedHotel);
+      }
+
+      return {
+        ...current,
+        hotelOptions: originalOptions,
+      };
+    });
+  };
+
 
   return (
     <AppLayout>
@@ -332,19 +539,39 @@ export default function HotelComparisonPage() {
                 Try again
               </button>
             </div>
+          
           ) : trip ? (
-            <HotelComparison
-              trip={{
-                ...trip,
-                totalBudget: Number(budgetData?.total_budget ?? 0),
-                estimatedCost: Number(budgetData?.estimated_cost ?? 0),
-                remainingBudget: Number(budgetData?.remaining_budget ?? 0),
-              }}
-              budgetReady={budgetReady}
-              budgetLoading={budgetLoading}
-              onSelectionChanged={refreshHotelSelection}
-              onBackAction={() => router.push(`/trips/${tripId}`)}
-            />
+            <div className="space-y-4">
+
+              <HotelComparison
+                trip={{
+                  ...trip,
+                  totalBudget: Number(
+                    budgetData?.total_budget ?? 0,
+                  ),
+                  estimatedCost: Number(
+                    budgetData?.estimated_cost ?? 0,
+                  ),
+                  remainingBudget: Number(
+                    budgetData?.remaining_budget ?? 0,
+                  ),
+                }}
+                budgetReady={budgetReady}
+                budgetLoading={budgetLoading}
+                recommendation={recommendedHotel}
+                refining={refining}
+                onRefineAction={handleRefineHotels}
+                refinementMessage={refinementMessage}
+                onSelectionChangedAction={refreshHotelSelection}
+                onBackAction={() =>
+                  router.push(`/trips/${tripId}`)
+                }
+                matchingOfferIds={matchingOfferIds}
+                onResetRefinementAction={
+                  handleResetHotelRefinement
+                }
+              />
+            </div>
           ) : null}
         </div>
       </div>

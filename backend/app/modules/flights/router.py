@@ -22,6 +22,13 @@ from app.modules.flights.service import (
   clear_trip_selected_flight,
 )
 from app.modules.users.models import User
+from app.modules.flights.refinement_orchestrator import (
+  refine_trip_flights,
+)
+from app.modules.flights.refinement_schemas import (
+  FlightRefinementRequest,
+  TripFlightsRefinementResponse,
+)
 
 
 router = APIRouter()
@@ -104,3 +111,22 @@ async def delete_selected_flight_endpoint(
   )
 
   return {"deleted": deleted}
+
+
+
+@router.post(
+  "/{trip_id}/flights/refine",
+  response_model=TripFlightsRefinementResponse,
+)
+async def refine_flights_endpoint(
+  trip_id: str,
+  payload: FlightRefinementRequest,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  return await refine_trip_flights(
+    db=db,
+    public_trip_id=trip_id,
+    user_id=current_user.id,
+    message=payload.message,
+  )

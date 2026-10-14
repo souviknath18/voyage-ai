@@ -17,10 +17,12 @@ import {
   deleteSelectedTripFlight,
   getTripFlights,
   getSelectedTripFlight,
+  refineTripFlights,
 } from "@/lib/trips";
 
 import {
   shortlistFlights,
+  mapFlightOffer,
   mapSelectedFlightToComparisonOption,
 } from "@/lib/flight-mappers";
 
@@ -95,6 +97,13 @@ export default function FlightComparison({
 
   const [removing, setRemoving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [refining, setRefining] = useState(false);
+
+  const [refinementExplanation, setRefinementExplanation] =
+    useState<string | null>(null);
+
+  const [originalFlightOptions, setOriginalFlightOptions] =
+    useState<FlightComparisonOption[] | null>(null);
 
   const currentFlight = currentFlightId
     ? flightOptions.find(
@@ -173,24 +182,73 @@ export default function FlightComparison({
       selectedAirlines,
     ]);
 
-  /*
-   * VoyageAI flight refinement.
-   */
-  const handleAIRefine = (
-    prompt: string,
-  ) => {
-    console.log(
-      "Flight refinement:",
-      prompt,
-    );
+  
+  const handleAIRefine = async (prompt: string) => {
+    if (refining || refreshing || selecting || removing) {
+      return;
+    }
 
-    /*
-     * Later:
-     *
-     * Send prompt to VoyageAI
-     * flight search / optimization API.
-     */
+    try {
+      setRefining(true);
+
+      const response = await refineTripFlights(
+        tripId,
+        prompt,
+      );
+
+      // Preserve the original offers for restoration.
+      setOriginalFlightOptions((previous) =>
+        previous ?? flightOptions,
+      );
+
+      // Preserve the backend's refined ordering.
+      const refinedOptions = response.offers.map(
+        mapFlightOffer,
+      );
+
+      // Keep the currently selected flight visible,
+      // even when it does not match the new preferences.
+      const existingCurrentFlight = flightOptions.find(
+        (flight) => flight.id === currentFlightId,
+      );
+
+      if (
+        existingCurrentFlight &&
+        !refinedOptions.some(
+          (flight) => flight.id === currentFlightId,
+        )
+      ) {
+        refinedOptions.unshift(existingCurrentFlight);
+      }
+
+      setFlightOptions(refinedOptions);
+      setRefinementExplanation(response.explanation);
+
+      // Reset manual filters so they do not hide
+      // the AI-refined results.
+      setNonStop(false);
+      setOneStop(false);
+      setSelectedAirlines([]);
+
+      setSelectedFlight(undefined);
+
+      toast.success("Flights refined", {
+        description: response.explanation,
+      });
+    } catch (error) {
+      console.error("Failed to refine flights:", error);
+
+      toast.error("Unable to refine flights", {
+        description:
+          error instanceof ApiError
+            ? error.message
+            : "Please try again.",
+      });
+    } finally {
+      setRefining(false);
+    }
   };
+
 
   /*
    * Airline checkbox.
@@ -262,7 +320,7 @@ export default function FlightComparison({
   };
 
   const handleRefreshFlights = async () => {
-    if (refreshing || selecting || removing) {
+    if (refreshing || refining || selecting || removing) {
       return;
     }
 
@@ -298,6 +356,8 @@ export default function FlightComparison({
       }
 
       setFlightOptions(updatedOptions);
+      setOriginalFlightOptions(null);
+      setRefinementExplanation(null);
       setCurrentFlightId(savedFlight?.provider_offer_id);
       setSelectedFlight(undefined);
 
@@ -328,6 +388,16 @@ export default function FlightComparison({
 
       if (result.deleted) {
         setCurrentFlightId(undefined);
+        setOriginalFlightOptions((previous) =>
+          previous
+            ? previous
+                .filter((flight) => !flight.persistedSnapshot)
+                .map((flight) => ({
+                  ...flight,
+                  current: false,
+                }))
+            : null,
+        );
 
         setFlightOptions((previousOptions) =>
           previousOptions
@@ -385,6 +455,21 @@ export default function FlightComparison({
       const newFlightId = result.provider_offer_id;
 
       setCurrentFlightId(newFlightId);
+
+      setOriginalFlightOptions((previous) =>
+        previous
+          ? previous
+              .filter(
+                (flight) =>
+                  !flight.persistedSnapshot ||
+                  flight.id === newFlightId,
+              )
+              .map((flight) => ({
+                ...flight,
+                current: flight.id === newFlightId,
+              }))
+          : null,
+      );
 
       setFlightOptions((previousOptions) =>
         previousOptions
@@ -541,7 +626,70 @@ export default function FlightComparison({
           {/* AI Refinement */}
           <FlightAIRefine
             onSubmitAction={handleAIRefine}
+            refining={refining}
           />
+
+          {refining && (
+            <p className="text-xs text-[#d1bcff]" role="status">
+              VoyageAI is refining your flights...
+            </p>
+          )}
+
+          {refinementExplanation && !refining && (
+            <div
+              role="status"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d1bcff]/20 bg-[#d1bcff]/[0.05] px-4 py-3"
+            >
+              <p className="text-xs text-[#d1bcff]">
+                {refinementExplanation}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (originalFlightOptions) {
+                    const restoredOptions = originalFlightOptions
+                      .filter(
+                        (flight) =>
+                          !flight.persistedSnapshot ||
+                          flight.id === currentFlightId,
+                      )
+                      .map((flight) => ({
+                        ...flight,
+                        current: flight.id === currentFlightId,
+                      }));
+
+                    const selectedCurrentFlight = flightOptions.find(
+                      (flight) => flight.id === currentFlightId,
+                    );
+
+                    if (
+                      selectedCurrentFlight &&
+                      !restoredOptions.some(
+                        (flight) => flight.id === currentFlightId,
+                      )
+                    ) {
+                      restoredOptions.unshift({
+                        ...selectedCurrentFlight,
+                        current: true,
+                      });
+                    }
+
+                    setFlightOptions(restoredOptions);
+                  }
+
+                  setOriginalFlightOptions(null);
+                  setRefinementExplanation(null);
+                  setNonStop(false);
+                  setOneStop(false);
+                  setSelectedAirlines([]);
+                }}
+                className="text-xs font-semibold text-[#e6e0e8] transition hover:text-[#fb7185]"
+              >
+                Clear AI Refinement
+              </button>
+            </div>
+          )}
 
           {/* Refresh Flights */}
           <div className="flex items-center justify-between gap-3">
@@ -557,7 +705,7 @@ export default function FlightComparison({
             <button
               type="button"
               onClick={handleRefreshFlights}
-              disabled={refreshing || selecting || removing}
+              disabled={refreshing || refining || selecting || removing}
               className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-[#d1bcff] transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw
