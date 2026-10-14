@@ -202,9 +202,11 @@ export default function TripWorkspaceLayout({
   return (
     <AppLayout>
       <div className="mx-auto w-full max-w-[1280px] px-4 pb-20 md:px-6">
-        <div className="space-y-5 pt-2.5 sm:pt-3">
+        <div className="space-y-3 sm:space-y-5 pt-2.5 sm:pt-3">
           {/* Mobile and tablet back button */}
-          <BackToTripsButton className="lg:hidden" />
+          <div className="lg:hidden">
+            <BackToTripsButton className="flex w-fit items-center gap-1.5 text-xs font-medium text-[#948e9c]" />
+          </div>
 
           <TripWorkspaceHeader
             trip={headerTrip}

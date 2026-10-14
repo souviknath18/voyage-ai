@@ -1,8 +1,10 @@
+
 "use client";
 
 import {
   Send,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 
 import {
@@ -10,12 +12,14 @@ import {
 } from "react";
 
 interface FlightAIRefineProps {
+  refining?: boolean;
   onSubmitAction: (
     prompt: string,
   ) => void;
 }
 
 export default function FlightAIRefine({
+  refining = false,
   onSubmitAction,
 }: FlightAIRefineProps) {
   const [
@@ -24,10 +28,9 @@ export default function FlightAIRefine({
   ] = useState("");
 
   const submit = () => {
-    const prompt =
-      value.trim();
+    const prompt = value.trim();
 
-    if (!prompt) {
+    if (!prompt || refining) {
       return;
     }
 
@@ -48,32 +51,45 @@ export default function FlightAIRefine({
 
         <input
           value={value}
+          disabled={refining}
           onChange={(event) =>
-            setValue(
-              event.target.value,
-            )
+            setValue(event.target.value)
           }
           onKeyDown={(event) => {
-            if (
-              event.key ===
-              "Enter"
-            ) {
+            if (event.key === "Enter") {
+              event.preventDefault();
               submit();
             }
           }}
-          placeholder="Ask VoyageAI to refine these flights..."
-          className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm text-[#e6e0e8] outline-none placeholder:text-[#7f8798]"
+          placeholder={
+            refining
+              ? "VoyageAI is refining your flights..."
+              : "Ask VoyageAI to refine these flights..."
+          }
+          aria-label="AI flight refinement instructions"
+          className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm text-[#e6e0e8] outline-none placeholder:text-[#7f8798] disabled:cursor-not-allowed"
         />
 
         <button
           type="button"
           onClick={submit}
-          disabled={
-            !value.trim()
+          disabled={!value.trim() || refining}
+          aria-label={
+            refining
+              ? "Refining flights"
+              : "Refine flights"
           }
-          className="voyage-gradient flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#24005b] transition hover:brightness-110 disabled:opacity-40"
+          aria-busy={refining}
+          className="voyage-gradient flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#24005b] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <Send size={13} />
+          {refining ? (
+            <Loader2
+              size={14}
+              className="animate-spin"
+            />
+          ) : (
+            <Send size={13} />
+          )}
         </button>
       </div>
     </div>

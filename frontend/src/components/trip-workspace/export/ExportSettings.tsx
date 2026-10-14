@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   CalendarDays,
   Download,
   Lock,
@@ -37,8 +36,6 @@ interface ExportSettingsProps {
     value: TripExportSettings[K],
   ) => void;
 
-  onBackAction: () => void;
-
   onDownloadAction: () => void;
 
   onPrintAction: () => void;
@@ -48,37 +45,21 @@ export default function ExportSettings({
   trip,
   settings,
   onChangeAction,
-  onBackAction,
   onDownloadAction,
   onPrintAction,
 }: ExportSettingsProps) {
   return (
-    <aside className="flex w-full shrink-0 flex-col border-b border-white/10 bg-[#0D1324] lg:h-full lg:w-[360px] lg:border-b-0 lg:border-r">
+    <aside className="flex w-full shrink-0 flex-col border-b border-white/10 bg-[#0D1324] lg:h-full lg:w-[280px] xl:w-[300px] lg:border-b-0 lg:border-r">
       {/* Header */}
       <div className="shrink-0 border-b border-white/10 px-5 py-5">
-        <div className="flex items-start gap-3">
-          <button
-            type="button"
-            onClick={onBackAction}
-            aria-label="Back to trip"
-            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-[#948e9c] transition hover:bg-white/[0.07] hover:text-[#e6e0e8]"
-          >
-            <ArrowLeft size={16} />
-          </button>
+        <h1 className="text-lg font-semibold tracking-tight text-[#e6e0e8]">
+          Export Itinerary
+        </h1>
 
-          <div className="min-w-0">
-            <h1 className="text-lg font-semibold tracking-tight text-[#e6e0e8]">
-              Export Itinerary
-            </h1>
-
-            <p className="mt-1 truncate text-xs text-[#948e9c]">
-              {trip.title} • {trip.duration}{" "}
-              {trip.duration === 1
-                ? "Day"
-                : "Days"}
-            </p>
-          </div>
-        </div>
+        <p className="mt-1 truncate text-xs text-[#948e9c]">
+          {trip.title} • {trip.duration}{" "}
+          {trip.duration === 1 ? "Day" : "Days"}
+        </p>
       </div>
 
       {/* Scrollable Settings */}

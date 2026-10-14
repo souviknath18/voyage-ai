@@ -24,6 +24,14 @@ from app.modules.hotels.selection_service import (
 from app.modules.hotels.recommendation_service import (
   get_trip_recommended_hotel,
 )
+from app.modules.hotels.refinement_orchestrator import (
+  refine_trip_hotels,
+)
+
+from app.modules.hotels.refinement_schemas import (
+  HotelRefinementRequest,
+  TripHotelsRefinementResponse,
+)
 
 
 router = APIRouter()
@@ -110,4 +118,23 @@ async def get_recommended_hotel_endpoint(
     db=db,
     trip_id=trip_id,
     user_id=current_user.id,
+  )
+
+
+
+@router.post(
+  "/{trip_id}/hotels/refine",
+  response_model=TripHotelsRefinementResponse,
+)
+async def refine_hotels_endpoint(
+  trip_id: str,
+  payload: HotelRefinementRequest,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  return await refine_trip_hotels(
+    db=db,
+    public_trip_id=trip_id,
+    user_id=current_user.id,
+    message=payload.message,
   )

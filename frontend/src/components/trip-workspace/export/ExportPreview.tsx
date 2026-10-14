@@ -22,20 +22,43 @@ interface ExportPreviewProps {
     TripExportSettings;
 }
 
+
+function formatCurrency(
+  amount: number,
+  currency: string,
+): string {
+  try {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return `${currency} ${amount.toLocaleString()}`;
+  }
+}
+
+
 export default function ExportPreview({
   trip,
   settings,
 }: ExportPreviewProps) {
   return (
-    <section className="min-h-0 flex-1 overflow-y-auto bg-[#080C17] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-[820px] overflow-hidden rounded-xl border border-white/10 bg-[#141218] shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+    <section className="min-w-0 min-h-0 flex-1 overflow-y-auto bg-[#080C17] px-3 py-6 sm:px-4 lg:px-5">
+      <div
+        data-trip-export-document
+        className="mx-auto w-full max-w-[1000px] overflow-hidden rounded-xl border border-white/10 bg-[#141218] shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
+      >
         <ExportPreviewHero
           trip={trip}
         />
 
         <div className="space-y-8 p-5 sm:p-7">
           {settings.itinerary && (
-            <ExportItineraryPreview />
+            <ExportItineraryPreview
+              itinerary={trip.itinerary}
+              currency={trip.currency}
+            />
           )}
 
           {settings.budget && (
@@ -51,29 +74,93 @@ export default function ExportPreview({
                 </h2>
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {trip.budgetBreakdown.map(
-                  (item) => (
+              {/* Budget Summary */}
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border border-white/10 bg-white/[0.025] p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[#7f8798]">
+                    Total Budget
+                  </p>
+
+                  <p className="mt-1.5 text-sm font-semibold text-[#e6e0e8]">
+                    {formatCurrency(
+                      trip.totalBudget,
+                      trip.currency,
+                    )}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-white/10 bg-white/[0.025] p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[#7f8798]">
+                    Estimated Trip Cost
+                  </p>
+
+                  <p className="mt-1.5 text-sm font-semibold text-[#e6e0e8]">
+                    {formatCurrency(
+                      trip.estimatedCost,
+                      trip.currency,
+                    )}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-white/10 bg-white/[0.025] p-3">
+                  <p className="text-[10px] uppercase tracking-wider text-[#7f8798]">
+                    Remaining Budget
+                  </p>
+
+                  <p
+                    className={`mt-1.5 text-sm font-semibold ${
+                      trip.remainingBudget < 0
+                        ? "text-[#fb7185]"
+                        : "text-[#e6e0e8]"
+                    }`}
+                  >
+                    {formatCurrency(
+                      trip.remainingBudget,
+                      trip.currency,
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Category Breakdown */}
+              <h3 className="mt-6 text-xs font-semibold text-[#cbc4d2]">
+                Estimated Expenses by Category
+              </h3>
+
+              {trip.budgetBreakdown.length > 0 ? (
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {trip.budgetBreakdown.map((item) => (
                     <div
-                      key={
-                        item.label
-                      }
+                      key={item.label}
                       className="rounded-lg border border-white/10 bg-white/[0.025] p-3"
                     >
                       <p className="text-[10px] uppercase tracking-wider text-[#7f8798]">
-                        {
-                          item.label
-                        }
+                        {item.label}
                       </p>
 
                       <p className="mt-1.5 text-sm font-semibold text-[#e6e0e8]">
-                        {trip.currency}{" "}
-                        {item.amount.toLocaleString()}
+                        {formatCurrency(
+                          item.amount,
+                          trip.currency,
+                        )}
                       </p>
                     </div>
-                  ),
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 rounded-lg border border-dashed border-white/15 bg-white/[0.02] p-4">
+                  <p className="text-xs text-[#948e9c]">
+                    No category-level budget estimates
+                    are available for this trip.
+                  </p>
+                </div>
+              )}
+
+              <p className="mt-4 text-[11px] leading-relaxed text-[#948e9c]">
+                All amounts are estimates and may change
+                before booking. Selected flights and hotels
+                are not confirmed purchases.
+              </p>
             </section>
           )}
 
