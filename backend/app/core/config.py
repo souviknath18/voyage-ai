@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     geoapify_api_key: str
     unsplash_access_key: str
+    wikimedia_contact_email: str = ""
 
     duffel_access_token: str
     duffel_api_base_url: str = "https://api.duffel.com"

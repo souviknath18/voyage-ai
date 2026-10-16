@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { NavigationGuardProvider } from "nextjs-nav-guard";
 import "./globals.css";
 
 import {
@@ -29,9 +30,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <NavigationGuardProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </NavigationGuardProvider>
 
         <Toaster
           position="top-right"

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   Bookmark,
   CalendarDays,
@@ -8,6 +10,7 @@ import {
 import type {
   Destination,
 } from "@/types/explore";
+
 import { DestinationImage } from "../ui";
 
 interface DestinationCardProps {
@@ -33,7 +36,7 @@ export default function DestinationCard({
       />
 
       {/* Overlay */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#070B18]/70 via-transparent to-black/15" />
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#070B18]/95 via-[#070B18]/50 to-transparent" />
 
       {/* Save */}
       <button
@@ -60,33 +63,82 @@ export default function DestinationCard({
         />
       </button>
 
-      {/* Content */}
-      <div className="absolute inset-x-0 bottom-0 z-10 p-4">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#fb7185]">
-          {destination.tag}
-        </span>
+      <Link
+        href={`/explore/${encodeURIComponent(destination.id)}`}
+        aria-label={`Explore ${destination.city}, ${destination.country}`}
+        className="absolute inset-0 z-[2] rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#fb7185]"
+      />
 
-        <h3 className="mt-1 text-lg font-semibold text-[#e6e0e8]">
-          {destination.city},{" "}
-          {destination.country}
+      {/* Content */}
+      <div
+        className={`absolute inset-x-0 z-10 p-4 ${
+          destination.imagePageUrl &&
+          destination.imageArtist &&
+          destination.imageLicense &&
+          destination.imageLicenseUrl
+            ? "bottom-5"
+            : "bottom-0"
+        }`}
+      >
+        {destination.tag && (
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#fb7185]">
+            {destination.tag}
+          </span>
+        )}
+
+        <h3 className="mt-1 text-lg font-semibold text-[#e6e0e8] transition-colors group-hover:text-[#d1bcff]">
+          {destination.city}, {destination.country}
         </h3>
 
         <p className="mt-1 line-clamp-2 text-xs leading-5 text-[#cbc4d2]">
           {destination.description}
         </p>
 
-        <div className="mt-3 flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-[#948e9c]">
-            <CalendarDays size={13} />
+        {(destination.bestTime || destination.idealStay) && (
+          <div className="mt-3 flex items-center justify-between">
+            {destination.bestTime ? (
+              <div className="flex items-center gap-1.5 text-xs text-[#948e9c]">
+                <CalendarDays size={13} />
+                {destination.bestTime}
+              </div>
+            ) : (
+              <div />
+            )}
 
-            {destination.bestTime}
+            {destination.idealStay && (
+              <span className="text-xs font-medium text-[#d1bcff]">
+                {destination.idealStay}
+              </span>
+            )}
           </div>
-
-          <span className="text-xs font-medium text-[#d1bcff]">
-            {destination.idealStay}
-          </span>
-        </div>
+        )}
       </div>
+
+      {destination.imagePageUrl &&
+        destination.imageArtist &&
+        destination.imageLicense &&
+        destination.imageLicenseUrl && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 px-4 py-1 text-[10px] text-[#cbc4d2]">
+            Photo by {destination.imageArtist} ·{" "}
+            <a
+              href={destination.imagePageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-white"
+            >
+              Source
+            </a>
+            {" · "}
+            <a
+              href={destination.imageLicenseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-white"
+            >
+              {destination.imageLicense}
+            </a>
+          </div>
+        )}
     </article>
   );
 }

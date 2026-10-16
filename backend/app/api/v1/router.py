@@ -36,7 +36,14 @@ from app.modules.hotels.router import (
   router as hotels_router,
 )
 from app.modules.dashboard.router import router as dashboard_router
+from app.modules.user_settings.router import (
+  router as user_settings_router,
+)
+from app.modules.notifications.router import (
+  router as notifications_router,
+)
 from app.api.v1.images import router as images_router
+from app.modules.explore.router import router as explore_router
 
 router = APIRouter()
 
@@ -135,3 +142,17 @@ router.include_router(
 )
 
 router.include_router(dashboard_router)
+
+router.include_router(
+  user_settings_router,
+  prefix="/user-settings",
+  tags=["User Settings"],
+)
+
+router.include_router(
+  notifications_router,
+  prefix="/notifications",
+  tags=["Notifications"],
+)
+
+router.include_router(explore_router)

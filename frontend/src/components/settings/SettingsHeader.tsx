@@ -11,10 +11,14 @@ import {
 
 interface SettingsHeaderProps {
   onSaveAction: () => void;
+  isSaving?: boolean;
+  hasUnsavedChanges?: boolean;
 }
 
 export default function SettingsHeader({
   onSaveAction,
+  isSaving = false,
+  hasUnsavedChanges = true,
 }: SettingsHeaderProps) {
   return (
     <div className="flex flex-col gap-4 pt-2.5 sm:flex-row sm:items-end sm:justify-between sm:pt-3">
@@ -38,13 +42,14 @@ export default function SettingsHeader({
       <div className="hidden sm:block">
         <Button
           size="md"
+          disabled={isSaving || !hasUnsavedChanges}
           onClick={
             onSaveAction
           }
         >
           <Save size={15} />
 
-          Save Changes
+          {isSaving ? "Saving..." : "Save Changes"}
         </Button>
       </div>
     </div>

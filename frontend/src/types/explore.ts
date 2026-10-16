@@ -19,17 +19,15 @@ export interface Destination {
   country: string;
   description: string;
   image: string;
-
-  category: ExploreCategory;
-
-  tag: string;
-
-  costLevel: number;
-
-  idealStay: string;
-
-  bestTime: string;
-
+  category?: ExploreCategory;
+  tag?: string;
+  costLevel?: number;
+  idealStay?: string;
+  bestTime?: string;
+  imageArtist?: string | null;
+  imagePageUrl?: string | null;
+  imageLicense?: string | null;
+  imageLicenseUrl?: string | null;
   featured?: boolean;
   saved?: boolean;
 }
@@ -83,4 +81,40 @@ export interface ValueRecommendation {
   region: string;
 
   costLevel: number;
+}
+
+export interface ExploreDestinationApi {
+  id: string;
+  wikidata_id: string;
+
+  name: string;
+  country: string;
+  country_code: string;
+
+  latitude: number;
+  longitude: number;
+
+  source: string;
+  country_source: string;
+
+  description: string | null;
+  description_source: string | null;
+
+  image_url: string | null;
+  image_source: string | null;
+
+  image_artist: string | null;
+  image_page_url: string | null;
+  image_license: string | null;
+  image_license_url: string | null;
+
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExploreDestinationListApi {
+  items: ExploreDestinationApi[];
+  total: number;
+  limit: number;
+  offset: number;
 }

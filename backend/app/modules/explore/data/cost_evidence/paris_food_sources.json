@@ -1,0 +1,189 @@
+{
+  "wikidata_id": "Q90",
+  "destination": "Paris",
+  "country": "France",
+  "currency": "EUR",
+  "research_status": "pending_source_research",
+  "price_basis": "per_person",
+  "meal_categories": [
+    {
+      "category": "breakfast",
+      "observations": [
+        {
+          "item": "Le Français breakfast set",
+          "restaurant": "Bistrot d'Antoine",
+          "price_min": "9.90",
+          "price_max": "9.90",
+          "currency": "EUR",
+          "price_unit": "per_person_per_meal",
+          "source_name": "Bistrot d'Antoine official menu",
+          "source_url": "https://en.bistrotantoine.com/carte/",
+          "license_type": null,
+          "commercial_reuse_verified": false,
+          "reference_date": "2026-10-16",
+          "status": "verified_published_price",
+          "attribution_required": null,
+          "meal_type": "breakfast_set",
+          "sales_channel": "unknown",
+          "price_checked_at": "2026-10-16",
+          "source_published_at": null
+        },
+        {
+          "item": "Malin du Matin breakfast set (coffee and pastry)",
+          "restaurant": "Chez Flo",
+          "price_min": "2.90",
+          "price_max": "2.90",
+          "currency": "EUR",
+          "price_unit": "per_person_per_meal",
+          "source_name": "Chez Flo official breakfast menu",
+          "source_url": "https://boulangerie-chezflo.com/en/formule-petit-dejeuner-paris-13",
+          "license_type": null,
+          "commercial_reuse_verified": false,
+          "reference_date": "2026-09-04",
+          "status": "verified_published_price",
+          "attribution_required": null,
+          "meal_type": "breakfast_set",
+          "sales_channel": "unknown",
+          "price_checked_at": null,
+          "source_published_at": null
+        }
+      ]
+    },
+    {
+      "category": "lunch",
+      "observations": [
+        {
+          "item": "Two-course fixed-price lunch",
+          "restaurant": "Chez Michel",
+          "price_min": "40.00",
+          "price_max": "40.00",
+          "currency": "EUR",
+          "price_unit": "per_person_per_meal",
+          "source_name": "Chez Michel official restaurant menu",
+          "source_url": "https://www.restaurantchezmichel.fr/menus-carte/",
+          "license_type": null,
+          "commercial_reuse_verified": false,
+          "reference_date": "2026-10-16",
+          "status": "verified_published_price",
+          "attribution_required": null,
+          "meal_type": "two_course_meal",
+          "sales_channel": "unknown",
+          "price_checked_at": "2026-10-16",
+          "source_published_at": null
+        },
+        {
+          "item": "La Classique lunch formula",
+          "restaurant": "Chez Flo",
+          "price_min": "10.30",
+          "price_max": "10.30",
+          "currency": "EUR",
+          "price_unit": "per_person_per_meal",
+          "source_name": "Chez Flo official menu",
+          "source_url": "https://boulangerie-chezflo.com/carte",
+          "license_type": null,
+          "commercial_reuse_verified": false,
+          "reference_date": "2026-08-11",
+          "status": "verified_published_price",
+          "attribution_required": null,
+          "meal_type": "lunch_formula",
+          "sales_channel": "unknown",
+          "price_checked_at": null,
+          "source_published_at": null
+        },
+        {
+          "item": "Formule sandwich (sandwich, drink and dessert)",
+          "restaurant": "BO&MIE Saint-Martin",
+          "meal_type": "lunch_formula",
+          "price_min": "14.50",
+          "price_max": "14.50",
+          "currency": "EUR",
+          "price_unit": "per_person_per_meal",
+          "sales_channel": "delivery_platform",
+          "source_name": "BO&MIE Saint-Martin listing on Uber Eats",
+          "source_url": "https://www.ubereats.com/fr-en/store/bo%26mie-saint-martin/B2EJsmnQSvCphTJj1DCXFA",
+          "license_type": null,
+          "commercial_reuse_verified": false,
+          "reference_date": "2026-10-16",
+          "status": "verified_published_price",
+          "attribution_required": null,
+          "price_checked_at": "2026-10-16",
+          "source_published_at": null
+        }
+      ]
+    },
+    {
+      "category": "dinner",
+      "observations": [
+        {
+          "item": "Three-course fixed-price dinner",
+          "price_min": "20.00",
+          "price_max": "40.00",
+          "currency": "EUR",
+          "price_unit": "per_person_per_meal",
+          "source_name": "Wikivoyage",
+          "source_url": "https://en.wikivoyage.org/wiki/Paris",
+          "license_type": "CC BY-SA 4.0",
+          "commercial_reuse_verified": true,
+          "reference_date": null,
+          "status": "historical_unverified",
+          "attribution_required": true,
+          "meal_type": "three_course_meal",
+          "sales_channel": "unknown",
+          "price_checked_at": null,
+          "source_published_at": null
+        },
+        {
+          "item": "Three-course fixed-price dinner",
+          "restaurant": "Chez Michel",
+          "price_min": "45.00",
+          "price_max": "48.00",
+          "currency": "EUR",
+          "price_unit": "per_person_per_meal",
+          "source_name": "Chez Michel official restaurant menu",
+          "source_url": "https://www.restaurantchezmichel.fr/menus-carte/",
+          "license_type": null,
+          "commercial_reuse_verified": false,
+          "reference_date": "2026-10-16",
+          "status": "verified_published_price",
+          "attribution_required": null,
+          "meal_type": "three_course_meal",
+          "sales_channel": "unknown",
+          "price_checked_at": "2026-10-16",
+          "source_published_at": null
+        },
+        {
+          "item": "Main course (published menu range)",
+          "restaurant": "Bouillon Chartier",
+          "price_min": "7.00",
+          "price_max": "13.80",
+          "currency": "EUR",
+          "price_unit": "per_person_per_meal",
+          "source_name": "Bouillon Chartier official menu PDF",
+          "source_url": "https://www.bouillon-chartier.com/chartier_medias/2025/10/Francais.pdf",
+          "license_type": null,
+          "commercial_reuse_verified": false,
+          "reference_date": null,
+          "status": "verified_published_price",
+          "attribution_required": null,
+          "meal_type": "main_course",
+          "sales_channel": "unknown",
+          "price_checked_at": null,
+          "source_published_at": null
+        }
+      ]
+    }
+  ],
+  "source_requirements": {
+    "must_have": [
+      "source_name",
+      "source_url",
+      "price",
+      "currency",
+      "price_unit",
+      "reference_date",
+      "license_type",
+      "commercial_reuse_verified"
+    ],
+    "allow_unverified_prices_in_production": false
+  }
+}

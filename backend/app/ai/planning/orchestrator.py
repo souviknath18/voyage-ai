@@ -35,6 +35,9 @@ from app.modules.agent_runs.repository import (
 from app.modules.itineraries.repository import (
   save_itinerary,
 )
+from app.modules.notifications.service import (
+  create_user_notification,
+)
 from app.modules.trips.repository import (
   update_trip_status,
 )
@@ -324,16 +327,35 @@ async def execute_planning_graph(
       commit=False,
     )
 
+    
     await mark_agent_run_completed(
       db=db,
       agent_run=agent_run,
       commit=False,
     )
 
+    # Create a notification only after successful
+    # itinerary generation and trip status update.
+    await create_user_notification(
+      db=db,
+      user_id=trip.user_id,
+      notification_type="itinerary_ready",
+      title="Your itinerary is ready",
+      message=(
+          f"Your AI-generated itinerary for "
+          f"{trip.destination} is ready to explore."
+      ),
+      action_url=f"/trips/{trip.trip_id}",
+      event_key=f"itinerary_ready:{agent_run.id}",
+    )
+
+    # Commit the itinerary, trip updates, agent run,
+    # and notification together.
     await db.commit()
     await db.refresh(agent_run)
 
     return agent_run
+
 
   except Exception as exc:
     print("\n[PLANNING ERROR] Full traceback:")

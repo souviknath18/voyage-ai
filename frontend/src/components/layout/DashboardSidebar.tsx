@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
 
 import {
   Bot,
@@ -16,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui";
+import { useUnsavedChangesContext } from "@/contexts/UnsavedChangesContext";
 
 interface DashboardSidebarProps {
   mobileOpen?: boolean;
@@ -65,6 +69,47 @@ export default function DashboardSidebar({
   onCloseAction,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const { requestNavigation } =
+    useUnsavedChangesContext();
+
+  const { confirmNavigation } =
+    useUnsavedChangesContext();
+  
+  const handleNavigation = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+
+    if (
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.altKey ||
+      event.button !== 0
+    ) {
+      return;
+    }
+
+    if (
+      pathname === href ||
+      pathname.startsWith(`${href}/`)
+    ) {
+      onCloseAction?.();
+      return;
+    }
+
+    event.preventDefault();
+
+    requestNavigation(() => {
+      onCloseAction?.();
+      router.push(href);
+    });
+  };
 
   return (
     <>
@@ -122,7 +167,9 @@ export default function DashboardSidebar({
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={onCloseAction}
+                onClick={(event) =>
+                  handleNavigation(event, item.href)
+                }
                 className={`group flex items-center gap-2.5 rounded-lg px-3 py-2.5 transition-all duration-200 ${
                   active
                     ? "border-r-2 border-[#d1bcff] bg-white/[0.07] text-[#d1bcff]"
@@ -145,7 +192,9 @@ export default function DashboardSidebar({
         {/* Plan New Trip */}
         <Link
           href="/plan-trip"
-          onClick={onCloseAction}
+          onClick={(event) =>
+            handleNavigation(event, "/plan-trip")
+          }
           className="mt-4 block"
         >
           <Button

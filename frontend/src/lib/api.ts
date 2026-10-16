@@ -1,3 +1,9 @@
+import type {
+  ExploreDestinationApi,
+  ExploreDestinationListApi,
+} from "@/types/explore";
+
+
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ??
   "http://127.0.0.1:8000/api/v1";
@@ -352,5 +358,75 @@ export async function getPlaceImagesBatch(
         places,
       }),
     },
+  );
+}
+
+export async function getExploreDestinations(
+  options: {
+    limit?: number;
+    offset?: number;
+    countryCode?: string;
+    search?: string;
+    category?: string;
+    interest?: string;
+  } = {},
+): Promise<ExploreDestinationListApi> {
+  const params = new URLSearchParams();
+
+  params.set(
+    "limit",
+    String(options.limit ?? 30),
+  );
+
+  params.set(
+    "offset",
+    String(options.offset ?? 0),
+  );
+
+  if (options.countryCode) {
+    params.set(
+      "country_code",
+      options.countryCode,
+    );
+  }
+
+  if (options.search) {
+    params.set(
+      "search",
+      options.search,
+    );
+  }
+
+  if (
+    options.category &&
+    options.category !== "popular"
+  ) {
+    params.set(
+      "category",
+      options.category,
+    );
+  }
+
+  // Combine interest with category using backend AND filtering.
+  if (
+    options.interest &&
+    options.interest !== "any"
+  ) {
+    params.set(
+      "interest",
+      options.interest,
+    );
+  }
+
+  return apiRequest<ExploreDestinationListApi>(
+    `/explore/destinations?${params.toString()}`,
+  );
+}
+
+export async function getExploreDestinationById(
+  wikidataId: string,
+): Promise<ExploreDestinationApi> {
+  return apiRequest<ExploreDestinationApi>(
+    `/explore/destinations/${encodeURIComponent(wikidataId)}`,
   );
 }

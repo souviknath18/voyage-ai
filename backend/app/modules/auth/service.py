@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.auth.schemas import RegisterRequest
+from app.modules.auth.schemas import RegisterRequest, UserProfileUpdate
 from app.modules.users.models import User
 from app.modules.users.repository import (
   create_user,
@@ -74,3 +74,37 @@ async def login_user(
   )
 
   return access_token, user
+
+
+
+async def update_user_profile(
+  db: AsyncSession,
+  user: User,
+  payload: UserProfileUpdate,
+) -> User:
+  """
+  Update the authenticated user's profile.
+
+  Only fields explicitly included in the
+  request are modified.
+  """
+
+  updates = payload.model_dump(
+    exclude_unset=True,
+  )
+
+  if not updates:
+    return user
+
+  if "full_name" in updates:
+    user.full_name = updates["full_name"]
+
+  try:
+    await db.commit()
+    await db.refresh(user)
+
+    return user
+
+  except Exception:
+    await db.rollback()
+    raise

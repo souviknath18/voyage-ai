@@ -23,10 +23,12 @@ from app.modules.auth.schemas import (
   RegisterRequest,
   TokenResponse,
   UserResponse,
+  UserProfileUpdate,
 )
 from app.modules.auth.service import (
   login_user,
   register_user,
+  update_user_profile,
 )
 from app.modules.users.models import User
 from jose import JWTError
@@ -191,3 +193,26 @@ async def get_me(
   ),
 ):
   return current_user
+
+
+@router.patch(
+  "/me",
+  response_model=UserResponse,
+)
+async def update_my_profile(
+  payload: UserProfileUpdate,
+  db: AsyncSession = Depends(get_db),
+  current_user: User = Depends(get_current_user),
+):
+  """
+  Update the authenticated user's profile.
+
+  Currently supports updating full_name.
+  Email updates will be handled separately.
+  """
+
+  return await update_user_profile(
+    db=db,
+    user=current_user,
+    payload=payload,
+  )

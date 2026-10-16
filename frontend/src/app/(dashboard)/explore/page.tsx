@@ -1,9 +1,13 @@
 "use client";
 
 import {
+  useEffect,
   useMemo,
   useState,
 } from "react";
+
+import { getExploreDestinations } from "@/lib/api";
+import { mapExploreDestinations } from "@/lib/explore-mapper";
 
 import AppLayout from "@/components/layout/AppLayout";
 
@@ -20,187 +24,6 @@ import type {
   ExploreFiltersData,
 } from "@/types/explore";
 
-const initialDestinations: Destination[] = [
-  {
-    id: "tokyo",
-    city: "Tokyo",
-    country: "Japan",
-
-    description:
-      "Ancient traditions meet neon-lit neighborhoods, world-class food and futuristic city life.",
-
-    image:
-      "/images/explore/tokyo.jpg",
-
-    category:
-      "technology",
-
-    tag:
-      "Tech & Culture",
-
-    costLevel: 3,
-
-    idealStay:
-      "10 - 14 Days",
-
-    bestTime:
-      "Mar - May",
-
-    featured: true,
-
-    saved: false,
-  },
-
-  {
-    id: "santorini",
-    city:
-      "Santorini",
-    country:
-      "Greece",
-
-    description:
-      "Whitewashed villages, volcanic cliffs and unforgettable sunsets over the Aegean Sea.",
-
-    image:
-      "/images/explore/santorini.jpg",
-
-    category:
-      "beaches",
-
-    tag:
-      "Romantic Retreat",
-
-    costLevel: 3,
-
-    idealStay:
-      "4 - 6 Days",
-
-    bestTime:
-      "May - Sep",
-
-    saved: false,
-  },
-
-  {
-    id: "zermatt",
-    city:
-      "Zermatt",
-    country:
-      "Switzerland",
-
-    description:
-      "High-altitude Alpine scenery, mountain adventures and peaceful luxury beneath the Matterhorn.",
-
-    image:
-      "/images/explore/zermatt.jpg",
-
-    category:
-      "adventure",
-
-    tag:
-      "Mountain Adventure",
-
-    costLevel: 3,
-
-    idealStay:
-      "5 - 7 Days",
-
-    bestTime:
-      "Dec - Apr",
-
-    saved: false,
-  },
-
-  {
-    id: "monteverde",
-    city:
-      "Monteverde",
-    country:
-      "Costa Rica",
-
-    description:
-      "Cloud forests, rare wildlife and immersive nature experiences surrounded by incredible biodiversity.",
-
-    image:
-      "/images/explore/monteverde.jpg",
-
-    category:
-      "adventure",
-
-    tag:
-      "Eco Adventure",
-
-    costLevel: 2,
-
-    idealStay:
-      "5 - 7 Days",
-
-    bestTime:
-      "Dec - Apr",
-
-    saved: false,
-  },
-
-  {
-    id: "marrakech",
-    city:
-      "Marrakech",
-    country:
-      "Morocco",
-
-    description:
-      "Historic riads, vibrant markets, traditional cuisine and rich North African culture.",
-
-    image:
-      "/images/explore/marrakech.jpg",
-
-    category:
-      "culture",
-
-    tag:
-      "Culture & Food",
-
-    costLevel: 2,
-
-    idealStay:
-      "4 - 6 Days",
-
-    bestTime:
-      "Mar - May",
-
-    saved: false,
-  },
-
-  {
-    id: "amalfi",
-    city:
-      "Amalfi Coast",
-    country:
-      "Italy",
-
-    description:
-      "Cliffside towns, Mediterranean waters and unforgettable coastal Italian cuisine.",
-
-    image:
-      "/images/explore/amalfi.jpg",
-
-    category:
-      "culinary",
-
-    tag:
-      "Coast & Cuisine",
-
-    costLevel: 3,
-
-    idealStay:
-      "5 - 7 Days",
-
-    bestTime:
-      "May - Sep",
-
-    saved: false,
-  },
-];
 
 const recommendationPreview: AIRecommendation[] = [
   {
@@ -337,13 +160,17 @@ const recommendationPreview: AIRecommendation[] = [
 ];
 
 export default function ExplorePage() {
-  const [
-    destinations,
-    setDestinations,
-  ] =
-    useState<Destination[]>(
-      initialDestinations,
-    );
+  const [destinations, setDestinations] =
+    useState<Destination[]>([]);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState<string | null>(null);
+
+  const [validationError, setValidationError] =
+    useState<string | null>(null);
 
   const [
     activeCategory,
@@ -364,6 +191,63 @@ export default function ExplorePage() {
       duration: "any",
     });
 
+  const [appliedInterest, setAppliedInterest] =
+    useState<string | null>(null);
+
+  const [appliedRegion, setAppliedRegion] =
+    useState("");
+
+  const [discoverVersion, setDiscoverVersion] =
+    useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // Show loading when switching categories.
+    setIsLoading(true);
+    setLoadError(null);
+
+    async function loadDestinations() {
+      try {
+        const response = await getExploreDestinations({
+          limit: 100,
+          offset: 0,
+          category: activeCategory,
+          interest: appliedInterest ?? undefined,
+        });
+
+        if (cancelled) return;
+
+        setDestinations(
+          mapExploreDestinations(response.items),
+        );
+
+        setLoadError(null);
+      } catch (error) {
+        if (cancelled) return;
+
+        console.error(
+          "Failed to load Explore destinations:",
+          error,
+        );
+
+        setLoadError(
+          "Unable to load destinations. Please try again.",
+        );
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void loadDestinations();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCategory, appliedInterest, discoverVersion]);
+
   const updateFilter = <
     K extends keyof ExploreFiltersData,
   >(
@@ -378,20 +262,36 @@ export default function ExplorePage() {
     );
   };
 
-  const handleGenerate =
-    () => {
-      console.log(
-        "Explore filters:",
-        filters,
-      );
+  const handleGenerate = () => {
+    const selectedInterest = filters.interest;
 
-      /*
-       * Later:
-       *
-       * Send these filters
-       * to FastAPI / VoyageAI agent.
-       */
-    };
+    if (filters.budgetStyle !== "any") {
+      setValidationError(
+        "Budget filtering is not available yet. Please select Any Budget.",
+      );
+      return;
+    }
+
+    if (filters.duration !== "any") {
+      setValidationError(
+        "Duration filtering is not available yet. Please select Any Duration.",
+      );
+      return;
+    }
+
+    setValidationError(null);
+
+    setAppliedRegion(filters.region);
+
+    setAppliedInterest(
+      selectedInterest === "any"
+        ? null
+        : selectedInterest,
+    );
+
+    // Allow Discover to refresh results with unchanged filters.
+    setDiscoverVersion((previous) => previous + 1);
+  };
 
   const handleSave = (
     id: string,
@@ -412,53 +312,27 @@ export default function ExplorePage() {
     );
   };
 
-  const visibleDestinations =
-    useMemo(() => {
-      let result =
-        destinations;
+  const visibleDestinations = useMemo(() => {
+    let result = destinations;
 
-      if (
-        activeCategory !==
-        "popular"
-      ) {
-        result =
-          result.filter(
-            (destination) =>
-              destination.category ===
-              activeCategory,
-          );
-      }
+    if (appliedRegion.trim()) {
+      const query = appliedRegion
+        .trim()
+        .toLowerCase();
 
-      if (
-        filters.region.trim()
-      ) {
-        const query =
-          filters.region
-            .trim()
-            .toLowerCase();
+      result = result.filter(
+        (destination) =>
+          destination.city
+            .toLowerCase()
+            .includes(query) ||
+          destination.country
+            .toLowerCase()
+            .includes(query),
+      );
+    }
 
-        result =
-          result.filter(
-            (destination) =>
-              destination.city
-                .toLowerCase()
-                .includes(
-                  query,
-                ) ||
-              destination.country
-                .toLowerCase()
-                .includes(
-                  query,
-                ),
-          );
-      }
-
-      return result;
-    }, [
-      destinations,
-      activeCategory,
-      filters.region,
-    ]);
+    return result;
+  }, [destinations, appliedRegion]);
 
   return (
     <AppLayout>
@@ -476,6 +350,15 @@ export default function ExplorePage() {
             }
           />
 
+          {validationError && (
+            <p
+              role="alert"
+              className="text-center text-sm text-rose-400"
+            >
+              {validationError}
+            </p>
+          )}
+
           <ExploreCategories
             activeCategory={
               activeCategory
@@ -487,7 +370,8 @@ export default function ExplorePage() {
 
           {activeCategory ===
             "popular" &&
-            !filters.region.trim() && (
+            !appliedRegion.trim() &&
+            !appliedInterest && (
               <AIRecommendationsPreview
                 recommendations={
                   recommendationPreview
@@ -495,14 +379,26 @@ export default function ExplorePage() {
               />
             )}
 
-          <DestinationGrid
-            destinations={
-              visibleDestinations
-            }
-            onSaveAction={
-              handleSave
-            }
-          />
+          {isLoading ? (
+            <p
+              role="status"
+              className="py-8 text-center text-sm text-[#cbc4d2]"
+            >
+              Loading destinations...
+            </p>
+          ) : loadError ? (
+            <p
+              role="alert"
+              className="py-8 text-center text-sm text-rose-400"
+            >
+              {loadError}
+            </p>
+          ) : (
+            <DestinationGrid
+              destinations={visibleDestinations}
+              onSaveAction={handleSave}
+            />
+          )}
         </div>
       </div>
     </AppLayout>

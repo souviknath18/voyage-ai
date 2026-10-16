@@ -15,7 +15,7 @@ import DashboardPlanHero from "@/components/dashboard/DashboardPlanHero";
 import DashboardUpcomingTrip from "@/components/dashboard/DashboardUpcomingTrip";
 import DashboardAgentActivity from "@/components/dashboard/DashboardAgentActivity";
 import DashboardRecommendation from "@/components/dashboard/DashboardRecommendation";
-
+import ErrorState from "@/components/ui/ErrorState";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 
 import {
@@ -90,23 +90,23 @@ export default function DashboardPage() {
   if (!authenticated) {
     return null;
   }
-
+  
   if (error || !dashboard) {
     return (
       <AppLayout>
-        <div className="mx-auto flex min-h-[60vh] w-full max-w-[1280px] flex-col items-center justify-center gap-4 px-4 text-center md:px-6">
-          <p className="text-sm text-[#948e9c]">
-            {error ?? "Dashboard data is unavailable."}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => void loadDashboard()}
-            className="rounded-lg border border-white/10 bg-white/[0.035] px-5 py-2 text-sm font-medium text-[#e6e0e8] transition hover:bg-white/[0.07]"
-          >
-            Try Again
-          </button>
-        </div>
+        <ErrorState
+          fullScreen={false}
+          title="Unable to load dashboard"
+          description={
+            error ?? "Dashboard data is unavailable. Please try again."
+          }
+          recoveryMessage="Your trips and saved information are not affected. Retry to load your latest dashboard information."
+          retrying={loading}
+          onRetry={() => {
+            void loadDashboard();
+          }}
+          showDashboardButton={false}
+        />
       </AppLayout>
     );
   }
