@@ -18,6 +18,7 @@ import {
 } from "react";
 
 import {
+  usePathname,
   useRouter,
 } from "next/navigation";
 
@@ -28,6 +29,16 @@ import {
 import {
   useAuth,
 } from "@/components/auth/AuthProvider";
+
+import {
+  getUnreadNotificationCount,
+} from "@/lib/notifications";
+
+import {
+  subscribeToNotificationsUpdated,
+} from "@/lib/notification-events";
+
+import { useUnsavedChangesContext } from "@/contexts/UnsavedChangesContext";
 
 
 interface DashboardNavbarProps {
@@ -40,6 +51,11 @@ export default function DashboardNavbar({
 }: DashboardNavbarProps) {
   const router =
     useRouter();
+
+  const pathname = usePathname();
+
+  const { requestNavigation } =
+    useUnsavedChangesContext();
 
   const {
     user: currentUser,
@@ -55,6 +71,11 @@ export default function DashboardNavbar({
     loggingOut,
     setLoggingOut,
   ] = useState(false);
+
+  const [
+    unreadCount,
+    setUnreadCount,
+  ] = useState(0);
 
   const profileMenuRef =
     useRef<HTMLDivElement>(null);
@@ -86,13 +107,85 @@ export default function DashboardNavbar({
       );
     };
   }, []);
-
-
-  async function handleLogout() {
-    if (loggingOut) {
+  
+  
+  useEffect(() => {
+    if (!currentUser) {
+      setUnreadCount(0);
       return;
     }
 
+    let active = true;
+    let requestVersion = 0;
+
+    const loadUnreadCount = async () => {
+      const version = ++requestVersion;
+
+      try {
+        const response =
+          await getUnreadNotificationCount();
+
+        if (active && version === requestVersion) {
+          setUnreadCount(response.unread_count);
+        }
+      } catch (error) {
+        if (active && version === requestVersion) {
+          console.error(
+            "Failed to fetch unread notification count:",
+            error,
+          );
+        }
+      }
+    };
+
+    void loadUnreadCount();
+
+    const unsubscribe =
+      subscribeToNotificationsUpdated(() => {
+        void loadUnreadCount();
+      });
+
+    return () => {
+      active = false;
+      requestVersion++;
+      unsubscribe();
+    };
+  }, [currentUser, pathname]);
+
+  
+  const handleNavbarNavigation = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    if (
+      event.defaultPrevented ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.altKey ||
+      event.button !== 0
+    ) {
+      return;
+    }
+
+    // Navigating to the current page is safe.
+    if (pathname === href) {
+      setProfileOpen(false);
+      return;
+    }
+
+    // Prevent the Link from navigating immediately.
+    event.preventDefault();
+
+    // Navigate immediately if there are no changes,
+    // otherwise wait for confirmation in the modal.
+    requestNavigation(() => {
+      setProfileOpen(false);
+      router.push(href);
+    });
+  };
+  
+  async function performLogout() {
     setLoggingOut(true);
 
     try {
@@ -107,12 +200,19 @@ export default function DashboardNavbar({
 
       setProfileOpen(false);
 
-      router.replace(
-        "/login",
-      );
+      router.replace("/login");
     }
   }
 
+  function handleLogout() {
+    if (loggingOut) {
+      return;
+    }
+
+    requestNavigation(() => {
+      void performLogout();
+    });
+  }
 
   const displayName =
     currentUser?.full_name?.trim() ||
@@ -164,12 +264,20 @@ export default function DashboardNavbar({
         {/* Notification */}
         <Link
           href="/notifications"
+          onClick={(event) =>
+            handleNavbarNavigation(
+              event,
+              "/notifications",
+            )
+          }
           aria-label="Notifications"
           className="relative rounded-full p-1.5 text-[#cbc4d2] transition hover:bg-white/[0.06] hover:text-[#fb7185]"
         >
           <Bell size={18} />
 
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#fb7185] ring-2 ring-[#070B18]" />
+          {unreadCount > 0 && (
+            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[#fb7185] ring-2 ring-[#070B18]" />
+          )}
         </Link>
 
         {/* User */}
@@ -221,8 +329,11 @@ export default function DashboardNavbar({
               <div className="p-1.5">
                 <Link
                   href="/settings"
-                  onClick={() =>
-                    setProfileOpen(false)
+                  onClick={(event) =>
+                    handleNavbarNavigation(
+                      event,
+                      "/settings",
+                    )
                   }
                   className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[#cbc4d2] transition hover:bg-white/[0.05] hover:text-[#e6e0e8]"
                 >

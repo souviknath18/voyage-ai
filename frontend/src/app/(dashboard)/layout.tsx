@@ -8,6 +8,7 @@ import {
   useRouter,
 } from "next/navigation";
 
+
 import {
   useAuth,
 } from "@/components/auth/AuthProvider";
@@ -15,6 +16,8 @@ import {
 import {
   PageLoader,
 } from "@/components/ui";
+
+import { UnsavedChangesProvider } from "@/contexts/UnsavedChangesContext";
 
 export default function DashboardLayout({
   children,
@@ -62,5 +65,9 @@ export default function DashboardLayout({
     );
   }
 
-  return children;
+  return (
+    <UnsavedChangesProvider>
+      {children}
+    </UnsavedChangesProvider>
+  );
 }

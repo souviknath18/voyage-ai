@@ -22,7 +22,6 @@ interface ProfileSettingsProps {
   onChangeAction: (
     field:
       | "fullName"
-      | "email"
       | "phone"
       | "homeCity"
       | "preferredAirport",
@@ -85,17 +84,21 @@ export default function ProfileSettings({
               placeholder="Full name"
             />
 
-            <Input
-              value={email}
-              onChange={(event) =>
-                onChangeAction(
-                  "email",
-                  event.target.value,
-                )
-              }
-              placeholder="Email address"
-              type="email"
-            />
+            <div className="space-y-1.5">
+              <Input
+                value={email}
+                placeholder="Email address"
+                type="email"
+                readOnly
+                aria-readonly="true"
+                className="cursor-not-allowed opacity-70"
+              />
+
+              <p className="text-xs leading-relaxed text-[#e6e0e8]/45">
+                Email changes will be available after
+                verification is enabled.
+              </p>
+            </div>
 
             <Input
               value={phone}

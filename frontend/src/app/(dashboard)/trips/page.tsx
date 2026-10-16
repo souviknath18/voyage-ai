@@ -10,6 +10,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import MyTripsHeader from "@/components/trips/MyTripsHeader";
 import TripTabs from "@/components/trips/TripTabs";
 import TripsGrid from "@/components/trips/TripsGrid";
+import ErrorState from "@/components/ui/ErrorState";
 import { getDestinationImageFromApi } from "@/lib/api";
 
 import {
@@ -142,6 +143,7 @@ export default function MyTripsPage() {
     setSavingTripId,
   ] = useState<string | null>(null);
 
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -219,7 +221,7 @@ export default function MyTripsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [retryKey]);
 
 
   const counts =
@@ -343,21 +345,19 @@ export default function MyTripsPage() {
       }
     };
 
-
   if (error) {
     return (
       <AppLayout>
-        <div className="mx-auto w-full max-w-[1280px] px-4 py-10 md:px-6">
-          <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6">
-            <h2 className="text-lg font-semibold">
-              Unable to load trips
-            </h2>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              {error}
-            </p>
-          </div>
-        </div>
+        <ErrorState
+          fullScreen={false}
+          title="Unable to load trips"
+          description="We couldn't load your trips right now. Please try again."
+          recoveryMessage="Your saved trips are not affected. Retry to reconnect and load your latest trips."
+          retrying={loading}
+          onRetry={() => {
+            setRetryKey((current) => current + 1);
+          }}
+        />
       </AppLayout>
     );
   }

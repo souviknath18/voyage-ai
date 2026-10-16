@@ -1,0 +1,27 @@
+
+{
+  "wikidata_id": "Q90",
+  "destination": "Paris",
+  "country": "France",
+  "currency": "EUR",
+  "evidence_status": "research",
+  "components": [
+    {
+      "category": "local_transport",
+      "item": "Metro-Train-RER single ticket",
+      "amount": "2.55",
+      "unit": "journey",
+      "source_name": "Île-de-France Mobilités",
+      "source_url": "https://www.data.gouv.fr/datasets/description-et-tarif-des-titres-de-transport-en-ile-de-france",
+      "license_type": "Licence Ouverte 2.0 (Etalab)",
+      "reference_year": 2026,
+      "includes_airport_transfer": false,
+      "commercial_reuse_verified": true,
+      "status": "verified_price",
+      "attribution": "Île-de-France Mobilités — Licence Ouverte 2.0 (Etalab)",
+      "attribution_url": "https://www.data.gouv.fr/datasets/description-et-tarif-des-titres-de-transport-en-ile-de-france",
+      "license_url": "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+      "source_last_checked": "2026-10-16"
+    }
+  ]
+}

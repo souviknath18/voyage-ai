@@ -21,6 +21,12 @@ from app.modules.itineraries.models import (
 from app.modules.places.models import TripPlace
 from app.modules.flights.models import SelectedFlight
 from app.modules.hotels.models import SelectedHotel
+from app.modules.user_settings.models import UserSettings
+from app.modules.notifications.models import Notification
+from app.modules.explore.models import (
+    ExploreDestination,
+    ExploreCategory,
+)
 
 
 config = context.config

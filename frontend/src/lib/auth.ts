@@ -86,3 +86,23 @@ export async function getCurrentUser(): Promise<CurrentUser> {
     },
   );
 }
+
+
+export async function updateCurrentUser(
+  payload: {
+    full_name?: string | null;
+  },
+): Promise<{
+  id: string;
+  email: string;
+  full_name: string | null;
+}> {
+  return apiRequest<{
+    id: string;
+    email: string;
+    full_name: string | null;
+  }>("/auth/me", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}

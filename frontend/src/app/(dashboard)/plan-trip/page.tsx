@@ -29,6 +29,7 @@ import {
   setTripOrigin,
   planTrip,
 } from "@/lib/trips";
+import { getExploreDestinationById } from "@/lib/api";
 import { PageLoader } from "@/components/ui";
 import type { TripFormData } from "@/types/trip";
 
@@ -36,6 +37,7 @@ export default function PlanTripPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const draftTripId = searchParams.get("draft");
+  const exploreDestinationId = searchParams.get("destination");
   const [trip, setTrip] = useState<TripFormData>({
     origin: "",
     destination: "",
@@ -55,6 +57,55 @@ export default function PlanTripPage() {
   const [planning, setPlanning] = useState(false);
   const [loadingDraft, setLoadingDraft] = useState(false);
   const planningRequestLock = useRef(false);
+  
+  useEffect(() => {
+    // Editing an existing draft takes priority over Explore.
+    if (draftTripId || !exploreDestinationId) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const prefillExploreDestination = async () => {
+      try {
+        const destination =
+          await getExploreDestinationById(exploreDestinationId);
+
+        if (cancelled) return;
+
+        const formattedName =
+          `${destination.name}, ${destination.country}`;
+
+        setTrip((previous) => ({
+          ...previous,
+          destination: formattedName,
+          destinationLocation: {
+            id: destination.wikidata_id,
+            name: destination.name,
+            formattedName,
+            country: destination.country,
+            countryCode: destination.country_code,
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+          },
+        }));
+      } catch (error) {
+        if (!cancelled) {
+          console.error(
+            "Failed to prefill Explore destination:",
+            error,
+          );
+        }
+      }
+    };
+
+    void prefillExploreDestination();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftTripId, exploreDestinationId]);
+
 
   useEffect(() => {
     if (!draftTripId) {
